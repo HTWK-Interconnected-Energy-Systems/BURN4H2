@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="a6f0c657-242a-4a10-8dfc-e7efb5e5f2d1" name="Changes" comment="Switched root directory" />
+    <list default="true" id="a6f0c657-242a-4a10-8dfc-e7efb5e5f2d1" name="Changes" comment="Added files from master to main branch">
+      <change beforePath="$PROJECT_DIR$/pvlib/correction_factor_generator.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pvlib/example1.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pvlib/example2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pvlib/example3.py" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -32,6 +40,35 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RunManager">
+    <configuration name="cgu_example" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="BURN4H2" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/optimization" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/optimization/cgu_example.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.cgu_example" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -40,7 +77,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1689662592577</updated>
-      <workItem from="1689662593601" duration="525000" />
+      <workItem from="1689662593601" duration="1027000" />
     </task>
     <task id="LOCAL-00001" summary="Switched root directory">
       <created>1689662636266</created>
@@ -49,7 +86,14 @@
       <option name="project" value="LOCAL" />
       <updated>1689662636266</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Added files from master to main branch">
+      <created>1689663160089</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1689663160089</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -57,6 +101,10 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Switched root directory" />
-    <option name="LAST_COMMIT_MESSAGE" value="Switched root directory" />
+    <MESSAGE value="Added files from master to main branch" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added files from master to main branch" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/BURN4H2$cgu_example.coverage" NAME="cgu_example Coverage Results" MODIFIED="1689663252085" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/optimization" />
   </component>
 </project>
