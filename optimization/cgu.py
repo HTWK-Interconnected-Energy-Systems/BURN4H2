@@ -148,7 +148,4 @@ solver = SolverFactory('ipopt')
 
 results = solver.solve(model)
 
-print("Hello World")
-
-
 model.display()
