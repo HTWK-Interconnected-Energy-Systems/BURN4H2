@@ -9,7 +9,7 @@ path_in = 'data/input/'
 path_out = 'data/output/'
 
 # Select Solver
-opt = SolverFactory('glpk')
+opt = SolverFactory('gurobi')
 
 # Create DataPortal
 data = DataPortal()
@@ -113,6 +113,15 @@ def HeatDependsOnPower(m, t):
 
 
 m.HeatDependsOnPower_Constraint = Constraint(m.t, rule=HeatDependsOnPower)
+
+
+def operating_hours(m, t):
+    """ Minimal amount of operating hours Constraint """
+
+    return quicksum(m.BHKW_Bin[t] for t in m.t) >= 10
+
+
+m.operating_hours_constraint = Constraint(m.t, rule=operating_hours)
 
 
 def obj_expression(m):
