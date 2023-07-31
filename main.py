@@ -18,16 +18,16 @@ data = DataPortal()
 data.load(
     filename=path_in + 'Gas_Price.csv',
     index='t',
-    param='Gas_Price'
+    param='gas_price'
 )
 data.load(
     filename=path_in + 'Power_Price.csv',
     index='t',
-    param='Power_Price'
+    param='power_price'
 )
 
 # Read BHKW Performance Data
-df_BHKWHilde = pd.read_csv(
+df_bhkw_hilde = pd.read_csv(
     path_in + 'BHKWHilde.csv',
     index_col=0
 )
@@ -39,86 +39,86 @@ m = AbstractModel()
 m.t = Set(ordered=True)
 
 # Define parameters
-m.Gas_Price = Param(m.t)
-m.Power_Price = Param(m.t)
+m.gas_price = Param(m.t)
+m.power_price = Param(m.t)
 
 # Define Binary Variables
-m.BHKW_Bin = Var(
+m.bhkw_bin = Var(
     m.t,
     within=Binary,
     doc='Online'
 )
 
 # Define Continuous Variable
-m.BHKW_Gas = Var(
+m.bhkw_gas = Var(
     m.t,
     domain=NonNegativeReals,
     doc='Fuel Consumption'
 )
-m.BHKW_Power = Var(
+m.bhkw_power = Var(
     m.t,
     domain=NonNegativeReals,
     doc='Power Production'
 )
-m.BHKW_Heat = Var(
+m.bhkw_heat = Var(
     m.t,
     domain=NonNegativeReals,
     doc='Heat Production'
 )
 
 
-def PowerMax(m, t):
+def power_max(m, t):
     """ Power Max Constraint """
-    return m.BHKW_Power[t] <= df_BHKWHilde.loc['Max', 'Power'] * m.BHKW_Bin[t]
+    return m.bhkw_power[t] <= df_bhkw_hilde.loc['Max', 'Power'] * m.bhkw_bin[t]
 
 
-m.PowerMax_Constraint = Constraint(m.t, rule=PowerMax)
+m.power_max_constraint = Constraint(m.t, rule=power_max)
 
 
-def PowerMin(m, t):
+def power_min(m, t):
     """ Power Min Constraint """
-    return df_BHKWHilde.loc['Min', 'Power'] * m.BHKW_Bin[t] <= m.BHKW_Power[t]
+    return df_bhkw_hilde.loc['Min', 'Power'] * m.bhkw_bin[t] <= m.bhkw_power[t]
 
 
-m.PowerMin_Constraint = Constraint(m.t, rule=PowerMin)
+m.power_min_constraint = Constraint(m.t, rule=power_min)
 
 
-def GasDependsOnPower(m, t):
+def gas_depends_on_power(m, t):
     """ Gas = a * Power + b Constraint """
-    value_GasMax = df_BHKWHilde.loc['Max', 'Gas']
-    value_GasMin = df_BHKWHilde.loc['Min', 'Gas']
-    value_PowerMax = df_BHKWHilde.loc['Max', 'Power']
-    value_PowerMin = df_BHKWHilde.loc['Min', 'Power']
+    value_gas_max = df_bhkw_hilde.loc['Max', 'Gas']
+    value_gas_min = df_bhkw_hilde.loc['Min', 'Gas']
+    value_power_max = df_bhkw_hilde.loc['Max', 'Power']
+    value_power_min = df_bhkw_hilde.loc['Min', 'Power']
 
-    a = (value_GasMax - value_GasMin) / (value_PowerMax - value_PowerMin)
-    b = value_GasMax - a * value_PowerMax
+    a = (value_gas_max - value_gas_min) / (value_power_max - value_power_min)
+    b = value_gas_max - a * value_power_max
 
-    return m.BHKW_Gas[t] == a * m.BHKW_Power[t] + b * m.BHKW_Bin[t]
-
-
-m.GasDependsOnPower_Constraint = Constraint(m.t, rule=GasDependsOnPower)
+    return m.bhkw_gas[t] == a * m.bhkw_power[t] + b * m.bhkw_bin[t]
 
 
-def HeatDependsOnPower(m, t):
+m.gas_depends_on_power_constraint = Constraint(m.t, rule=gas_depends_on_power)
+
+
+def heat_depends_on_power(m, t):
     """ Heat = a * Power + b Constraint """
-    value_HeatMax = df_BHKWHilde.loc['Max', 'Heat']
-    value_HeatMin = df_BHKWHilde.loc['Min', 'Heat']
-    value_PowerMax = df_BHKWHilde.loc['Max', 'Power']
-    value_PowerMin = df_BHKWHilde.loc['Min', 'Power']
+    value_heat_max = df_bhkw_hilde.loc['Max', 'Heat']
+    value_heat_min = df_bhkw_hilde.loc['Min', 'Heat']
+    value_power_max = df_bhkw_hilde.loc['Max', 'Power']
+    value_power_min = df_bhkw_hilde.loc['Min', 'Power']
 
-    a = (value_HeatMax - value_HeatMin) / (value_PowerMax - value_PowerMin)
-    b = value_HeatMax - a * value_PowerMax
+    a = (value_heat_max - value_heat_min) / (value_power_max - value_power_min)
+    b = value_heat_max - a * value_power_max
 
-    return m.BHKW_Heat[t] == a * m.BHKW_Power[t] + b * m.BHKW_Bin[t]
+    return m.bhkw_heat[t] == a * m.bhkw_power[t] + b * m.bhkw_bin[t]
 
 
-m.HeatDependsOnPower_Constraint = Constraint(m.t, rule=HeatDependsOnPower)
+m.heat_depends_on_power_constraint = Constraint(m.t, rule=heat_depends_on_power)
 
 
 def operating_hours(m, t):
     """ Minimal amount of operating hours Constraint """
 
-    return quicksum(m.BHKW_Bin[t] for t in m.t) >= 10
+    return quicksum(m.bhkw_bin[t] for t in m.t) >= 10
 
 
 m.operating_hours_constraint = Constraint(m.t, rule=operating_hours)
@@ -126,8 +126,8 @@ m.operating_hours_constraint = Constraint(m.t, rule=operating_hours)
 
 def obj_expression(m):
     """ Objective Function """
-    return (quicksum(m.BHKW_Gas[t] * m.Gas_Price[t] for t in m.t) -
-            quicksum(m.BHKW_Power[t] * m.Power_Price[t] for t in m.t))
+    return (quicksum(m.bhkw_gas[t] * m.gas_price[t] for t in m.t) -
+            quicksum(m.bhkw_power[t] * m.power_price[t] for t in m.t))
 
 
 m.obj = Objective(rule=obj_expression, sense=minimize)
@@ -149,10 +149,11 @@ results.write()
 df_output = pd.DataFrame()
 
 for t in instance.t.data():
-    df_output.loc[t, 'Power_Price'] = instance.Power_Price[t]
-    df_output.loc[t, 'Gas_Price'] = instance.Gas_Price[t]
+    df_output.loc[t, 'power_price'] = instance.power_price[t]
+    df_output.loc[t, 'gas_price'] = instance.gas_price[t]
 
     for variable in m.component_objects(Var, active=True):
         name = variable.name
         df_output.loc[t, name] = instance.__getattribute__(name)[t].value
+        
 df_output.to_csv(path_out + 'Output_TimeSeries.csv')

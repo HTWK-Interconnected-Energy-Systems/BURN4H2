@@ -1,4 +1,4 @@
-,Power_Price,Gas_Price,BHKW_Bin,BHKW_Gas,BHKW_Power,BHKW_Heat
+,power_price,gas_price,bhkw_bin,bhkw_gas,bhkw_power,bhkw_heat
 1,21.0,16.0,0.0,0.0,0.0,0.0
 2,20.0,16.0,0.0,0.0,0.0,0.0
 3,22.0,16.0,0.0,0.0,0.0,0.0
