@@ -65,6 +65,11 @@ m.bhkw_heat = Var(
     domain=NonNegativeReals,
     doc='Heat Production'
 )
+m.plant_supply_power = Var(
+    m.t,
+    domain=NonNegativeReals,
+    doc='Plant Supply Power'
+)
 
 
 def power_max(m, t):
@@ -124,10 +129,18 @@ def operating_hours(m, t):
 m.operating_hours_constraint = Constraint(m.t, rule=operating_hours)
 
 
+def supply_depends_on_power(m, t):
+    """ Supply = sum(asset_powers) - storage_input Constraint"""
+
+    return m.plant_supply_power[t] == m.bhkw_power[t]
+
+m.plant_supply_power_constraint = Constraint(m.t, rule=supply_depends_on_power)
+
+
 def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.bhkw_gas[t] * m.gas_price[t] for t in m.t) -
-            quicksum(m.bhkw_power[t] * m.power_price[t] for t in m.t))
+            quicksum(m.plant_supply_power[t] * m.power_price[t] for t in m.t))
 
 
 m.obj = Objective(rule=obj_expression, sense=minimize)
