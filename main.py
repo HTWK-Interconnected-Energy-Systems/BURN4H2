@@ -23,20 +23,22 @@ power_price_data = pp.get_prices(xlsx, 'Strompreise_Strukt_2016_UE2023')
 data = DataPortal()
 
 # Read Time Series
-# data.load(
-#     filename=path_in + 'Gas_Price.csv',
-#     index='t',
-#     param='gas_price'
-# )
-# data.load(
-#     filename=path_in + 'Power_Price.csv',
-#     index='t',
-#     param='power_price'
-# )
+data.load(
+    filename=path_in + 'Gas_Price.csv',
+    index='t',
+    param='gas_price'
+)
+data.load(
+    filename=path_in + 'Power_Price.csv',
+    index='t',
+    param='power_price'
+)
 
-data['gas_price'] = gas_price_data['2024']
-data['power_price'] = power_price_data['2024']
-data['t'] = list(data['gas_price'].keys())
+# Read Time Series and declare data
+# data['gas_price'] = gas_price_data['2024']
+# data['power_price'] = power_price_data['2024']
+# data['t'] = list(data['gas_price'].keys())
+
 # Read BHKW Performance Data
 df_bhkw_hilde = pd.read_csv(
     path_in + 'BHKWHilde.csv',
@@ -291,3 +293,10 @@ for t in instance.t.data():
         df_output.loc[t, name] = instance.__getattribute__(name)[t].value
         
 df_output.to_csv(path_out + 'Output_TimeSeries.csv')
+
+# Write results
+df_results = pd.DataFrame()
+df_results['objective_value'] = pd.Series(value(instance.obj))
+print(results.solution.gap)
+
+df_results.to_csv(path_out + 'results.csv')
