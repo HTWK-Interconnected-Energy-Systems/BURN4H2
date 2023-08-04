@@ -3,6 +3,8 @@ import pandas as pd
 from pyomo.opt import SolverFactory
 from pyomo.environ import *
 
+import preprocessing as pp
+
 
 # Path
 path_in = 'data/input/'
@@ -11,24 +13,38 @@ path_out = 'data/output/'
 # Select Solver
 opt = SolverFactory('gurobi')
 
+
+xlsx = pd.ExcelFile(path_in + 'Zeitreihen_UE23.xlsx')
+
+gas_price_data = pp.get_prices(xlsx, 'Gaspreise_Struktur_2016_UE2023')
+power_price_data = pp.get_prices(xlsx, 'Strompreise_Strukt_2016_UE2023')
+
 # Create DataPortal
 data = DataPortal()
 
 # Read Time Series
-data.load(
-    filename=path_in + 'Gas_Price.csv',
-    index='t',
-    param='gas_price'
-)
-data.load(
-    filename=path_in + 'Power_Price.csv',
-    index='t',
-    param='power_price'
-)
+# data.load(
+#     filename=path_in + 'Gas_Price.csv',
+#     index='t',
+#     param='gas_price'
+# )
+# data.load(
+#     filename=path_in + 'Power_Price.csv',
+#     index='t',
+#     param='power_price'
+# )
 
+data['gas_price'] = gas_price_data['2024']
+data['power_price'] = power_price_data['2024']
+data['t'] = list(data['gas_price'].keys())
 # Read BHKW Performance Data
 df_bhkw_hilde = pd.read_csv(
     path_in + 'BHKWHilde.csv',
+    index_col=0
+)
+
+df_electricity_storage = pd.read_csv(
+    path_in + 'Electricity_Storage.csv',
     index_col=0
 )
 
@@ -46,7 +62,12 @@ m.power_price = Param(m.t)
 m.bhkw_bin = Var(
     m.t,
     within=Binary,
-    doc='Online'
+    doc='BHKW_Online'
+)
+m.storage_bin = Var(
+    m.t,
+    within=Binary,
+    doc='Storage_Online'
 )
 
 # Define Continuous Variable
@@ -65,26 +86,48 @@ m.bhkw_heat = Var(
     domain=NonNegativeReals,
     doc='Heat Production'
 )
+m.plant_supply_power = Var(
+    m.t,
+    domain=NonNegativeReals,
+    doc='Plant Supply Power'
+)
+m.storage_power = Var(
+    m.t,
+    domain=Reals,
+    doc='Storage Charge/Discharge Power'
+)
+m.storage_energy = Var(
+    m.t,
+    domain=NonNegativeReals,
+    doc='Storage Actual Energy'
+)
 
 
-def power_max(m, t):
-    """ Power Max Constraint """
+# Define Constraints
+def bhkw_power_max(m, t):
+    """ BHKW Power Max Constraint """
     return m.bhkw_power[t] <= df_bhkw_hilde.loc['Max', 'Power'] * m.bhkw_bin[t]
 
 
-m.power_max_constraint = Constraint(m.t, rule=power_max)
+m.bhkw_power_max_constraint = Constraint(
+    m.t,
+    rule=bhkw_power_max
+    )
 
 
-def power_min(m, t):
-    """ Power Min Constraint """
+def bhkw_power_min(m, t):
+    """ BHKW Power Min Constraint """
     return df_bhkw_hilde.loc['Min', 'Power'] * m.bhkw_bin[t] <= m.bhkw_power[t]
 
 
-m.power_min_constraint = Constraint(m.t, rule=power_min)
+m.bhkw_power_min_constraint = Constraint(
+    m.t,
+    rule=bhkw_power_min
+    )
 
 
-def gas_depends_on_power(m, t):
-    """ Gas = a * Power + b Constraint """
+def bhkw_gas_depends_on_power(m, t):
+    """ BHKW Gas = a * Power + b Constraint """
     value_gas_max = df_bhkw_hilde.loc['Max', 'Gas']
     value_gas_min = df_bhkw_hilde.loc['Min', 'Gas']
     value_power_max = df_bhkw_hilde.loc['Max', 'Power']
@@ -96,11 +139,14 @@ def gas_depends_on_power(m, t):
     return m.bhkw_gas[t] == a * m.bhkw_power[t] + b * m.bhkw_bin[t]
 
 
-m.gas_depends_on_power_constraint = Constraint(m.t, rule=gas_depends_on_power)
+m.bhkw_gas_depends_on_power_constraint = Constraint(
+    m.t,
+    rule=bhkw_gas_depends_on_power
+    )
 
 
-def heat_depends_on_power(m, t):
-    """ Heat = a * Power + b Constraint """
+def bhkw_heat_depends_on_power(m, t):
+    """ BHKW Heat = a * Power + b Constraint """
     value_heat_max = df_bhkw_hilde.loc['Max', 'Heat']
     value_heat_min = df_bhkw_hilde.loc['Min', 'Heat']
     value_power_max = df_bhkw_hilde.loc['Max', 'Power']
@@ -112,25 +158,113 @@ def heat_depends_on_power(m, t):
     return m.bhkw_heat[t] == a * m.bhkw_power[t] + b * m.bhkw_bin[t]
 
 
-m.heat_depends_on_power_constraint = Constraint(m.t, rule=heat_depends_on_power)
+m.bhkw_heat_depends_on_power_constraint = Constraint(
+    m.t,
+    rule=bhkw_heat_depends_on_power
+    )
 
 
-def operating_hours(m, t):
-    """ Minimal amount of operating hours Constraint """
+def bhkw_operating_hours(m, t):
+    """ BHKW Minimal amount of operating hours Constraint """
 
     return quicksum(m.bhkw_bin[t] for t in m.t) >= 10
 
 
-m.operating_hours_constraint = Constraint(m.t, rule=operating_hours)
+m.bhkw_operating_hours_constraint = Constraint(
+    m.t,
+    rule=bhkw_operating_hours
+    )
 
 
+def plant_supply_depends_on_power(m, t):
+    """ Plant Power Supply = sum(asset_powers) - storage_input Constraint"""
+
+    return m.plant_supply_power[t] == m.bhkw_power[t] - m.storage_power[t]
+
+
+m.plant_supply_power_constraint = Constraint(
+    m.t,
+    rule=plant_supply_depends_on_power
+    )
+
+
+def storage_power_min(m, t):
+    """ Storage Power Min Constraint. """
+    value_power_min = df_electricity_storage.loc['Min', 'Power']
+
+    return value_power_min * m.storage_bin[t] <= m.storage_power[t]
+
+
+m.storage_power_min_constraint = Constraint(
+    m.t,
+    rule=storage_power_min
+)
+
+
+def storage_power_max(m, t):
+    """ Storage Power Max Constraint. """
+    value_power_max = df_electricity_storage.loc['Max', 'Power']
+
+    return m.storage_power[t] <= value_power_max * m.storage_bin[t]
+
+
+m.storage_power_max_constraint = Constraint(
+    m.t,
+    rule=storage_power_max
+)
+
+
+def storage_energy_min(m, t):
+    """ Storage Energy Min Constraint. """
+    value_energy_min = df_electricity_storage.loc['Min', 'Capacity']
+
+    return value_energy_min <= m.storage_energy[t]
+
+
+m.storage_energy_min_constraint = Constraint(
+    m.t,
+    rule=storage_energy_min
+)
+
+
+def storage_energy_max(m, t):
+    """ Storage Energy Max Constraint. """
+    value_energy_max = df_electricity_storage.loc['Max', 'Capacity']
+
+    return m.storage_energy[t] <= value_energy_max
+
+
+m.storage_energy_max_constraint = Constraint(
+    m.t,
+    rule=storage_energy_max
+)
+
+
+def storage_energy_actual(m, t):
+    """ Storage Energy Actual Constraint. """
+    if t == 1:
+        return m.storage_energy[t] == 0 + m.storage_power[t]
+    else:
+        return m.storage_energy[t] == m.storage_energy[t - 1] + m.storage_power[t]
+
+
+m.storage_energy_actual_constraint = Constraint(
+    m.t,
+    rule=storage_energy_actual
+)
+
+
+# Define Objective
 def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.bhkw_gas[t] * m.gas_price[t] for t in m.t) -
-            quicksum(m.bhkw_power[t] * m.power_price[t] for t in m.t))
+            quicksum(m.plant_supply_power[t] * m.power_price[t] for t in m.t))
 
 
-m.obj = Objective(rule=obj_expression, sense=minimize)
+m.obj = Objective(
+    rule=obj_expression,
+    sense=minimize
+    )
 
 # Create instanz
 instance = m.create_instance(data)
