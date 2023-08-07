@@ -3,50 +3,44 @@ import pandas as pd
 from pyomo.opt import SolverFactory
 from pyomo.environ import *
 
-import preprocessing as pp
-
 
 # Path
-path_in = 'data/input/'
+PATH_IN = 'data/input/'
 path_out = 'data/output/'
+
+# Scenario
+SCENARIO = 'UE23'
+
+# Year
+YEAR = '2024'
 
 # Select Solver
 opt = SolverFactory('gurobi')
 
-
-xlsx = pd.ExcelFile(path_in + 'Zeitreihen_UE23.xlsx')
-
-gas_price_data = pp.get_prices(xlsx, 'Gaspreise_Struktur_2016_UE2023')
-power_price_data = pp.get_prices(xlsx, 'Strompreise_Strukt_2016_UE2023')
 
 # Create DataPortal
 data = DataPortal()
 
 # Read Time Series
 data.load(
-    filename=path_in + 'Gas_Price.csv',
+    filename=PATH_IN + SCENARIO + '/gas_price_' + YEAR + '.csv',
     index='t',
     param='gas_price'
 )
 data.load(
-    filename=path_in + 'Power_Price.csv',
+    filename=PATH_IN + SCENARIO + '/power_price_' + YEAR + '.csv',
     index='t',
     param='power_price'
 )
 
-# Read Time Series and declare data
-# data['gas_price'] = gas_price_data['2024']
-# data['power_price'] = power_price_data['2024']
-# data['t'] = list(data['gas_price'].keys())
-
 # Read BHKW Performance Data
 df_bhkw_hilde = pd.read_csv(
-    path_in + 'BHKWHilde.csv',
+    PATH_IN + 'BHKWHilde.csv',
     index_col=0
 )
 
 df_electricity_storage = pd.read_csv(
-    path_in + 'Electricity_Storage.csv',
+    PATH_IN + 'Electricity_Storage.csv',
     index_col=0
 )
 
@@ -297,6 +291,5 @@ df_output.to_csv(path_out + 'Output_TimeSeries.csv')
 # Write results
 df_results = pd.DataFrame()
 df_results['objective_value'] = pd.Series(value(instance.obj))
-print(results.solution.gap)
 
 df_results.to_csv(path_out + 'results.csv')
