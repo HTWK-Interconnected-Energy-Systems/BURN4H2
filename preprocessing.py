@@ -2,6 +2,11 @@ import os
 import pandas as pd
 from datetime import datetime
 
+PATH_IN = 'data/raw/'
+PATH_OUT = 'data/input/'
+
+SCENARIOS = ['GEE23', 'KT23', 'UE23']
+SHEETS = ['Gaspreise_Struktur_2016_', 'Strompreise_Strukt_2016_']
 
 def get_prices(xlsx_file: pd.ExcelFile, sheet_name: str):
     """ Reads a xlsx file according to the template of the Zukunftsbilder. """
@@ -37,13 +42,7 @@ def get_prices(xlsx_file: pd.ExcelFile, sheet_name: str):
 
 if __name__ == '__main__':
 
-    PATH_IN = 'data/raw/'
-    PATH_OUT = 'data/input/'
-
-    scenarios = ['GEE23', 'KT23', 'UE23']
-    sheets = ['Gaspreise_Struktur_2016_', 'Strompreise_Strukt_2016_']
-
-    for scenario in scenarios:
+    for scenario in SCENARIOS:
         print(scenario)
         path_out = PATH_OUT + '/' + scenario + '/'
 
@@ -52,7 +51,7 @@ if __name__ == '__main__':
 
         xlsx = pd.ExcelFile(PATH_IN + 'Zeitreihen_Struktur_2016_' + scenario + '_nicht_freigegeben.xlsx')
 
-        for sheet in sheets:
+        for sheet in SHEETS:
             print(sheet)
             data = get_prices(xlsx, sheet + scenario.replace('23', '2023'))
         
@@ -63,17 +62,5 @@ if __name__ == '__main__':
                     df.to_csv(path_out + 'gas_price_' + key + '.csv')
                 else:
                     df.to_csv(path_out + 'power_price_' + key + '.csv')
-    #     power_data = get_prices(xlsx, 'Strompreise_Strukt_2016_UE2023')
-
-
-    # gas_df = pd.DataFrame(gas_data)
-    # gas_df.index.name = 't'
-
-    # power_df = pd.DataFrame(power_data)
-    # power_df.index.name = 't'
-
-    # for year in gas_data.keys():
-    #     gas_df[year].to_csv('data/input/gas_prices_' + year + '.csv')
-    #     power_df[year].to_csv('data/input/power_prices_' + year + '.csv')
 
 
