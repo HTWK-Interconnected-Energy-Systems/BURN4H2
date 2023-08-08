@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 
 from pyomo.opt import SolverFactory
@@ -6,10 +7,11 @@ from pyomo.environ import *
 
 # Path
 PATH_IN = 'data/input/'
-path_out = 'data/output/'
+PATH_OUT = 'data/output/'
 
 # Scenario
-SCENARIO = 'UE23'
+# SCENARIO = 'UE23'
+SCENARIO = 'testing'
 
 # Year
 YEAR = '2024'
@@ -22,25 +24,37 @@ opt = SolverFactory('gurobi')
 data = DataPortal()
 
 # Read Time Series
-data.load(
-    filename=PATH_IN + SCENARIO + '/gas_price_' + YEAR + '.csv',
-    index='t',
-    param='gas_price'
-)
-data.load(
-    filename=PATH_IN + SCENARIO + '/power_price_' + YEAR + '.csv',
-    index='t',
-    param='power_price'
-)
+if SCENARIO == 'testing':
+    data.load(
+        filename=PATH_IN + SCENARIO + '/gas_price.csv',
+        index='t',
+        param='gas_price'
+    )
+    data.load(
+        filename=PATH_IN + SCENARIO + '/power_price.csv',
+        index='t',
+        param='power_price'
+    )
+else:
+    data.load(
+        filename=PATH_IN + SCENARIO + '/gas_price_' + YEAR + '.csv',
+        index='t',
+        param='gas_price'
+    )
+    data.load(
+        filename=PATH_IN + SCENARIO + '/power_price_' + YEAR + '.csv',
+        index='t',
+        param='power_price'
+    )
 
 # Read BHKW Performance Data
 df_bhkw_hilde = pd.read_csv(
-    PATH_IN + 'BHKWHilde.csv',
+    PATH_IN + 'assets/BHKWHilde.csv',
     index_col=0
 )
 
 df_electricity_storage = pd.read_csv(
-    PATH_IN + 'Electricity_Storage.csv',
+    PATH_IN + 'assets/Electricity_Storage.csv',
     index_col=0
 )
 
@@ -82,7 +96,7 @@ m.bhkw_heat = Var(
     domain=NonNegativeReals,
     doc='Heat Production'
 )
-m.plant_supply_power = Var(
+m.plant_power = Var(
     m.t,
     domain=NonNegativeReals,
     doc='Plant Supply Power'
@@ -175,7 +189,7 @@ m.bhkw_operating_hours_constraint = Constraint(
 def plant_supply_depends_on_power(m, t):
     """ Plant Power Supply = sum(asset_powers) - storage_input Constraint"""
 
-    return m.plant_supply_power[t] == m.bhkw_power[t] - m.storage_power[t]
+    return m.plant_power[t] == m.bhkw_power[t] - m.storage_power[t]
 
 
 m.plant_supply_power_constraint = Constraint(
@@ -254,7 +268,7 @@ m.storage_energy_actual_constraint = Constraint(
 def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.bhkw_gas[t] * m.gas_price[t] for t in m.t) -
-            quicksum(m.plant_supply_power[t] * m.power_price[t] for t in m.t))
+            quicksum(m.plant_power[t] * m.power_price[t] for t in m.t))
 
 
 m.obj = Objective(
@@ -278,6 +292,14 @@ results.write()
 """ Write Output Time Series """
 df_output = pd.DataFrame()
 
+if SCENARIO == 'testing':
+    path_output = PATH_OUT + SCENARIO + '/'
+else:
+    path_output = PATH_OUT + SCENARIO + '/' + YEAR + '/'
+
+if not os.path.exists(path_output):
+    os.makedirs(path_output)
+
 for t in instance.t.data():
     df_output.loc[t, 'power_price'] = instance.power_price[t]
     df_output.loc[t, 'gas_price'] = instance.gas_price[t]
@@ -286,10 +308,10 @@ for t in instance.t.data():
         name = variable.name
         df_output.loc[t, name] = instance.__getattribute__(name)[t].value
         
-df_output.to_csv(path_out + 'Output_TimeSeries.csv')
+df_output.to_csv(path_output + 'output_time_series.csv')
 
 # Write results
 df_results = pd.DataFrame()
 df_results['objective_value'] = pd.Series(value(instance.obj))
 
-df_results.to_csv(path_out + 'results.csv')
+df_results.to_csv(path_output + 'results.csv')
