@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 PATH_IN = 'data/output/'
 
@@ -90,7 +89,6 @@ def check_objective_value(output_dict):
               - output_dict['plant']['power_revenue']
               )
     obj_value = (pd.read_csv(path_input + 'results.csv', index_col=0)).iloc[0].values[0]
-    print(obj_value)
     
     if result == obj_value:
         print('Objective value and calculated value are the same.')
