@@ -189,7 +189,7 @@ m.bhkw_operating_hours_constraint = Constraint(
 def plant_supply_depends_on_power(m, t):
     """ Plant Power Supply = sum(asset_powers) - storage_input Constraint"""
 
-    return m.plant_power[t] == m.bhkw_power[t] - m.storage_power[t]
+    return m.plant_power[t] == m.bhkw_power[t] + m.storage_power[t]
 
 
 m.plant_supply_power_constraint = Constraint(
@@ -202,7 +202,7 @@ def storage_power_min(m, t):
     """ Storage Power Min Constraint. """
     value_power_min = df_electricity_storage.loc['Min', 'Power']
 
-    return value_power_min * m.storage_bin[t] <= m.storage_power[t]
+    return value_power_min * m.storage_bin[t] >= m.storage_power[t]
 
 
 m.storage_power_min_constraint = Constraint(
@@ -215,7 +215,7 @@ def storage_power_max(m, t):
     """ Storage Power Max Constraint. """
     value_power_max = df_electricity_storage.loc['Max', 'Power']
 
-    return m.storage_power[t] <= value_power_max * m.storage_bin[t]
+    return m.storage_power[t] >= value_power_max * m.storage_bin[t]
 
 
 m.storage_power_max_constraint = Constraint(
@@ -255,7 +255,7 @@ def storage_energy_actual(m, t):
     if t == 1:
         return m.storage_energy[t] == 0 + m.storage_power[t]
     else:
-        return m.storage_energy[t] == m.storage_energy[t - 1] + m.storage_power[t]
+        return m.storage_energy[t] == m.storage_energy[t - 1] - m.storage_power[t]
 
 
 m.storage_energy_actual_constraint = Constraint(
