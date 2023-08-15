@@ -5,16 +5,25 @@ from pyomo.opt import SolverFactory
 from pyomo.environ import *
 
 
-# Path
-PATH_IN = 'data/input/'
-PATH_OUT = 'data/output/'
-
 # Scenario
 # SCENARIO = 'UE23'
 SCENARIO = 'testing'
 
+
 # Year
 YEAR = '2024'
+
+
+# Path
+PATH_IN = 'data/input/'
+PATH_OUT = 'data/output/'
+
+
+if SCENARIO == 'testing':
+    path_output = PATH_OUT + SCENARIO + '/'
+else:
+    path_output = PATH_OUT + SCENARIO + '/' + YEAR + '/'
+
 
 # Select Solver
 opt = SolverFactory('gurobi')
@@ -54,6 +63,11 @@ df_bhkw_hilde = pd.read_csv(
 
 df_electricity_storage = pd.read_csv(
     PATH_IN + 'assets/Electricity_Storage.csv',
+    index_col=0
+)
+
+df_electrical_net = pd.read_csv(
+    PATH_IN + 'assets/electrical_net.csv',
     index_col=0
 )
 
@@ -112,7 +126,7 @@ m.bhkw_heat = Var(
 )
 m.net_power = Var(
     m.t,
-    domain=NonNegativeReals,
+    domain=Reals,
     doc='Plant Supply Power'
 )
 m.storage_power = Var(
@@ -125,22 +139,22 @@ m.storage_energy = Var(
     domain=NonNegativeReals,
     doc='Storage Actual Energy'
 )
-m.bhkw_p_con_1 = Var(
+m.bhkw_con_1_power = Var(
     m.t,
     domain=NonNegativeReals,
     doc='Power of the connection between bhkw and electricity storage'
 )
-m.bhkw_p_con_2 = Var(
+m.bhkw_con_2_power = Var(
     m.t,
     domain=NonNegativeReals,
     doc='Power of the connection between bhkw and net'
 )
-m.storage_p_con_3 = Var(
+m.storage_con_3_power = Var(
     m.t,
     domain=NonNegativeReals,
     doc='Discharging power of the connection between storage and net'
 )
-m.net_p_con_4 = Var(
+m.net_con_4_power = Var(
     m.t,
     domain=NonNegativeReals,
     doc='Charging power of the connection between net and storage'
@@ -224,7 +238,7 @@ def bhkw_connections(m,t):
     """ BHKW power distribution constraint """
 
     # return m.bhkw_power[t] == (m.p_con_1[t] + m.p_con_2[t]) * m.bhkw_bin[t]
-    return m.bhkw_power[t] == m.bhkw_p_con_1[t] + m.bhkw_p_con_2[t]
+    return m.bhkw_power[t] == m.bhkw_con_1_power[t] + m.bhkw_con_2_power[t]
 
 
 m.bhkw_connections_constraint = Constraint(
@@ -232,11 +246,36 @@ m.bhkw_connections_constraint = Constraint(
     rule=bhkw_connections
 )
 
+def net_feed_in_power_max(m, t):
+    """ Electrical network max feed in power constraint """
+    feed_in_power_max = df_electrical_net.loc['Max', 'Power_feed_in']
+
+    return m.bhkw_con_2_power[t] + m.storage_con_3_power[t] <= feed_in_power_max * m.net_feeding_bin[t]
+
+
+m.net_feed_in_power_max_constraint = Constraint(
+    m.t,
+    rule=net_feed_in_power_max
+)
+
+
+def net_supply_max_power(m, t):
+    """ Electrical network max supply power constraint """
+    supply_power_max = df_electrical_net.loc['Max', 'Power_supply']
+
+    return m.net_con_4_power[t] <= supply_power_max * m.net_supplying_bin[t]
+
+
+m.net_supply_max_power_constraint = Constraint(
+    m.t,
+    rule=net_supply_max_power
+)
+
 
 def net_overall_power(m, t):
     """ Electrical network overall power constraint """
-    feed_in = (m.bhkw_p_con_2[t] + m.storage_p_con_3[t]) * m.net_feeding_bin[t]
-    supplying = m.net_p_con_4[t] * m.net_supplying_bin[t]
+    feed_in = m.bhkw_con_2_power[t] + m.storage_con_3_power[t]
+    supplying = m.net_con_4_power[t]
 
     return m.net_power[t] == feed_in - supplying
 
@@ -264,7 +303,7 @@ def storage_discharging_power_max(m, t):
     value_discharge_power_max = df_electricity_storage.loc['Min', 'Power']
 
     # return m.storage_power[t] <= value_discharge_power_max * m.storage_discharge_bin[t]
-    return m.storage_p_con_3[t] <= value_discharge_power_max * m.storage_discharge_bin[t]
+    return m.storage_con_3_power[t] <= value_discharge_power_max * m.storage_discharge_bin[t]
 
 
 m.storage_discharging_power_max_constraint = Constraint(
@@ -278,7 +317,7 @@ def storage_charging_power_max(m, t):
     value_charging_power_max = df_electricity_storage.loc['Max', 'Power']
 
     # return m.storage_power[t] >= value_charging_power_max * m.storage_charge_bin[t]
-    return -(m.bhkw_p_con_1[t] + m.net_p_con_4[t]) >= value_charging_power_max * m.storage_charge_bin[t]
+    return -(m.bhkw_con_1_power[t] + m.net_con_4_power[t]) >= value_charging_power_max * m.storage_charge_bin[t]
 
 
 m.storage_charging_power_max_constraint = Constraint(
@@ -290,9 +329,9 @@ m.storage_charging_power_max_constraint = Constraint(
 def storage_overall_power(m, t):
     """ Storage overall power constraint """
     # charge = (m.p_con_1[t] + m.p_con_4[t]) * m.storage_charge_bin[t]
-    charge = m.bhkw_p_con_1[t] + m.net_p_con_4[t]
+    charge = m.bhkw_con_1_power[t] + m.net_con_4_power[t]
     # discharge = m.p_con_3[t] * m.storage_discharge_bin[t]
-    discharge = m.storage_p_con_3[t]
+    discharge = m.storage_con_3_power[t]
 
     return m.storage_power[t] == discharge - charge 
 
@@ -375,6 +414,7 @@ results = opt.solve(
     instance,
     symbolic_solver_labels=True,
     tee=True,
+    logfile=path_output + 'solver.log', 
     load_solutions=True)
 
 # Write Results
@@ -382,11 +422,6 @@ results.write()
 
 """ Write Output Time Series """
 df_output = pd.DataFrame()
-
-if SCENARIO == 'testing':
-    path_output = PATH_OUT + SCENARIO + '/'
-else:
-    path_output = PATH_OUT + SCENARIO + '/' + YEAR + '/'
 
 if not os.path.exists(path_output):
     os.makedirs(path_output)
