@@ -19,7 +19,6 @@ YEAR = '2024'
 # Select Solver
 opt = SolverFactory('gurobi')
 
-
 # Create DataPortal
 data = DataPortal()
 
@@ -74,10 +73,25 @@ m.bhkw_bin = Var(
     within=Binary,
     doc='BHKW_Online'
 )
-m.storage_bin = Var(
+m.storage_charge_bin = Var(
     m.t,
     within=Binary,
-    doc='Storage_Online'
+    doc='storage charging'
+)
+m.storage_discharge_bin = Var(
+    m.t,
+    within=Binary,
+    doc='storage discharging'
+)
+m.net_feeding_bin = Var(
+    m.t,
+    within=Binary,
+    doc='net feeding'
+)
+m.net_supplying_bin = Var(
+    m.t,
+    within=Binary,
+    doc='net supplying'
 )
 
 # Define Continuous Variable
@@ -96,7 +110,7 @@ m.bhkw_heat = Var(
     domain=NonNegativeReals,
     doc='Heat Production'
 )
-m.plant_power = Var(
+m.net_power = Var(
     m.t,
     domain=NonNegativeReals,
     doc='Plant Supply Power'
@@ -111,9 +125,29 @@ m.storage_energy = Var(
     domain=NonNegativeReals,
     doc='Storage Actual Energy'
 )
-
+m.bhkw_p_con_1 = Var(
+    m.t,
+    domain=NonNegativeReals,
+    doc='Power of the connection between bhkw and electricity storage'
+)
+m.bhkw_p_con_2 = Var(
+    m.t,
+    domain=NonNegativeReals,
+    doc='Power of the connection between bhkw and net'
+)
+m.storage_p_con_3 = Var(
+    m.t,
+    domain=NonNegativeReals,
+    doc='Discharging power of the connection between storage and net'
+)
+m.net_p_con_4 = Var(
+    m.t,
+    domain=NonNegativeReals,
+    doc='Charging power of the connection between net and storage'
+)
 
 # Define Constraints
+
 def bhkw_power_max(m, t):
     """ BHKW Power Max Constraint """
     return m.bhkw_power[t] <= df_bhkw_hilde.loc['Max', 'Power'] * m.bhkw_bin[t]
@@ -186,41 +220,98 @@ m.bhkw_operating_hours_constraint = Constraint(
     )
 
 
-def plant_supply_depends_on_power(m, t):
-    """ Plant Power Supply = sum(asset_powers) - storage_input Constraint"""
+def bhkw_connections(m,t):
+    """ BHKW power distribution constraint """
 
-    return m.plant_power[t] == m.bhkw_power[t] + m.storage_power[t]
+    # return m.bhkw_power[t] == (m.p_con_1[t] + m.p_con_2[t]) * m.bhkw_bin[t]
+    return m.bhkw_power[t] == m.bhkw_p_con_1[t] + m.bhkw_p_con_2[t]
 
 
-m.plant_supply_power_constraint = Constraint(
+m.bhkw_connections_constraint = Constraint(
     m.t,
-    rule=plant_supply_depends_on_power
-    )
-
-
-def storage_power_min(m, t):
-    """ Storage Power Min Constraint. """
-    value_power_min = df_electricity_storage.loc['Min', 'Power']
-
-    return value_power_min * m.storage_bin[t] >= m.storage_power[t]
-
-
-m.storage_power_min_constraint = Constraint(
-    m.t,
-    rule=storage_power_min
+    rule=bhkw_connections
 )
 
 
-def storage_power_max(m, t):
-    """ Storage Power Max Constraint. """
-    value_power_max = df_electricity_storage.loc['Max', 'Power']
+def net_overall_power(m, t):
+    """ Electrical network overall power constraint """
+    feed_in = (m.bhkw_p_con_2[t] + m.storage_p_con_3[t]) * m.net_feeding_bin[t]
+    supplying = m.net_p_con_4[t] * m.net_supplying_bin[t]
 
-    return m.storage_power[t] >= value_power_max * m.storage_bin[t]
+    return m.net_power[t] == feed_in - supplying
 
 
-m.storage_power_max_constraint = Constraint(
+m.net_power_constraint = Constraint(
     m.t,
-    rule=storage_power_max
+    rule=net_overall_power
+    )
+
+
+def net_binary(m, t):
+    """ Net binary constraint """
+    
+    return m.net_feeding_bin[t] + m.net_supplying_bin[t] <= 1
+
+
+m.net_binary_constraint = Constraint(
+    m.t,
+    rule=net_binary
+)
+
+
+def storage_discharging_power_max(m, t):
+    """ Storage discharging power max constraint """
+    value_discharge_power_max = df_electricity_storage.loc['Min', 'Power']
+
+    # return m.storage_power[t] <= value_discharge_power_max * m.storage_discharge_bin[t]
+    return m.storage_p_con_3[t] <= value_discharge_power_max * m.storage_discharge_bin[t]
+
+
+m.storage_discharging_power_max_constraint = Constraint(
+    m.t,
+    rule=storage_discharging_power_max
+)
+
+
+def storage_charging_power_max(m, t):
+    """ Storage charging power max constraint """
+    value_charging_power_max = df_electricity_storage.loc['Max', 'Power']
+
+    # return m.storage_power[t] >= value_charging_power_max * m.storage_charge_bin[t]
+    return -(m.bhkw_p_con_1[t] + m.net_p_con_4[t]) >= value_charging_power_max * m.storage_charge_bin[t]
+
+
+m.storage_charging_power_max_constraint = Constraint(
+    m.t,
+    rule=storage_charging_power_max
+)
+
+
+def storage_overall_power(m, t):
+    """ Storage overall power constraint """
+    # charge = (m.p_con_1[t] + m.p_con_4[t]) * m.storage_charge_bin[t]
+    charge = m.bhkw_p_con_1[t] + m.net_p_con_4[t]
+    # discharge = m.p_con_3[t] * m.storage_discharge_bin[t]
+    discharge = m.storage_p_con_3[t]
+
+    return m.storage_power[t] == discharge - charge 
+
+
+m.storage_power_constraint = Constraint(
+    m.t,
+    rule=storage_overall_power
+)
+
+
+def storage_binary(m, t):
+    """ Storage binary constraint """
+
+    return m.storage_charge_bin[t] + m.storage_discharge_bin[t] <= 1
+
+
+m.storage_bin_constraint = Constraint(
+    m.t,
+    rule=storage_binary
 )
 
 
@@ -228,7 +319,7 @@ def storage_energy_min(m, t):
     """ Storage Energy Min Constraint. """
     value_energy_min = df_electricity_storage.loc['Min', 'Capacity']
 
-    return value_energy_min <= m.storage_energy[t]
+    return m.storage_energy[t] >= value_energy_min
 
 
 m.storage_energy_min_constraint = Constraint(
@@ -253,7 +344,7 @@ m.storage_energy_max_constraint = Constraint(
 def storage_energy_actual(m, t):
     """ Storage Energy Actual Constraint. """
     if t == 1:
-        return m.storage_energy[t] == 0 + m.storage_power[t]
+        return m.storage_energy[t] == 0 - m.storage_power[t]
     else:
         return m.storage_energy[t] == m.storage_energy[t - 1] - m.storage_power[t]
 
@@ -268,7 +359,7 @@ m.storage_energy_actual_constraint = Constraint(
 def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.bhkw_gas[t] * m.gas_price[t] for t in m.t) -
-            quicksum(m.plant_power[t] * m.power_price[t] for t in m.t))
+            quicksum(m.net_power[t] * m.power_price[t] for t in m.t))
 
 
 m.obj = Objective(
