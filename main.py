@@ -225,7 +225,7 @@ m.bhkw_heat_depends_on_power_constraint = Constraint(
 def bhkw_operating_hours(m, t):
     """ BHKW Minimal amount of operating hours Constraint """
 
-    return quicksum(m.bhkw_bin[t] for t in m.t) >= 10
+    return quicksum(m.bhkw_bin[t] for t in m.t) >= 24
 
 
 m.bhkw_operating_hours_constraint = Constraint(
