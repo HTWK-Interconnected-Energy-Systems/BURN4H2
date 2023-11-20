@@ -7,19 +7,16 @@ from pyomo.environ import *
 
 # Scenario
 # SCENARIO = 'UE23'
-SCENARIO = 'testing'
-
+SCENARIO = 'dummy'
 
 # Year
 YEAR = '2024'
-
 
 # Path
 PATH_IN = 'data/input/'
 PATH_OUT = 'data/output/'
 
-
-if SCENARIO == 'testing':
+if SCENARIO == 'dummy':
     path_output = PATH_OUT + SCENARIO + '/'
 else:
     path_output = PATH_OUT + SCENARIO + '/' + YEAR + '/'
@@ -32,25 +29,25 @@ opt = SolverFactory('gurobi')
 data = DataPortal()
 
 # Read Time Series
-if SCENARIO == 'testing':
+if SCENARIO == 'dummy':
     data.load(
-        filename=PATH_IN + SCENARIO + '/gas_price.csv',
+        filename=PATH_IN + 'prices/' + SCENARIO + '/gas_price.csv',
         index='t',
         param='gas_price'
     )
     data.load(
-        filename=PATH_IN + SCENARIO + '/power_price.csv',
+        filename=PATH_IN + 'prices/' + SCENARIO + '/power_price.csv',
         index='t',
         param='power_price'
     )
 else:
     data.load(
-        filename=PATH_IN + SCENARIO + '/gas_price_' + YEAR + '.csv',
+        filename=PATH_IN + 'prices/' + SCENARIO + '/gas_price_' + YEAR + '.csv',
         index='t',
         param='gas_price'
     )
     data.load(
-        filename=PATH_IN + SCENARIO + '/power_price_' + YEAR + '.csv',
+        filename=PATH_IN + 'prices/' + SCENARIO + '/power_price_' + YEAR + '.csv',
         index='t',
         param='power_price'
     )
