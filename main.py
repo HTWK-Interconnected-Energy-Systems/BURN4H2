@@ -5,6 +5,7 @@ from pyomo.opt import SolverFactory
 from pyomo.environ import *
 
 import blocks.chp as chp
+import blocks.grid as grid
 
 
 # Path
@@ -29,9 +30,13 @@ data.load(
     param='power_price'
 )
 
-# Get performance parameters for the chp
+# Get performance parameters for the assets
 chp_data = pd.read_csv(
     PATH_IN + 'assets/chp.csv',
+    index_col=0
+)
+electrical_grid_data = pd.read_csv(
+    'data/input/assets/electrical_grid.csv',
     index_col=0
 )
 
@@ -41,13 +46,10 @@ df_electricity_storage = pd.read_csv(
     index_col=0
 )
 
-df_electrical_net = pd.read_csv(
-    PATH_IN + 'assets/electrical_net.csv',
-    index_col=0
-)
 
-# Create chp instance
+# Create instance
 chp_obj = chp.Chp(chp_data, forced_operation_time=24)
+electrical_grid_obj = grid.Grid(electrical_grid_data)
 
 # Define abstract model
 m = AbstractModel()
@@ -70,23 +72,9 @@ m.storage_discharge_bin = Var(
     within=Binary,
     doc='storage discharging'
 )
-m.net_feeding_bin = Var(
-    m.t,
-    within=Binary,
-    doc='net feeding'
-)
-m.net_supplying_bin = Var(
-    m.t,
-    within=Binary,
-    doc='net supplying'
-)
+
 
 # Define Continuous Variable
-m.net_power = Var(
-    m.t,
-    domain=Reals,
-    doc='Plant Supply Power'
-)
 m.storage_power = Var(
     m.t,
     domain=Reals,
@@ -120,6 +108,7 @@ m.net_con_4_power = Var(
 
 # Define block components
 m.chp = Block(rule=chp_obj.chp_block_rule)
+m.electrical_grid = Block(rule=electrical_grid_obj.electrcial_grid_block_rule)
 
 
 # Define Constraints
@@ -137,9 +126,7 @@ m.bhkw_connections_constraint = Constraint(
 
 def net_feed_in_power_max(m, t):
     """ Electrical network max feed in power constraint """
-    feed_in_power_max = df_electrical_net.loc['Max', 'Power_feed_in']
-
-    return m.bhkw_con_2_power[t] + m.storage_con_3_power[t] <= feed_in_power_max * m.net_feeding_bin[t]
+    return m.bhkw_con_2_power[t] + m.storage_con_3_power[t] <= m.electrical_grid.max_power[t] * m.electrical_grid.feedin_bin[t]
 
 
 m.net_feed_in_power_max_constraint = Constraint(
@@ -150,9 +137,7 @@ m.net_feed_in_power_max_constraint = Constraint(
 
 def net_supply_max_power(m, t):
     """ Electrical network max supply power constraint """
-    supply_power_max = df_electrical_net.loc['Max', 'Power_supply']
-
-    return m.net_con_4_power[t] <= supply_power_max * m.net_supplying_bin[t]
+    return m.net_con_4_power[t] <= m.electrical_grid.max_power[t] * m.electrical_grid.supply_bin[t]
 
 
 m.net_supply_max_power_constraint = Constraint(
@@ -166,25 +151,13 @@ def net_overall_power(m, t):
     feed_in = m.bhkw_con_2_power[t] + m.storage_con_3_power[t]
     supplying = m.net_con_4_power[t]
 
-    return m.net_power[t] == feed_in - supplying
+    return m.electrical_grid.power[t] == feed_in - supplying
 
 
 m.net_power_constraint = Constraint(
     m.t,
     rule=net_overall_power
     )
-
-
-def net_binary(m, t):
-    """ Net binary constraint """
-    
-    return m.net_feeding_bin[t] + m.net_supplying_bin[t] <= 1
-
-
-m.net_binary_constraint = Constraint(
-    m.t,
-    rule=net_binary
-)
 
 
 def storage_discharging_power_max(m, t):
@@ -287,7 +260,7 @@ m.storage_energy_actual_constraint = Constraint(
 def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in m.t) -
-            quicksum(m.net_power[t] * m.power_price[t] for t in m.t))
+            quicksum(m.electrical_grid.power[t] * m.power_price[t] for t in m.t))
 
 
 m.obj = Objective(
