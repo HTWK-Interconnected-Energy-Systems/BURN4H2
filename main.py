@@ -4,23 +4,12 @@ import pandas as pd
 from pyomo.opt import SolverFactory
 from pyomo.environ import *
 
+import blocks.chp as chp
 
-# Scenario
-# SCENARIO = 'UE23'
-SCENARIO = 'dummy'
-
-# Year
-YEAR = '2024'
 
 # Path
 PATH_IN = 'data/input/'
 PATH_OUT = 'data/output/'
-
-if SCENARIO == 'dummy':
-    path_output = PATH_OUT + SCENARIO + '/'
-else:
-    path_output = PATH_OUT + SCENARIO + '/' + YEAR + '/'
-
 
 # Select Solver
 opt = SolverFactory('gurobi')
@@ -29,35 +18,24 @@ opt = SolverFactory('gurobi')
 data = DataPortal()
 
 # Read Time Series
-if SCENARIO == 'dummy':
-    data.load(
-        filename=PATH_IN + 'prices/' + SCENARIO + '/gas_price.csv',
-        index='t',
-        param='gas_price'
-    )
-    data.load(
-        filename=PATH_IN + 'prices/' + SCENARIO + '/power_price.csv',
-        index='t',
-        param='power_price'
-    )
-else:
-    data.load(
-        filename=PATH_IN + 'prices/' + SCENARIO + '/gas_price_' + YEAR + '.csv',
-        index='t',
-        param='gas_price'
-    )
-    data.load(
-        filename=PATH_IN + 'prices/' + SCENARIO + '/power_price_' + YEAR + '.csv',
-        index='t',
-        param='power_price'
-    )
+data.load(
+    filename=PATH_IN + 'prices/dummy/gas_price.csv',
+    index='t',
+    param='gas_price'
+)
+data.load(
+    filename=PATH_IN + 'prices/dummy/power_price.csv',
+    index='t',
+    param='power_price'
+)
 
-# Read BHKW Performance Data
-df_bhkw_hilde = pd.read_csv(
-    PATH_IN + 'assets/BHKWHilde.csv',
+# Get performance parameters for the chp
+chp_data = pd.read_csv(
+    PATH_IN + 'assets/chp.csv',
     index_col=0
 )
 
+# Read BHKW Performance Data
 df_electricity_storage = pd.read_csv(
     PATH_IN + 'assets/Electricity_Storage.csv',
     index_col=0
@@ -67,6 +45,9 @@ df_electrical_net = pd.read_csv(
     PATH_IN + 'assets/electrical_net.csv',
     index_col=0
 )
+
+# Create chp instance
+chp_obj = chp.Chp(chp_data, forced_operation_time=24)
 
 # Define abstract model
 m = AbstractModel()
@@ -79,11 +60,6 @@ m.gas_price = Param(m.t)
 m.power_price = Param(m.t)
 
 # Define Binary Variables
-m.bhkw_bin = Var(
-    m.t,
-    within=Binary,
-    doc='BHKW_Online'
-)
 m.storage_charge_bin = Var(
     m.t,
     within=Binary,
@@ -106,21 +82,6 @@ m.net_supplying_bin = Var(
 )
 
 # Define Continuous Variable
-m.bhkw_gas = Var(
-    m.t,
-    domain=NonNegativeReals,
-    doc='Fuel Consumption'
-)
-m.bhkw_power = Var(
-    m.t,
-    domain=NonNegativeReals,
-    doc='Power Production'
-)
-m.bhkw_heat = Var(
-    m.t,
-    domain=NonNegativeReals,
-    doc='Heat Production'
-)
 m.net_power = Var(
     m.t,
     domain=Reals,
@@ -157,85 +118,16 @@ m.net_con_4_power = Var(
     doc='Charging power of the connection between net and storage'
 )
 
+# Define block components
+m.chp = Block(rule=chp_obj.chp_block_rule)
+
+
 # Define Constraints
-
-def bhkw_power_max(m, t):
-    """ BHKW Power Max Constraint """
-    return m.bhkw_power[t] <= df_bhkw_hilde.loc['Max', 'Power'] * m.bhkw_bin[t]
-
-
-m.bhkw_power_max_constraint = Constraint(
-    m.t,
-    rule=bhkw_power_max
-    )
-
-
-def bhkw_power_min(m, t):
-    """ BHKW Power Min Constraint """
-    return df_bhkw_hilde.loc['Min', 'Power'] * m.bhkw_bin[t] <= m.bhkw_power[t]
-
-
-m.bhkw_power_min_constraint = Constraint(
-    m.t,
-    rule=bhkw_power_min
-    )
-
-
-def bhkw_gas_depends_on_power(m, t):
-    """ BHKW Gas = a * Power + b Constraint """
-    value_gas_max = df_bhkw_hilde.loc['Max', 'Gas']
-    value_gas_min = df_bhkw_hilde.loc['Min', 'Gas']
-    value_power_max = df_bhkw_hilde.loc['Max', 'Power']
-    value_power_min = df_bhkw_hilde.loc['Min', 'Power']
-
-    a = (value_gas_max - value_gas_min) / (value_power_max - value_power_min)
-    b = value_gas_max - a * value_power_max
-
-    return m.bhkw_gas[t] == a * m.bhkw_power[t] + b * m.bhkw_bin[t]
-
-
-m.bhkw_gas_depends_on_power_constraint = Constraint(
-    m.t,
-    rule=bhkw_gas_depends_on_power
-    )
-
-
-def bhkw_heat_depends_on_power(m, t):
-    """ BHKW Heat = a * Power + b Constraint """
-    value_heat_max = df_bhkw_hilde.loc['Max', 'Heat']
-    value_heat_min = df_bhkw_hilde.loc['Min', 'Heat']
-    value_power_max = df_bhkw_hilde.loc['Max', 'Power']
-    value_power_min = df_bhkw_hilde.loc['Min', 'Power']
-
-    a = (value_heat_max - value_heat_min) / (value_power_max - value_power_min)
-    b = value_heat_max - a * value_power_max
-
-    return m.bhkw_heat[t] == a * m.bhkw_power[t] + b * m.bhkw_bin[t]
-
-
-m.bhkw_heat_depends_on_power_constraint = Constraint(
-    m.t,
-    rule=bhkw_heat_depends_on_power
-    )
-
-
-def bhkw_operating_hours(m, t):
-    """ BHKW Minimal amount of operating hours Constraint """
-
-    return quicksum(m.bhkw_bin[t] for t in m.t) >= 24
-
-
-m.bhkw_operating_hours_constraint = Constraint(
-    m.t,
-    rule=bhkw_operating_hours
-    )
-
-
 def bhkw_connections(m,t):
     """ BHKW power distribution constraint """
 
     # return m.bhkw_power[t] == (m.p_con_1[t] + m.p_con_2[t]) * m.bhkw_bin[t]
-    return m.bhkw_power[t] == m.bhkw_con_1_power[t] + m.bhkw_con_2_power[t]
+    return m.chp.power[t] == m.bhkw_con_1_power[t] + m.bhkw_con_2_power[t]
 
 
 m.bhkw_connections_constraint = Constraint(
@@ -394,7 +286,7 @@ m.storage_energy_actual_constraint = Constraint(
 # Define Objective
 def obj_expression(m):
     """ Objective Function """
-    return (quicksum(m.bhkw_gas[t] * m.gas_price[t] for t in m.t) -
+    return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in m.t) -
             quicksum(m.net_power[t] * m.power_price[t] for t in m.t))
 
 
@@ -411,7 +303,7 @@ results = opt.solve(
     instance,
     symbolic_solver_labels=True,
     tee=True,
-    logfile=path_output + 'solver.log', 
+    logfile=PATH_OUT + 'solver.log', 
     load_solutions=True)
 
 # Write Results
@@ -420,8 +312,8 @@ results.write()
 """ Write Output Time Series """
 df_output = pd.DataFrame()
 
-if not os.path.exists(path_output):
-    os.makedirs(path_output)
+if not os.path.exists(PATH_OUT):
+    os.makedirs(PATH_OUT)
 
 for t in instance.t.data():
     df_output.loc[t, 'power_price'] = instance.power_price[t]
@@ -431,10 +323,10 @@ for t in instance.t.data():
         name = variable.name
         df_output.loc[t, name] = instance.__getattribute__(name)[t].value
         
-df_output.to_csv(path_output + 'output_time_series.csv')
+df_output.to_csv(PATH_OUT + 'output_time_series.csv')
 
 # Write results
 df_results = pd.DataFrame()
 df_results['objective_value'] = pd.Series(value(instance.obj))
 
-df_results.to_csv(path_output + 'results.csv')
+df_results.to_csv(PATH_OUT + 'results.csv')
