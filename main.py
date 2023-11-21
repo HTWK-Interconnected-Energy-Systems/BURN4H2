@@ -309,24 +309,17 @@ results = opt.solve(
 # Write Results
 results.write()
 
-""" Write Output Time Series """
+df_variables = pd.DataFrame()
+df_parameters = pd.DataFrame()
 df_output = pd.DataFrame()
 
-if not os.path.exists(PATH_OUT):
-    os.makedirs(PATH_OUT)
+for parameter in instance.component_objects(Param, active=True):
+    name = parameter.name
+    df_parameters[name] = [value(parameter[t]) for t in instance.t]
 
-for t in instance.t.data():
-    df_output.loc[t, 'power_price'] = instance.power_price[t]
-    df_output.loc[t, 'gas_price'] = instance.gas_price[t]
+for variable in instance.component_objects(Var, active=True):
+    name = variable.name
+    df_variables[name] = [value(variable[t]) for t in instance.t]
 
-    for variable in m.component_objects(Var, active=True):
-        name = variable.name
-        df_output.loc[t, name] = instance.__getattribute__(name)[t].value
-        
+df_output = pd.concat([df_parameters, df_variables], axis=1)
 df_output.to_csv(PATH_OUT + 'output_time_series.csv')
-
-# Write results
-df_results = pd.DataFrame()
-df_results['objective_value'] = pd.Series(value(instance.obj))
-
-df_results.to_csv(PATH_OUT + 'results.csv')
