@@ -16,7 +16,7 @@ PATH_OUT = 'data/output/'
 
 # Select Solver
 opt = SolverFactory('gurobi')
-opt.options['nonconvex'] = 2
+# opt.options['nonconvex'] = 2
 
 # Create DataPortal
 data = DataPortal()
@@ -129,10 +129,7 @@ for parameter in instance.component_objects(Param, active=True):
 
 for variable in instance.component_objects(Var, active=True):
     name = variable.name
-    if 'splitfrac' in name:
-        continue
-    else:
-        df_variables[name] = [value(variable[t]) for t in instance.t]
+    df_variables[name] = [value(variable[t]) for t in instance.t]
 
 df_output = pd.concat([df_parameters, df_variables], axis=1)
 df_output.to_csv(PATH_OUT + 'output_time_series.csv')
