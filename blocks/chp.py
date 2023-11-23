@@ -31,14 +31,15 @@ class Chp:
         # Get index from model
         t = block.model().t
 
+
         # Define components
         block.bin = Var(t, within=Binary)
         block.gas = Var(t, domain=NonNegativeReals)
         block.power = Var(t, domain=NonNegativeReals)
         block.heat = Var(t, domain=NonNegativeReals)
 
+
         # block.port_gas = Port(initialize={'gas': (block.gas, Port.Extensive)})
-        # block.power_out = Port(initialize={'power': (block.power, Port.Extensive)})
         block.power_out = Port()
         block.power_out.add(block.power, 'power', Port.Extensive, include_splitfrac=False)
 

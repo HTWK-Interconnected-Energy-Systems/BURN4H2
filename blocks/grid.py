@@ -14,6 +14,7 @@ class Grid:
         # Get index from model
         t = block.model().t
 
+
         # Define components
         block.overall_power = Var(t, domain=Reals)
         block.supply_power = Var(t, domain=NonNegativeReals)
