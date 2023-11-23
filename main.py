@@ -14,12 +14,14 @@ import blocks.storage as storage
 PATH_IN = 'data/input/'
 PATH_OUT = 'data/output/'
 
+
 # Select Solver
 opt = SolverFactory('gurobi')
-# opt.options['nonconvex'] = 2
+
 
 # Create DataPortal
 data = DataPortal()
+
 
 # Read Time Series
 data.load(
@@ -32,6 +34,7 @@ data.load(
     index='t',
     param='power_price'
 )
+
 
 # Get performance parameters for the assets
 chp_data = pd.read_csv(
@@ -53,11 +56,14 @@ chp_obj = chp.Chp(chp_data, forced_operation_time=24)
 electrical_grid_obj = grid.Grid(electrical_grid_data)
 battery_storage_obj = storage.BatteryStorage(battery_storage_data)
 
+
 # Define abstract model
 m = AbstractModel()
 
+
 # Define sets
 m.t = Set(ordered=True)
+
 
 # Define parameters
 m.gas_price = Param(m.t)
@@ -82,6 +88,7 @@ m.obj = Objective(
     sense=minimize
     )
 
+
 # Create instance
 instance = m.create_instance(data)
 
@@ -104,6 +111,7 @@ instance.arc4 = Arc(
     destination=instance.battery_storage.power_in
 )
 
+
 # Expand arcs and generate connection constraints
 TransformationFactory('network.expand_arcs').apply_to(instance)
 
@@ -115,6 +123,7 @@ results = opt.solve(
     tee=True,
     logfile=PATH_OUT + 'solver.log', 
     load_solutions=True)
+
 
 # Write Results
 results.write()
