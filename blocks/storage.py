@@ -1,4 +1,5 @@
 from pyomo.environ import *
+from pyomo.network import *
 
 class BatteryStorage:
     """Class for constructing battery storage objects."""
@@ -13,24 +14,32 @@ class BatteryStorage:
         t = block.model().t
         
         # Define components
-        block.max_discharge_power = Var(t, domain=NonNegativeReals)
-        block.max_charge_power = Var(t, domain=NonPositiveReals)
         block.overall_power = Var(t, domain=Reals)
+        block.charging_power = Var(t, domain=NonNegativeReals)
+        block.discharging_power = Var(t, domain=NonNegativeReals)
         block.energy = Var(t, domain=NonNegativeReals)
         block.discharge_bin = Var(t, within=Binary)
         block.charge_bin = Var(t, within=Binary)
+
+        block.power_in = Port(initialize={'power': (block.charging_power, Port.Extensive)})
+        block.power_out = Port(initialize={'power': (block.discharging_power, Port.Extensive)})
 
 
         # Define construction rules for constraints
         def max_charging_power_rule(_block, i):
             """Rule for the maximal charging power."""
-            return _block.max_charge_power[i] == self.data.loc['Max', 'Power']
+            return _block.charging_power[i] <= self.data.loc['Max', 'Power'] * _block.charge_bin[i]
         
 
         def max_discharging_power_rule(_block, i):
             """Rule for the maximal discharging power."""
-            return _block.max_discharge_power[i] == self.data.loc['Min', 'Power']
-        
+            return _block.discharging_power[i] <= self.data.loc['Max', 'Power'] * _block.discharge_bin[i]
+
+
+        def overall_power_rule(_block, i):
+            """Rule for calculating the overall power."""
+            return _block.overall_power[i] ==  _block.discharging_power[i] - _block.charging_power[i]
+
 
         def binary_rule(_block, i):
             """Rule for restricting simultaneous charging and discharging."""
@@ -63,6 +72,10 @@ class BatteryStorage:
         block.max_discharging_power_constraint = Constraint(
             t,
             rule=max_discharging_power_rule
+        )
+        block.overall_power_constraint = Constraint(
+            t,
+            rule=overall_power_rule
         )
         block.binary_constraint = Constraint(
             t,
