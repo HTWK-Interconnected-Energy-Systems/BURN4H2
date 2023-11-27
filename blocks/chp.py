@@ -103,6 +103,7 @@ class Chp:
         # Define optional constraint via expression if right kwarg is given.
         if 'forced_operation_time' in self.kwargs:
             kwarg_value = self.kwargs['forced_operation_time']
+            
             block.forced_operation_time_constraint = Constraint(
                 expr=quicksum(block.bin[i] for i in t) >= kwarg_value
             )

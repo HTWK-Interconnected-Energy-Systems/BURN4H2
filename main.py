@@ -79,8 +79,8 @@ m.battery_storage = Block(rule=battery_storage_obj.battery_storage_construction_
 # Define Objective
 def obj_expression(m):
     """ Objective Function """
-    return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in m.t) +
-            quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t))
+    return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in [1,2]) +
+            quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in [1,2]))
 
 
 m.obj = Objective(
