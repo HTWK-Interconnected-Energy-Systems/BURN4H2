@@ -21,15 +21,17 @@ class BatteryStorage:
         block.discharge_bin = Var(t, within=Binary)
         block.charge_bin = Var(t, within=Binary)
 
-        block.power_in = Port(initialize={'power': (block.charging_power, Port.Extensive)})
-        block.power_out = Port(initialize={'power': (block.discharging_power, Port.Extensive)})
+        block.power_in = Port()
+        block.power_in.add(block.charging_power, 'power', Port.Extensive, include_splitfrac=False)
+        block.power_out = Port()
+        block.power_out.add(block.discharging_power, 'power', Port.Extensive, include_splitfrac=False)
 
 
         # Define construction rules for constraints
         def max_charging_power_rule(_block, i):
             """Rule for the maximal charging power."""
             return _block.charging_power[i] <= self.data.loc['Max', 'Power'] * _block.charge_bin[i]
-        
+                
 
         def max_discharging_power_rule(_block, i):
             """Rule for the maximal discharging power."""

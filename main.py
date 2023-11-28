@@ -60,7 +60,7 @@ pv_capacity_factors = pd.read_csv(
 
 
 # Create instance
-chp_obj = chp.Chp(chp_data, forced_operation_time=24)
+chp_obj = chp.Chp(chp_data)
 electrical_grid_obj = grid.Grid(electrical_grid_data)
 battery_storage_obj = storage.BatteryStorage(battery_storage_data)
 pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
@@ -106,10 +106,10 @@ instance = m.create_instance(data)
 # Define arcs
 instance.arc1 = Arc(
     source=instance.chp.power_out,
-    destination=instance.battery_storage.power_in
+    destination=instance.electrical_grid.power_in
 )
 instance.arc2 = Arc(
-    source=instance.chp.power_out,
+    source=instance.pv.power_out,
     destination=instance.electrical_grid.power_in
 )
 instance.arc3 = Arc(
@@ -119,14 +119,6 @@ instance.arc3 = Arc(
 instance.arc4 = Arc(
     source=instance.electrical_grid.power_out,
     destination=instance.battery_storage.power_in
-)
-instance.arc5 = Arc(
-    source=instance.pv.power_out,
-    destination=instance.battery_storage.power_in
-)
-instance.arc6 = Arc(
-    source=instance.pv.power_out,
-    destination=instance.electrical_grid.power_in
 )
 
 

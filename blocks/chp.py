@@ -39,7 +39,7 @@ class Chp:
         block.heat = Var(t, domain=NonNegativeReals)
 
         block.power_out = Port()
-        block.power_out.add(block.power, 'power', Port.Extensive, include_splitfrac=False)
+        block.power_out.add(block.power, 'power', block.power_out.Extensive, include_splitfrac=False)
 
 
         # Define construction rules for constraints
@@ -51,7 +51,7 @@ class Chp:
         def power_min_rule(_block, i):
             """Rule for the minimal power."""
             return self.data.loc['Min', 'Power'] * _block.bin[i] <= _block.power[i]
-
+        
 
         def gas_depends_on_power_rule(_block, i):
             """Rule for the dependencies between gas demand and power output."""
@@ -105,4 +105,3 @@ class Chp:
             block.forced_operation_time_constraint = Constraint(
                 expr=quicksum(block.bin[i] for i in t) >= kwarg_value
             )
-
