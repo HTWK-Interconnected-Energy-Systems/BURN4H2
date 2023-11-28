@@ -2,7 +2,7 @@ from pyomo.environ import *
 from pyomo.network import *
 
 class Chp:
-    """Class for constructing chp objects.
+    """Class for constructing chp asset objects.
     
     kwargs:
     -------
@@ -38,8 +38,6 @@ class Chp:
         block.power = Var(t, domain=NonNegativeReals)
         block.heat = Var(t, domain=NonNegativeReals)
 
-
-        # block.port_gas = Port(initialize={'gas': (block.gas, Port.Extensive)})
         block.power_out = Port()
         block.power_out.add(block.power, 'power', Port.Extensive, include_splitfrac=False)
 
@@ -103,7 +101,7 @@ class Chp:
         # Define optional constraint via expression if right kwarg is given.
         if 'forced_operation_time' in self.kwargs:
             kwarg_value = self.kwargs['forced_operation_time']
-            
+
             block.forced_operation_time_constraint = Constraint(
                 expr=quicksum(block.bin[i] for i in t) >= kwarg_value
             )

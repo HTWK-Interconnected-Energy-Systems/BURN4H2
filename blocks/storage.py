@@ -2,12 +2,12 @@ from pyomo.environ import *
 from pyomo.network import *
 
 class BatteryStorage:
-    """Class for constructing battery storage objects."""
+    """Class for constructing battery storage asset objects."""
 
     def __init__(self, data) -> None:
         self.data = data
     
-    def battery_storage_construction_rule(self, block):
+    def battery_storage_block_rule(self, block):
         """Rule for creating a battery storage block with default components and constraints."""
 
         # Get index from model

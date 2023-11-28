@@ -2,7 +2,7 @@ from pyomo.environ import *
 from pyomo.network import *
 
 class Grid:
-    """Class for constructing grid objects."""
+    """Class for constructing grid asset objects."""
 
     def __init__(self, data) -> None:
         self.data = data
