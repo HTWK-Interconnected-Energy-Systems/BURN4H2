@@ -96,7 +96,8 @@ m.electrolyzer = Block(rule=electrolyzer_obj.electrolyzer_block_rule)
 def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in m.t) +
-            quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t))
+            quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) -
+            quicksum(m.electrolyzer.hydrogen[t] * m.gas_price[t] * 2.5 for t in m.t))
 
 
 m.obj = Objective(
