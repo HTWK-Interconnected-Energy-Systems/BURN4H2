@@ -8,6 +8,7 @@ import blocks.chp as chp
 import blocks.grid as grid
 import blocks.storage as storage
 import blocks.res as res
+import blocks.electrolyzer as elec
 
 
 # Path
@@ -57,13 +58,17 @@ pv_capacity_factors = pd.read_csv(
     PATH_IN + 'pv_capacity_factors/leipzig_t45_a180.csv',
     index_col=0
 )
-
+electrolyzer_data = pd.read_csv(
+    PATH_IN + 'assets/electrolyzer.csv',
+    index_col=0
+)
 
 # Create instance
 chp_obj = chp.Chp(chp_data)
 electrical_grid_obj = grid.Grid(electrical_grid_data)
 battery_storage_obj = storage.BatteryStorage(battery_storage_data)
 pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
+electrolyzer_obj = elec.Electrolyzer(electrolyzer_data)
 
 
 # Define abstract model
@@ -84,6 +89,7 @@ m.chp = Block(rule=chp_obj.chp_block_rule)
 m.electrical_grid = Block(rule=electrical_grid_obj.electrcial_grid_block_rule)
 m.battery_storage = Block(rule=battery_storage_obj.battery_storage_block_rule)
 m.pv = Block(rule=pv_obj.pv_block_rule)
+m.electrolyzer = Block(rule=electrolyzer_obj.electrolyzer_block_rule)
 
 
 # Define Objective
@@ -119,6 +125,10 @@ instance.arc3 = Arc(
 instance.arc4 = Arc(
     source=instance.electrical_grid.power_out,
     destination=instance.battery_storage.power_in
+)
+instance.arc5 = Arc(
+    source=instance.electrical_grid.power_out,
+    destination=instance.electrolyzer.power_in
 )
 
 

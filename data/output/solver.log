@@ -2,24 +2,24 @@ Solver command line: ['C:\\gurobi1002\\win64\\bin\\gurobi.bat']
 
 Set parameter Username
 Academic license - for non-commercial use only - expires 2024-08-20
-Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmp7io_58qa.pyomo.lp
+Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmp5divvbib.pyomo.lp
 Reading time = 0.01 seconds
-obj: 504 rows, 456 columns, 1031 nonzeros
+obj: 624 rows, 552 columns, 1319 nonzeros
 Gurobi Optimizer version 10.0.2 build v10.0.2rc0 (win64)
 
 CPU model: AMD Ryzen 7 3800X 8-Core Processor, instruction set [SSE2|AVX|AVX2]
 Thread count: 8 physical cores, 16 logical processors, using up to 16 threads
 
-Optimize a model with 504 rows, 456 columns and 1031 nonzeros
-Model fingerprint: 0x6242ddfe
-Variable types: 336 continuous, 120 integer (120 binary)
+Optimize a model with 624 rows, 552 columns and 1319 nonzeros
+Model fingerprint: 0x008dc88c
+Variable types: 456 continuous, 96 integer (96 binary)
 Coefficient statistics:
-  Matrix range     [2e-01, 2e+00]
+  Matrix range     [1e-03, 3e+02]
   Objective range  [1e+01, 6e+01]
   Bounds range     [1e+00, 1e+00]
   RHS range        [2e-02, 1e+01]
 Found heuristic solution: objective -1.1877600
-Presolve removed 435 rows and 363 columns
+Presolve removed 555 rows and 459 columns
 Presolve time: 0.00s
 Presolved: 69 rows, 93 columns, 184 nonzeros
 Found heuristic solution: objective -125.9877600
@@ -34,7 +34,7 @@ Root relaxation: objective -4.079878e+02, 30 iterations, 0.00 seconds (0.00 work
 H    0     0                    -407.9877600 -407.98776  0.00%     -    0s
      0     0 -407.98776    0    3 -407.98776 -407.98776  0.00%     -    0s
 
-Explored 1 nodes (30 simplex iterations) in 0.00 seconds (0.00 work units)
+Explored 1 nodes (30 simplex iterations) in 0.01 seconds (0.00 work units)
 Thread count was 16 (of 16 available processors)
 
 Solution count 3: -407.988 -125.988 -1.18776 
