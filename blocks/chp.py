@@ -11,6 +11,7 @@ class Chp:
         to the block construction rule.
     """
 
+
     def __init__(self, data, **kwargs) -> None:
         self.data = data
         self.kwargs = kwargs
@@ -23,7 +24,7 @@ class Chp:
 
         for key in self.kwargs:
             if key not in allowed_kwargs:
-                raise(KeyError(f"Unexpected kwarg '{key}' detected."))
+                raise(KeyError(f'Unexpected kwarg "{key}" detected.'))
     
 
     def chp_block_rule(self, block):

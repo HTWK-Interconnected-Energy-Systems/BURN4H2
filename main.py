@@ -160,6 +160,8 @@ for parameter in instance.component_objects(Param, active=True):
 
 for variable in instance.component_objects(Var, active=True):
     name = variable.name
+    if 'aux' in name:   # Filters auxiliary variables from the output data
+        continue
     df_variables[name] = [value(variable[t]) for t in instance.t]
 
 df_output = pd.concat([df_parameters, df_variables], axis=1)

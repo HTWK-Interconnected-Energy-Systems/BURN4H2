@@ -4,8 +4,20 @@ from pyomo.network import *
 class BatteryStorage:
     """Class for constructing battery storage asset objects."""
 
-    def __init__(self, data) -> None:
+    def __init__(self, data, **kwargs) -> None:
         self.data = data
+        self.kwargs = kwargs
+        self.validate_kwargs()
+    
+
+    def validate_kwargs(self):
+        """Checks for unknown kwargs and returns a KeyError if some are found."""
+        allowed_kwargs = ['cyclic_behavior']
+
+        for key in self.kwargs:
+            if key not in allowed_kwargs:
+                raise(KeyError(f'Unexpected kwarg "{key}" detected.'))
+
     
     def battery_storage_block_rule(self, block):
         """Rule for creating a battery storage block with default components and constraints."""
@@ -20,6 +32,11 @@ class BatteryStorage:
         block.energy = Var(t, domain=NonNegativeReals)
         block.discharge_bin = Var(t, within=Binary)
         block.charge_bin = Var(t, within=Binary)
+        block.switch_bin = Var(t, within=Binary)
+
+        # Auxiliary variables for calculating the modulo values in the switch constraints
+        block.aux_remainder = Var(t, domain=Integers, bounds=(0,3))    
+        block.aux_quotient = Var(t, domain=Integers, initialize=0)
 
         block.power_in = Port()
         block.power_in.add(block.charging_power, 'power', Port.Extensive, include_splitfrac=False)
@@ -45,7 +62,7 @@ class BatteryStorage:
 
         def binary_rule(_block, i):
             """Rule for restricting simultaneous charging and discharging."""
-            return _block.charge_bin[i] + _block.discharge_bin[i] <= 1
+            return _block.charge_bin[i] + _block.discharge_bin[i] == 1
         
 
         def max_energy_content_rule(_block, i):
@@ -64,7 +81,53 @@ class BatteryStorage:
                 return _block.energy[i] == 0 - _block.overall_power[i]
             else:
                 return _block.energy[i] == _block.energy[i - 1] - _block.overall_power[i]
+
+
+        def switch_from_charge_to_discharge_rule(_block, i):
+            """Rule for determining the switch state when the storage operation changes from 
+            charging to discharging."""
+            if i == 1:
+                return _block.switch_bin[i] == 0
+            
+            current_state = _block.charge_bin[i] - _block.discharge_bin[i]
+            previous_state = _block.charge_bin[i - 1] - _block.discharge_bin[i - 1]
+            switch_state = current_state - previous_state
+
+            return switch_state >= -2 * _block.switch_bin[i]
         
+
+        def switch_from_discharge_to_charge_rule(_block, i):
+            """Rule for determining the switch state when the storage operation changes from
+            discharging to charging."""
+            if i == 1:
+                return _block.switch_bin[i] == 0
+        
+            current_state = _block.charge_bin[i] - _block.discharge_bin[i]
+            previous_state = _block.charge_bin[i - 1] - _block.discharge_bin[i - 1]
+            switch_state = current_state - previous_state
+
+            return 2 * _block.switch_bin[i] >= switch_state
+        
+
+        def no_operational_switch_rule(_block, i):
+            """Rule for determining the switch state when the storage operation does not change."""
+            if i == 1:
+                return _block.switch_bin[i] == 0
+
+            return _block.aux_remainder[i] * _block.switch_bin[i] == 0
+        
+
+        def modulo_rule(_block, i):
+            """Rule for the modulo operation for usage within the "no_operational_switch" rule."""
+            if i - 1 % 24 == 0:
+                return _block.aux_remainder[i] == 0
+            
+            current_state = _block.charge_bin[i] - _block.discharge_bin[i]
+            previous_state = _block.charge_bin[i - 1] - _block.discharge_bin[i - 1]
+            switch_state = current_state - previous_state + 2
+
+            return switch_state == 4 * _block.aux_quotient[i] + _block.aux_remainder[i]
+
 
         # Define constraints
         block.max_charging_power_constraint = Constraint(
@@ -95,3 +158,43 @@ class BatteryStorage:
             t,
             rule=actual_energy_content_rule
         )
+        block.switch_from_charge_to_discharge_constraint = Constraint(
+            t,
+            rule=switch_from_charge_to_discharge_rule
+        )
+        block.switch_from_discharge_to_charge_constraint = Constraint(
+            t,
+            rule=switch_from_discharge_to_charge_rule
+        )
+        block.no_operational_switch_constraint = Constraint(
+            t,
+            rule=no_operational_switch_rule
+        )
+        block.modulo_constraint = Constraint(
+            t,
+            rule=modulo_rule
+        )
+
+
+        # if 'cyclic_behavior' in self.kwargs:
+
+        #     def cyclic_behavior_rule(_block, i):
+        #         kwarg_value = self.kwargs['cyclic_behavior']
+
+        #         if i % kwarg_value == 0:
+        #             return _block.switch_state[i] == 0
+                
+            
+        #     def cyclic_behavior_restriction_rule(_block, i):
+        #         kwarg_value = self.kwargs['cyclic_behavior']
+
+        #         if (i - 1) % kwarg_value != kwarg_value - 1:
+        #             return Constraint.Skip
+        #         else:
+        #             return sum(check_var[t] for t in range(i, i - kwarg_value, -1)) <= 2
+                
+            
+
+
+
+
