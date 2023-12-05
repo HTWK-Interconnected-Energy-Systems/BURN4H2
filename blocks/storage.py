@@ -12,7 +12,7 @@ class BatteryStorage:
 
     def validate_kwargs(self):
         """Checks for unknown kwargs and returns a KeyError if some are found."""
-        allowed_kwargs = ['cyclic_behavior']
+        allowed_kwargs = ['cyclic_behaviour']
 
         for key in self.kwargs:
             if key not in allowed_kwargs:
@@ -117,9 +117,9 @@ class BatteryStorage:
             return _block.aux_remainder[i] * _block.switch_bin[i] == 0
         
 
-        def modulo_rule(_block, i):
+        def modulo_switch_rule(_block, i):
             """Rule for the modulo operation for usage within the "no_operational_switch" rule."""
-            if i - 1 % 24 == 0:
+            if i == 1:
                 return _block.aux_remainder[i] == 0
             
             current_state = _block.charge_bin[i] - _block.discharge_bin[i]
@@ -172,28 +172,38 @@ class BatteryStorage:
         )
         block.modulo_constraint = Constraint(
             t,
-            rule=modulo_rule
+            rule=modulo_switch_rule
         )
 
 
-        # if 'cyclic_behavior' in self.kwargs:
-
-        #     def cyclic_behavior_rule(_block, i):
-        #         kwarg_value = self.kwargs['cyclic_behavior']
-
-        #         if i % kwarg_value == 0:
-        #             return _block.switch_state[i] == 0
-                
+        if 'cyclic_behaviour' in self.kwargs:             
             
-        #     def cyclic_behavior_restriction_rule(_block, i):
-        #         kwarg_value = self.kwargs['cyclic_behavior']
+            block.cyclic_switch_bin = Var(t, within=Binary)
+            kwarg_value = self.kwargs['cyclic_behaviour']
 
-        #         if (i - 1) % kwarg_value != kwarg_value - 1:
-        #             return Constraint.Skip
-        #         else:
-        #             return sum(check_var[t] for t in range(i, i - kwarg_value, -1)) <= 2
+            def cyclic_switch_rule(_block, i):
+                if (i - 1) % kwarg_value == 0:
+                    return _block.cyclic_switch_bin[i] == 0
                 
+                return _block.cyclic_switch_bin[i] == _block.switch_bin[i]
+
+
+            def cyclic_behaviour_rule(_block, i):
+
+                if i % kwarg_value == 0:
+                    return sum(_block.cyclic_switch_bin[j] for j in range(i, i - kwarg_value, -1)) <= 1
+                else:
+                    return Constraint.Skip
             
+
+            block.cyclic_switch_constraint = Constraint(
+                t,
+                rule=cyclic_switch_rule
+            )
+            block.cyclic_behavior_constaint = Constraint(
+                t,
+                rule=cyclic_behaviour_rule
+            )
 
 
 
