@@ -165,4 +165,6 @@ for variable in instance.component_objects(Var, active=True):
     df_variables[name] = [value(variable[t]) for t in instance.t]
 
 df_output = pd.concat([df_parameters, df_variables], axis=1)
+df_output.index = instance.t
+df_output.index.name = 't'
 df_output.to_csv(PATH_OUT + 'output_time_series.csv')
