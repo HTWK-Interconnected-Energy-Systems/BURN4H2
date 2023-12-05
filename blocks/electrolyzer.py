@@ -18,6 +18,7 @@ class Electrolyzer:
         block.hydrogen = Var(t, domain=NonNegativeReals)
         block.power = Var(t, domain=NonNegativeReals)
         block.water = Var(t, domain=NonNegativeReals)
+        block.heat = Var(t, domain=NonNegativeReals)
 
         block.power_in = Port()
         block.power_in.add(block.power, 'power', block.power_in.Extensive, include_splitfrac=False)
@@ -59,6 +60,19 @@ class Electrolyzer:
             return _block.water[i] == a * _block.hydrogen[i] + b
         
 
+        def heat_depends_on_power_rule(_block, i):
+            """Rule for the dependencies between heat output and power demand."""
+            heat_min = self.data.loc['min', 'heat']
+            heat_max = self.data.loc['max', 'heat']
+            power_min = self.data.loc['min', 'power']
+            power_max = self.data.loc['max', 'power']
+
+            a = (heat_max - heat_min) / (power_max - power_min)
+            b = heat_max - a * power_max
+
+            return _block.heat[i] == a * _block.power[i] + b * _block.bin[i]
+
+
         # Define constraints
         block.power_max_constraint = Constraint(
             t,
@@ -72,7 +86,11 @@ class Electrolyzer:
             t,
             rule=hydrogen_depends_on_power_rule
         )
-        block.water_depends_in_hydrogen_constraint = Constraint(
+        block.water_depends_on_hydrogen_constraint = Constraint(
             t,
             rule=water_depends_on_hydrogen
+        )
+        block.heat_depends_on_power_constraint = Constraint(
+            t,
+            rule=heat_depends_on_power_rule
         )
