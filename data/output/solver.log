@@ -2,44 +2,43 @@ Solver command line: ['C:\\gurobi1002\\win64\\bin\\gurobi.bat']
 
 Set parameter Username
 Academic license - for non-commercial use only - expires 2024-08-20
-Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmpzvflbfps.pyomo.lp
+Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmpct59zc3e.pyomo.lp
 Reading time = 0.01 seconds
-obj: 853 rows, 743 columns, 1991 nonzeros
+obj: 1093 rows, 935 columns, 2494 nonzeros
 Gurobi Optimizer version 10.0.2 build v10.0.2rc0 (win64)
 
 CPU model: AMD Ryzen 7 3800X 8-Core Processor, instruction set [SSE2|AVX|AVX2]
 Thread count: 8 physical cores, 16 logical processors, using up to 16 threads
 
-Optimize a model with 853 rows, 743 columns and 1991 nonzeros
-Model fingerprint: 0x279ea9f9
+Optimize a model with 1093 rows, 935 columns and 2494 nonzeros
+Model fingerprint: 0xb34348fe
 Model has 23 quadratic constraints
-Variable types: 552 continuous, 191 integer (144 binary)
+Variable types: 696 continuous, 239 integer (192 binary)
 Coefficient statistics:
   Matrix range     [1e-04, 3e+02]
   QMatrix range    [1e+00, 1e+00]
   Objective range  [1e+01, 6e+01]
   Bounds range     [1e+00, 3e+00]
-  RHS range        [2e-02, 1e+01]
-Presolve removed 737 rows and 603 columns
+  RHS range        [2e-02, 2e+01]
+Presolve removed 890 rows and 693 columns
 Presolve time: 0.00s
-Presolved: 116 rows, 140 columns, 336 nonzeros
-Variable types: 70 continuous, 70 integer (70 binary)
-Found heuristic solution: objective -1128.542133
-Found heuristic solution: objective -1133.542133
+Presolved: 203 rows, 242 columns, 565 nonzeros
+Variable types: 149 continuous, 93 integer (93 binary)
+Found heuristic solution: objective -1158.542133
 
-Root relaxation: objective -1.247498e+03, 25 iterations, 0.00 seconds (0.00 work units)
+Root relaxation: objective -1.347498e+03, 57 iterations, 0.00 seconds (0.00 work units)
 
     Nodes    |    Current Node    |     Objective Bounds      |     Work
  Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
 
-*    0     0               0    -1247.498306 -1247.4983  0.00%     -    0s
+*    0     0               0    -1347.498306 -1347.4983  0.00%     -    0s
 
-Explored 1 nodes (25 simplex iterations) in 0.01 seconds (0.00 work units)
+Explored 1 nodes (57 simplex iterations) in 0.01 seconds (0.00 work units)
 Thread count was 16 (of 16 available processors)
 
-Solution count 3: -1247.5 -1133.54 -1128.54 
-No other solutions better than -1247.5
+Solution count 2: -1347.5 -1158.54 
+No other solutions better than -1347.5
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective -1.247498305684e+03, best bound -1.247498305684e+03, gap 0.0000%
+Best objective -1.347498305684e+03, best bound -1.347498305684e+03, gap 0.0000%
 

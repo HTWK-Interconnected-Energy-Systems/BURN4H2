@@ -26,10 +26,10 @@ class BatteryStorage:
         t = block.model().t
         
         # Declare components
-        block.overall_power = Var(t, domain=Reals)
+        block.power_balance = Var(t, domain=Reals)
         block.charging_power = Var(t, domain=NonNegativeReals)
         block.discharging_power = Var(t, domain=NonNegativeReals)
-        block.energy = Var(t, domain=NonNegativeReals)
+        block.energy_content = Var(t, domain=NonNegativeReals)
         block.discharge_bin = Var(t, within=Binary)
         block.charge_bin = Var(t, within=Binary)
         block.switch_bin = Var(t, within=Binary)
@@ -47,17 +47,17 @@ class BatteryStorage:
         # Declare construction rules for constraints
         def max_charging_power_rule(_block, i):
             """Rule for the maximal charging power."""
-            return _block.charging_power[i] <= self.data.loc['Max', 'Power'] * _block.charge_bin[i]
+            return _block.charging_power[i] <= self.data.loc['max', 'power'] * _block.charge_bin[i]
                 
 
         def max_discharging_power_rule(_block, i):
             """Rule for the maximal discharging power."""
-            return _block.discharging_power[i] <= self.data.loc['Max', 'Power'] * _block.discharge_bin[i]
+            return _block.discharging_power[i] <= self.data.loc['max', 'power'] * _block.discharge_bin[i]
 
 
         def overall_power_rule(_block, i):
             """Rule for calculating the overall power."""
-            return _block.overall_power[i] ==  _block.discharging_power[i] - _block.charging_power[i]
+            return _block.power_balance[i] ==  _block.discharging_power[i] - _block.charging_power[i]
 
 
         def binary_rule(_block, i):
@@ -67,20 +67,20 @@ class BatteryStorage:
 
         def max_energy_content_rule(_block, i):
             """Rule for the maximal energy content of the battery storage."""
-            return _block.energy[i] <= self.data.loc['Max', 'Capacity']
+            return _block.energy_content[i] <= self.data.loc['max', 'capacity']
         
 
         def min_energy_content_rule(_block, i):
             """Rule for the minimal energy content of the battery storage."""
-            return _block.energy[i] >= self.data.loc['Min', 'Capacity']
+            return _block.energy_content[i] >= self.data.loc['min', 'capacity']
         
 
         def actual_energy_content_rule(_block, i):
             """Rule for calculating the actual energy content of the battery storage."""
             if i == 1:
-                return _block.energy[i] == 0 - _block.overall_power[i]
+                return _block.energy_content[i] == 0 - _block.power_balance[i]
             else:
-                return _block.energy[i] == _block.energy[i - 1] - _block.overall_power[i]
+                return _block.energy_content[i] == _block.energy_content[i - 1] - _block.power_balance[i]
 
 
         def switch_from_charge_to_discharge_rule(_block, i):
@@ -221,6 +221,83 @@ class HydrogenStorage:
         t = block.model().t
         
         # Declare components
+        block.hydrogen_balance = Var(t, domain=Reals)
+        block.charging_hydrogen = Var(t, domain=NonNegativeReals)
+        block.discharging_hydrogen = Var(t, domain=NonNegativeReals)
+        block.hydrogen_content = Var(t, domain=NonNegativeReals)
+        block.charge_bin = Var(t, within=Binary)
+        block.discharge_bin = Var(t, within=Binary)
+
+        block.hydrogen_in = Port()
+        block.hydrogen_in.add(block.charging_hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
+        block.hydrogen_out = Port()
+        block.hydrogen_out.add(block.discharging_hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
 
 
+        def max_charging_capacity_rule(_block, i):
+            """Rule for the maximum charging capacity of hydrogen."""
+            return _block.charging_hydrogen[i] <= self.data.loc['max', 'hydrogen'] * _block.charge_bin[i]
+                
 
+        def max_discharging_capacity_rule(_block, i):
+            """Rule for the maximum discharging capacity of hydrogen."""
+            return _block.discharging_hydrogen[i] <= self.data.loc['max', 'hydrogen'] * _block.discharge_bin[i]
+
+
+        def hydrogen_balance_rule(_block, i):
+            """Rule for calculating the overall hydrogen capacity balance."""
+            return _block.hydrogen_balance[i] ==  _block.discharging_hydrogen[i] - _block.charging_hydrogen[i]
+
+
+        def binary_rule(_block, i):
+            """Rule for restricting simultaneous charging and discharging."""
+            return _block.charge_bin[i] + _block.discharge_bin[i] == 1
+        
+
+        def max_hydrogen_content_rule(_block, i):
+            """Rule for the maximum amount of hydrogen in the hydrogen storage."""
+            return _block.hydrogen_content[i] <= self.data.loc['max', 'content']
+        
+
+        def min_hydrogen_content_rule(_block, i):
+            """Rule for the minimum amount of hydrogen in the hydrogen storage."""
+            return _block.hydrogen_content[i] >= self.data.loc['min', 'content']
+        
+
+        def actual_hydrogen_content_rule(_block, i):
+            """Rule for calculating the actual energy content of the battery storage."""
+            if i == 1:
+                return _block.hydrogen_content[i] == 0 - _block.hydrogen_balance[i]
+            else:
+                return _block.hydrogen_content[i] == _block.hydrogen_content[i - 1] - _block.hydrogen_balance[i]
+
+
+        # Declare constraints
+        block.max_charging_capacity_constraint = Constraint(
+            t,
+            rule=max_charging_capacity_rule
+        )
+        block.max_discharging_capacity_constraint = Constraint(
+            t,
+            rule=max_discharging_capacity_rule
+        )
+        block.hydrogen_balance_constraint = Constraint(
+            t,
+            rule=hydrogen_balance_rule
+        )
+        block.binary_constraint = Constraint(
+            t,
+            rule=binary_rule
+        )
+        block.max_hydrogen_content_constraint = Constraint(
+            t,
+            rule=max_hydrogen_content_rule
+        )
+        block.min_hydrogen_content_constraint = Constraint(
+            t,
+            rule=min_hydrogen_content_rule
+        )
+        block.actual_hydrogen_content_rule = Constraint(
+            t,
+            rule=actual_hydrogen_content_rule
+        )
