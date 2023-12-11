@@ -26,12 +26,12 @@ data = DataPortal()
 
 # Read Time Series
 data.load(
-    filename=PATH_IN + 'prices/dummy/gas_price.csv',
+    filename=PATH_IN + 'prices/gee23/gas_price_2025.csv',
     index='t',
     param='gas_price'
 )
 data.load(
-    filename=PATH_IN + 'prices/dummy/power_price.csv',
+    filename=PATH_IN + 'prices/gee23/power_price_2025.csv',
     index='t',
     param='power_price'
 )
@@ -110,7 +110,7 @@ def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in m.t) +
             quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) +
-            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 5 for t in m.t))
+            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 10.0 for t in m.t))
 
 
 m.obj = Objective(
