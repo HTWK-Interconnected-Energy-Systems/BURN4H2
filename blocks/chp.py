@@ -33,7 +33,7 @@ class Chp:
         t = block.model().t
 
 
-        # Define components
+        # Declare components
         block.bin = Var(t, within=Binary)
         block.gas = Var(t, domain=NonNegativeReals)
         block.power = Var(t, domain=NonNegativeReals)
@@ -43,23 +43,23 @@ class Chp:
         block.power_out.add(block.power, 'power', block.power_out.Extensive, include_splitfrac=False)
 
 
-        # Define construction rules for constraints
+        # Declare construction rules for constraints
         def power_max_rule(_block, i):
             """Rule for the maximal power."""
-            return _block.power[i] <= self.data.loc['Max', 'Power'] * _block.bin[i]
+            return _block.power[i] <= self.data.loc['max', 'power'] * _block.bin[i]
 
 
         def power_min_rule(_block, i):
             """Rule for the minimal power."""
-            return self.data.loc['Min', 'Power'] * _block.bin[i] <= _block.power[i]
+            return self.data.loc['min', 'power'] * _block.bin[i] <= _block.power[i]
         
 
         def gas_depends_on_power_rule(_block, i):
             """Rule for the dependencies between gas demand and power output."""
-            gas_max = self.data.loc['Max', 'Gas']
-            gas_min = self.data.loc['Min', 'Gas']
-            power_max = self.data.loc['Max', 'Power']
-            power_min = self.data.loc['Min', 'Power']
+            gas_max = self.data.loc['max', 'gas']
+            gas_min = self.data.loc['min', 'gas']
+            power_max = self.data.loc['max', 'power']
+            power_min = self.data.loc['min', 'power']
 
             a = (gas_max - gas_min) / (power_max - power_min)
             b = gas_max - a * power_max
@@ -69,10 +69,10 @@ class Chp:
 
         def heat_depends_on_power_rule(_block, i):
             """Rule for the dependencies betwwen heat and power output."""
-            heat_max = self.data.loc['Max', 'Heat']
-            heat_min = self.data.loc['Min', 'Heat']
-            power_max = self.data.loc['Max', 'Power']
-            power_min = self.data.loc['Min', 'Power']
+            heat_max = self.data.loc['max', 'heat']
+            heat_min = self.data.loc['min', 'heat']
+            power_max = self.data.loc['max', 'power']
+            power_min = self.data.loc['min', 'power']
 
             a = (heat_max - heat_min) / (power_max - power_min)
             b = heat_max - a * power_max
@@ -80,7 +80,7 @@ class Chp:
             return _block.heat[i] == a * _block.power[i] + b * _block.bin[i]
         
 
-        # Define constraints
+        # Declare constraints
         block.power_max_constraint = Constraint(
             t,
             rule=power_max_rule
@@ -99,7 +99,7 @@ class Chp:
         )
 
 
-        # Define optional constraint via expression if right kwarg is given.
+        # Declare optional constraint via expression when right kwarg is given.
         if 'forced_operation_time' in self.kwargs:
             kwarg_value = self.kwargs['forced_operation_time']
 

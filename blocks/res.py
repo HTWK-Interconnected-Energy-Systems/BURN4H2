@@ -15,14 +15,14 @@ class Photovoltaics:
         t = block.model().t
 
 
-        # Define components
+        # Declare components
         block.power = Var(t, domain=NonNegativeReals)
 
         block.power_out = Port()
         block.power_out.add(block.power, 'power', Port.Extensive, include_splitfrac=False)
 
 
-        # Define construction rules for constraints
+        # Declare construction rules for constraints
         def power_generation_rule(_block, i):
             """Rule for calculating the power generation of the photovoltaics."""
             installed_power = self.data.loc['value', 'installed_power']
@@ -31,7 +31,7 @@ class Photovoltaics:
             return _block.power[i] == installed_power * inverter_efficiency * capacity_factors[i]
         
 
-        # Define constraints
+        # Declare constraints
         block.power_generation_constraint = Constraint(
             t,
             rule=power_generation_rule
