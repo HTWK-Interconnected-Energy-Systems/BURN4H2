@@ -110,7 +110,7 @@ def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in m.t) +
             quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) +
-            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 2.5 for t in m.t))
+            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 5 for t in m.t))
 
 
 m.obj = Objective(
