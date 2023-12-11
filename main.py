@@ -62,6 +62,10 @@ electrolyzer_data = pd.read_csv(
     PATH_IN + 'assets/electrolyzer.csv',
     index_col=0
 )
+hydrogen_grid_data = pd.read_csv(
+    PATH_IN + 'assets/hydrogen_grid.csv',
+    index_col=0
+)
 
 # Create instance
 chp_obj = chp.Chp(chp_data)
@@ -69,6 +73,7 @@ electrical_grid_obj = grid.Grid(electrical_grid_data)
 battery_storage_obj = storage.BatteryStorage(battery_storage_data, cyclic_behaviour=2)
 pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
 electrolyzer_obj = elec.Electrolyzer(electrolyzer_data)
+hydrogen_grid_obj = grid.Grid(hydrogen_grid_data)
 
 
 # Define abstract model
@@ -90,14 +95,15 @@ m.electrical_grid = Block(rule=electrical_grid_obj.electrcial_grid_block_rule)
 m.battery_storage = Block(rule=battery_storage_obj.battery_storage_block_rule)
 m.pv = Block(rule=pv_obj.pv_block_rule)
 m.electrolyzer = Block(rule=electrolyzer_obj.electrolyzer_block_rule)
+m.hydrogen_grid = Block(rule=hydrogen_grid_obj.hydrogen_grid_block_rule)
 
 
 # Define Objective
 def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in m.t) +
-            quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) -
-            quicksum(m.electrolyzer.hydrogen[t] * m.gas_price[t] * 2.5 for t in m.t))
+            quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) +
+            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 2.5 for t in m.t))
 
 
 m.obj = Objective(
@@ -130,6 +136,10 @@ instance.arc4 = Arc(
 instance.arc5 = Arc(
     source=instance.electrical_grid.power_out,
     destination=instance.electrolyzer.power_in
+)
+instance.arc6 = Arc(
+    source=instance.electrolyzer.hydrogen_out,
+    destination=instance.hydrogen_grid.hydrogen_in
 )
 
 
