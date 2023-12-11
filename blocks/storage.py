@@ -207,5 +207,20 @@ class BatteryStorage:
             )
 
 
+class HydrogenStorage:
+    """Class for constructing hydrogen storage asset objects."""
+
+    def __init__(self, data) -> None:
+        self.data = data
+    
+
+    def hydrogen_storage_block_rule(self, block):
+        """Rule for creating a hydrogen storage block with default components and constraints."""
+
+        # Get index from model
+        t = block.model().t
+        
+        # Declare components
+
 
 
