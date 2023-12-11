@@ -13,7 +13,7 @@ class Electrolyzer:
         # Get index from model
         t = block.model().t
 
-        # Define components
+        # Declare components
         block.bin = Var(t, within=Binary)
         block.hydrogen = Var(t, domain=NonNegativeReals)
         block.power = Var(t, domain=NonNegativeReals)
@@ -21,9 +21,12 @@ class Electrolyzer:
         block.heat = Var(t, domain=NonNegativeReals)
 
         block.power_in = Port()
-        block.power_in.add(block.power, 'power', block.power_in.Extensive, include_splitfrac=False)
+        block.power_in.add(block.power, 'power', Port.Extensive, include_splitfrac=False)
+        block.hydrogen_out = Port()
+        block.hydrogen_out.add(block.hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
 
 
+        # Declare construction rules for constraints
         def power_max_rule(_block, i):
             """Rule for the maximal power consumption."""
             return _block.power[i] <= self.data.loc['max', 'power'] * _block.bin[i]
@@ -73,7 +76,7 @@ class Electrolyzer:
             return _block.heat[i] == a * _block.power[i] + b * _block.bin[i]
 
 
-        # Define constraints
+        # Declare constraints
         block.power_max_constraint = Constraint(
             t,
             rule=power_max_rule

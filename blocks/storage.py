@@ -25,7 +25,7 @@ class BatteryStorage:
         # Get index from model
         t = block.model().t
         
-        # Define components
+        # Declare components
         block.overall_power = Var(t, domain=Reals)
         block.charging_power = Var(t, domain=NonNegativeReals)
         block.discharging_power = Var(t, domain=NonNegativeReals)
@@ -44,7 +44,7 @@ class BatteryStorage:
         block.power_out.add(block.discharging_power, 'power', Port.Extensive, include_splitfrac=False)
 
 
-        # Define construction rules for constraints
+        # Declare construction rules for constraints
         def max_charging_power_rule(_block, i):
             """Rule for the maximal charging power."""
             return _block.charging_power[i] <= self.data.loc['Max', 'Power'] * _block.charge_bin[i]
@@ -129,7 +129,7 @@ class BatteryStorage:
             return switch_state == 4 * _block.aux_quotient[i] + _block.aux_remainder[i]
 
 
-        # Define constraints
+        # Declare constraints
         block.max_charging_power_constraint = Constraint(
             t,
             rule=max_charging_power_rule
@@ -176,6 +176,7 @@ class BatteryStorage:
         )
 
 
+        # Declare optional constraint via expression when right kwarg is given.
         if 'cyclic_behaviour' in self.kwargs:             
             
             block.cyclic_switch_bin = Var(t, within=Binary)
