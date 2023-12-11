@@ -75,7 +75,7 @@ hydrogen_storage_data = pd.read_csv(
 # Create instance
 chp_obj = chp.Chp(chp_data)
 electrical_grid_obj = grid.Grid(electrical_grid_data)
-battery_storage_obj = storage.BatteryStorage(battery_storage_data, cyclic_behaviour=2)
+battery_storage_obj = storage.BatteryStorage(battery_storage_data)
 pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
 electrolyzer_obj = elec.Electrolyzer(electrolyzer_data)
 hydrogen_grid_obj = grid.Grid(hydrogen_grid_data)

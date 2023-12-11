@@ -2,43 +2,44 @@ Solver command line: ['C:\\gurobi1002\\win64\\bin\\gurobi.bat']
 
 Set parameter Username
 Academic license - for non-commercial use only - expires 2024-08-20
-Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmpct59zc3e.pyomo.lp
-Reading time = 0.01 seconds
-obj: 1093 rows, 935 columns, 2494 nonzeros
+Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmp0ypocol4.pyomo.lp
+Reading time = 0.03 seconds
+obj: 7393 rows, 6383 columns, 17122 nonzeros
 Gurobi Optimizer version 10.0.2 build v10.0.2rc0 (win64)
 
 CPU model: AMD Ryzen 7 3800X 8-Core Processor, instruction set [SSE2|AVX|AVX2]
 Thread count: 8 physical cores, 16 logical processors, using up to 16 threads
 
-Optimize a model with 1093 rows, 935 columns and 2494 nonzeros
-Model fingerprint: 0xb34348fe
-Model has 23 quadratic constraints
-Variable types: 696 continuous, 239 integer (192 binary)
+Optimize a model with 7393 rows, 6383 columns and 17122 nonzeros
+Model fingerprint: 0x2c555520
+Model has 167 quadratic constraints
+Variable types: 4872 continuous, 1511 integer (1176 binary)
 Coefficient statistics:
   Matrix range     [1e-04, 3e+02]
   QMatrix range    [1e+00, 1e+00]
-  Objective range  [1e+01, 6e+01]
+  Objective range  [4e+01, 3e+02]
   Bounds range     [1e+00, 3e+00]
-  RHS range        [2e-02, 2e+01]
-Presolve removed 890 rows and 693 columns
-Presolve time: 0.00s
-Presolved: 203 rows, 242 columns, 565 nonzeros
-Variable types: 149 continuous, 93 integer (93 binary)
-Found heuristic solution: objective -1158.542133
+  RHS range        [3e-04, 2e+01]
+Presolve removed 6033 rows and 4699 columns
+Presolve time: 0.02s
+Presolved: 1360 rows, 1684 columns, 3736 nonzeros
+Variable types: 1016 continuous, 668 integer (668 binary)
+Found heuristic solution: objective -9386.875768
 
-Root relaxation: objective -1.347498e+03, 57 iterations, 0.00 seconds (0.00 work units)
+Root relaxation: objective -1.280134e+04, 633 iterations, 0.01 seconds (0.01 work units)
 
     Nodes    |    Current Node    |     Objective Bounds      |     Work
  Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
 
-*    0     0               0    -1347.498306 -1347.4983  0.00%     -    0s
+H    0     0                    -12801.33665 -181029.72  1314%     -    0s
+     0     0          -    0      -12801.337 -12801.337  0.00%     -    0s
 
-Explored 1 nodes (57 simplex iterations) in 0.01 seconds (0.00 work units)
+Explored 1 nodes (785 simplex iterations) in 0.06 seconds (0.08 work units)
 Thread count was 16 (of 16 available processors)
 
-Solution count 2: -1347.5 -1158.54 
-No other solutions better than -1347.5
+Solution count 2: -12801.3 -9386.88 
+No other solutions better than -12801.3
 
 Optimal solution found (tolerance 1.00e-04)
-Best objective -1.347498305684e+03, best bound -1.347498305684e+03, gap 0.0000%
+Best objective -1.280133665034e+04, best bound -1.280133665034e+04, gap 0.0000%
 
