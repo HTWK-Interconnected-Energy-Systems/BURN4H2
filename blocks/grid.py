@@ -55,4 +55,7 @@ class Grid:
             t,
             rule=overall_power_rule
         )
-        
+    
+
+    def hydrogen_grid_block_rule(self, block):
+        """Rule for creating a hydrogen gas grid block with default components and constraints."""
