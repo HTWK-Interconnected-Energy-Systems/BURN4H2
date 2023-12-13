@@ -1,43 +1,44 @@
-Solver command line: ['C:\\gurobi1002\\win64\\bin\\gurobi.bat']
+Solver command line: ['C:\\Users\\Paul Wilhelm\\PycharmProjects\\burn4h2\\venv\\Scripts\\python.exe']
 
 Set parameter Username
-Academic license - for non-commercial use only - expires 2024-08-20
-Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmp3zvr19uk.pyomo.lp
+Academic license - for non-commercial use only - expires 2024-07-10
+Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmp6ivqg_hp.pyomo.lp
 Reading time = 0.01 seconds
-obj: 757 rows, 671 columns, 1823 nonzeros
+obj: 877 rows, 839 columns, 2087 nonzeros
 Gurobi Optimizer version 10.0.2 build v10.0.2rc0 (win64)
 
-CPU model: AMD Ryzen 7 3800X 8-Core Processor, instruction set [SSE2|AVX|AVX2]
-Thread count: 8 physical cores, 16 logical processors, using up to 16 threads
+CPU model: Intel(R) Xeon(R) CPU E5-1607 v2 @ 3.00GHz, instruction set [SSE2|AVX]
+Thread count: 4 physical cores, 4 logical processors, using up to 4 threads
 
-Optimize a model with 757 rows, 671 columns and 1823 nonzeros
-Model fingerprint: 0x586ad2a3
-Model has 23 quadratic constraints
-Variable types: 480 continuous, 191 integer (144 binary)
+Optimize a model with 877 rows, 839 columns and 2087 nonzeros
+Model fingerprint: 0xd5296aaf
+Model has 47 quadratic constraints
+Variable types: 624 continuous, 215 integer (168 binary)
 Coefficient statistics:
   Matrix range     [1e-04, 3e+02]
-  QMatrix range    [1e+00, 1e+00]
+  QMatrix range    [1e+00, 3e+00]
+  QLMatrix range   [1e+00, 1e+00]
   Objective range  [1e+01, 6e+01]
   Bounds range     [1e+00, 3e+00]
   RHS range        [2e-02, 1e+01]
-Presolve removed 641 rows and 531 columns
-Presolve time: 0.00s
-Presolved: 116 rows, 140 columns, 336 nonzeros
-Variable types: 70 continuous, 70 integer (70 binary)
-Found heuristic solution: objective -1128.542133
-Found heuristic solution: objective -1133.542133
+Presolve removed 569 rows and 579 columns
+Presolve time: 0.01s
+Presolved: 308 rows, 260 columns, 864 nonzeros
+Variable types: 142 continuous, 118 integer (118 binary)
+Found heuristic solution: objective 458.0578665
+Found heuristic solution: objective 455.4977539
 
-Root relaxation: objective -1.247498e+03, 25 iterations, 0.00 seconds (0.00 work units)
+Root relaxation: objective -1.247498e+03, 31 iterations, 0.00 seconds (0.00 work units)
 
     Nodes    |    Current Node    |     Objective Bounds      |     Work
  Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
 
 *    0     0               0    -1247.498306 -1247.4983  0.00%     -    0s
 
-Explored 1 nodes (25 simplex iterations) in 0.01 seconds (0.00 work units)
-Thread count was 16 (of 16 available processors)
+Explored 1 nodes (31 simplex iterations) in 0.02 seconds (0.00 work units)
+Thread count was 4 (of 4 available processors)
 
-Solution count 3: -1247.5 -1133.54 -1128.54 
+Solution count 3: -1247.5 455.498 458.058 
 No other solutions better than -1247.5
 
 Optimal solution found (tolerance 1.00e-04)

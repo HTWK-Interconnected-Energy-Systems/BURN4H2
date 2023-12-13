@@ -6,9 +6,11 @@ from pyomo.network import *
 
 import blocks.chp as chp
 import blocks.grid as grid
+import blocks.heatgrid as heatgrid
 import blocks.storage as storage
 import blocks.res as res
 import blocks.electrolyzer as elec
+import blocks.heatpump as hp
 
 
 # Path
@@ -62,6 +64,16 @@ electrolyzer_data = pd.read_csv(
     PATH_IN + 'assets/electrolyzer.csv',
     index_col=0
 )
+heatpump_data = pd.read_csv(
+    PATH_IN + 'assets/heatpump.csv',
+    index_col=0
+)
+heat_grid_data = pd.read_csv(
+    PATH_IN + 'assets/heat_grid.csv',
+    index_col=0
+)
+
+
 
 # Create instance
 chp_obj = chp.Chp(chp_data)
@@ -69,6 +81,8 @@ electrical_grid_obj = grid.Grid(electrical_grid_data)
 battery_storage_obj = storage.BatteryStorage(battery_storage_data, cyclic_behaviour=2)
 pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
 electrolyzer_obj = elec.Electrolyzer(electrolyzer_data)
+heatpump_obj = hp.Heatpump(heatpump_data, link_heatpump_to_electrolyzer=1)
+heat_grid_obj = heatgrid.Heatgrid(heat_grid_data)
 
 
 # Define abstract model
@@ -90,7 +104,8 @@ m.electrical_grid = Block(rule=electrical_grid_obj.electrcial_grid_block_rule)
 m.battery_storage = Block(rule=battery_storage_obj.battery_storage_block_rule)
 m.pv = Block(rule=pv_obj.pv_block_rule)
 m.electrolyzer = Block(rule=electrolyzer_obj.electrolyzer_block_rule)
-
+m.hp = Block(rule=heatpump_obj.heatpump_block_rule)
+m.heatgrid = Block(rule=heat_grid_obj.heat_grid_block_rule)
 
 # Define Objective
 def obj_expression(m):
@@ -130,6 +145,14 @@ instance.arc4 = Arc(
 instance.arc5 = Arc(
     source=instance.electrical_grid.power_out,
     destination=instance.electrolyzer.power_in
+)
+instance.arc6 = Arc(
+    source=instance.electrolyzer.heat_out,
+    destination=instance.hp.heat_in
+)
+instance.arc7 = Arc(
+    source=instance.hp.heat_out,
+    destination=instance.heatgrid.heat_in
 )
 
 

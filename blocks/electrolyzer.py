@@ -21,7 +21,11 @@ class Electrolyzer:
         block.heat = Var(t, domain=NonNegativeReals)
 
         block.power_in = Port()
-        block.power_in.add(block.power, 'power', block.power_in.Extensive, include_splitfrac=False)
+        block.power_in.add(block.power, 'power', Port.Extensive, include_splitfrac=False)
+
+        block.heat_out = Port()
+        block.heat_out.add(block.heat,'heat',Port.Extensive, include_splitfrac=False)
+
 
 
         def power_max_rule(_block, i):
