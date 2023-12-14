@@ -67,25 +67,45 @@ class Heatpump:
         )
 
         if 'link_heatpump_to_electrolyzer' in self.kwargs and self.kwargs['link_heatpump_to_electrolyzer'] == 1:
-            # random M
-            M = 1000
-            # Auxiliary Variable
-            block.heat_input_indicator = Var(t, within=Binary)
+            # # random M
+            # M = 1000
+            #
+            # # Auxiliary Variable
+            # block.heat_input_indicator = Var(t, within=Binary)
+            #
+            # # Constraints for dependency
+            # block.heat_input_zero_constraint = Constraint(
+            #     t,
+            #     rule=lambda _block, i: _block.heat_input_indicator[i] <= _block.heat_input[i]
+            # )
+            # block.heat_input_positive_constraint = Constraint(
+            #     t,
+            #     rule=lambda _block, i: _block.heat_input[i] <= M * _block.heat_input_indicator[i]
+            # )
+            #
+            # # Constraint for linking auxiliary variable and binary variable
+            # block.bin_constraint = Constraint(
+            #     t,
+            #     rule=lambda _block, i: _block.bin[i] == _block.heat_input_indicator[i]
+            # )
 
-            # Constraints for dependency
-            block.heat_input_zero_constraint = Constraint(
+            block.heat_consumption = Var(
                 t,
-                rule=lambda _block, i: _block.heat_input_indicator[i] <= _block.heat_input[i]
-            )
-            block.heat_input_positive_constraint = Constraint(
-                t,
-                rule=lambda _block, i: _block.heat_input[i] <= M * _block.heat_input_indicator[i]
+                domain=NonNegativeReals
             )
 
-            # Constraint for linking auxiliary variable and binary variable
-            block.bin_constraint = Constraint(
+            block.heat_input_equal_to_heat_consumption_constraint = Constraint(
                 t,
-                rule=lambda _block, i: _block.bin[i] == _block.heat_input_indicator[i]
+                rule= lambda _block, i: block.heat_consumption[i] * block.bin[i] == block.heat_input[i]
+            )
+
+            block.heat_input_operation_constraint = Constraint(
+                t,
+                rule= lambda _block,i: (block.heat_input[i]-1)*block.bin[i] >= 0
+            )
+            block.heat_input_operation_constraint_2 = Constraint(
+                t,
+                rule=lambda _block, i: block.heat_input[i] >= 0.001 * block.bin[i]
             )
 
 
