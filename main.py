@@ -66,10 +66,10 @@ hydrogen_grid_data = pd.read_csv(
     PATH_IN + 'assets/hydrogen_grid.csv',
     index_col=0
 )
-hydrogen_storage_data = pd.read_csv(
-    PATH_IN + 'assets/hydrogen_storage.csv',
-    index_col=0
-)
+# hydrogen_storage_data = pd.read_csv(
+#     PATH_IN + 'assets/hydrogen_storage.csv',
+#     index_col=0
+# )
 
 
 # Create instance
@@ -79,7 +79,7 @@ battery_storage_obj = storage.BatteryStorage(battery_storage_data)
 pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
 electrolyzer_obj = elec.Electrolyzer(electrolyzer_data)
 hydrogen_grid_obj = grid.Grid(hydrogen_grid_data)
-hydrogen_storage_obj = storage.HydrogenStorage(hydrogen_storage_data)
+# hydrogen_storage_obj = storage.HydrogenStorage(hydrogen_storage_data)
 
 
 # Define abstract model
@@ -102,7 +102,7 @@ m.battery_storage = Block(rule=battery_storage_obj.battery_storage_block_rule)
 m.pv = Block(rule=pv_obj.pv_block_rule)
 m.electrolyzer = Block(rule=electrolyzer_obj.electrolyzer_block_rule)
 m.hydrogen_grid = Block(rule=hydrogen_grid_obj.hydrogen_grid_block_rule)
-m.hydrogen_storage = Block(rule=hydrogen_storage_obj.hydrogen_storage_block_rule)
+# m.hydrogen_storage = Block(rule=hydrogen_storage_obj.hydrogen_storage_block_rule)
 
 
 # Define Objective
@@ -110,7 +110,7 @@ def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in m.t) +
             quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) +
-            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 10.0 for t in m.t))
+            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 9.0 for t in m.t))
 
 
 m.obj = Objective(
@@ -148,14 +148,14 @@ instance.arc6 = Arc(
     source=instance.electrolyzer.hydrogen_out,
     destination=instance.hydrogen_grid.hydrogen_in
 )
-instance.arc7 = Arc(
-    source=instance.hydrogen_grid.hydrogen_out,
-    destination=instance.hydrogen_storage.hydrogen_in
-)
-instance.arc8 = Arc(
-    source=instance.hydrogen_storage.hydrogen_out,
-    destination=instance.hydrogen_grid.hydrogen_in
-)
+# instance.arc7 = Arc(
+#     source=instance.hydrogen_grid.hydrogen_out,
+#     destination=instance.hydrogen_storage.hydrogen_in
+# )
+# instance.arc8 = Arc(
+#     source=instance.hydrogen_storage.hydrogen_out,
+#     destination=instance.hydrogen_grid.hydrogen_in
+# )
 
 
 # Expand arcs and generate connection constraints
