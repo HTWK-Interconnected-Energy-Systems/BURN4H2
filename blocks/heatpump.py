@@ -36,21 +36,36 @@ class Heatpump:
 
         # Port 3
         block.heat_out = Port()
-        block.heat_out.add(block.heat_output,'heat',Port.Extensive, include_splitfrac=False)
+        block.heat_out.add(block.heat_output,'heat_high_temperature',Port.Extensive, include_splitfrac=False)
 
 
         def power_max_rule(_block, i):
             """Rule for the maximal power input."""
             return _block.power[i] <= self.data.loc['max', 'power'] * _block.bin[i]
 
-        # Define Construction Rules
+
         def power_min_rule(_block, i):
             """Rule for the minimal power input."""
             return self.data.loc['min', 'power'] * _block.bin[i] <= _block.power[i]
 
-        def heat_output_depends_on_power_rule(_block, i):
+
+        def heat_output_depends_on_heat_input_rule(_block, i):
             """ Rule for the dependencies between heat output and power input """
-            return _block.heat_output[i] == _block.bin[i]*(_block.heat_input[i] + 3 *_block.power[i]) # factor 3.0 considered
+            # return _block.heat_output[i] == _block.bin[i] * (_block.heat_input[i] + 3 * _block.power[i]) # factor 3.0 considered
+            return _block.heat_output[i] == _block.heat_input[i] * 3
+        
+
+        def power_depends_on_heat_output_rule(_block, i):
+            return _block.power[i] == _block.heat_output[i] / 3
+
+
+        def binary_rule(_block, i):
+            return (_block.heat_input[i] - 1) * _block.bin[i] >= 0
+        
+
+        def binary_2_rule(_block, i):
+            return _block.heat_output[i] * _block.bin[i] >= _block.heat_input[i]
+        
 
         # Define constraints
         block.power_max_constraint = Constraint(
@@ -63,28 +78,43 @@ class Heatpump:
         )
         block.heat_output_depends_on_power_input_constraint = Constraint(
             t,
-            rule=heat_output_depends_on_power_rule
+            rule=heat_output_depends_on_heat_input_rule
+        )
+        block.power_depends_on_heat_output_constraint = Constraint(
+            t,
+            rule=power_depends_on_heat_output_rule
+        )
+        block.binary_constraint = Constraint(
+            t,
+            rule=binary_rule
+        )
+        block.binary_2_constraint = Constraint(
+            t,
+            rule=binary_2_rule
         )
 
-        if 'link_heatpump_to_electrolyzer' in self.kwargs and self.kwargs['link_heatpump_to_electrolyzer'] == 1:
 
-            block.heat_consumption = Var(
-                t,
-                domain=NonNegativeReals
-            )
+        # if 'link_heatpump_to_electrolyzer' in self.kwargs and self.kwargs['link_heatpump_to_electrolyzer'] == 1:
 
-            block.heat_input_equal_to_heat_consumption_constraint = Constraint(
-                t,
-                rule= lambda _block, i: block.heat_consumption[i] * block.bin[i] == block.heat_input[i]
-            )
+        #     block.heat_consumption = Var(
+        #         t,
+        #         domain=NonNegativeReals
+        #     )
 
-            block.heat_input_operation_constraint = Constraint(
-                t,
-                rule= lambda _block,i: (block.heat_input[i]-1)*block.bin[i] >= 0
-            )
-            block.heat_input_operation_constraint_2 = Constraint(
-                t,
-                rule=lambda _block, i: block.heat_input[i] >= 0.001 * block.bin[i]
-            )
+        #     block.heat_input_equal_to_heat_consumption_constraint = Constraint(
+        #         t,
+        #         rule= lambda _block, i: block.heat_consumption[i] * block.bin[i] == block.heat_input[i]
+        #     )
+
+        #     block.heat_input_operation_constraint = Constraint(
+        #         t,
+        #         rule= lambda _block,i: (block.heat_input[i]-1)*block.bin[i] >= 0
+        #     )
+        #     block.heat_input_operation_constraint_2 = Constraint(
+        #         t,
+        #         rule=lambda _block, i: block.heat_input[i] >= 0.001 * block.bin[i]
+            # )
+
+        
 
 

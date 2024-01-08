@@ -9,8 +9,8 @@ class Heatgrid:
         self.data = data
 
     def heat_grid_block_rule(self, block):
-        """Rule for creating a electrical power grid block with default components and
-        constraints."""
+        """Rule for creating a electrical power grid block with default 
+        components and constraints."""
         # Get index from model
         t = block.model().t
 
@@ -20,9 +20,9 @@ class Heatgrid:
         block.feedin_heat = Var(t, domain=NonNegativeReals)
 
         block.heat_in = Port()
-        block.heat_in.add(block.feedin_heat, 'heat', Port.Extensive, include_splitfrac=False)
+        block.heat_in.add(block.feedin_heat, 'heat_high_temperature', Port.Extensive, include_splitfrac=False)
         block.heat_out = Port()
-        block.heat_out.add(block.supply_heat, 'heat', Port.Extensive, include_splitfrac=False)
+        block.heat_out.add(block.supply_heat, 'heat_high_temperature', Port.Extensive, include_splitfrac=False)
 
         # Define construction rules for constraints
         def overall_heat_rule(_block, i):
