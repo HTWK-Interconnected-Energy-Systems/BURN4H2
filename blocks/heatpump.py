@@ -67,27 +67,6 @@ class Heatpump:
         )
 
         if 'link_heatpump_to_electrolyzer' in self.kwargs and self.kwargs['link_heatpump_to_electrolyzer'] == 1:
-            # # random M
-            # M = 1000
-            #
-            # # Auxiliary Variable
-            # block.heat_input_indicator = Var(t, within=Binary)
-            #
-            # # Constraints for dependency
-            # block.heat_input_zero_constraint = Constraint(
-            #     t,
-            #     rule=lambda _block, i: _block.heat_input_indicator[i] <= _block.heat_input[i]
-            # )
-            # block.heat_input_positive_constraint = Constraint(
-            #     t,
-            #     rule=lambda _block, i: _block.heat_input[i] <= M * _block.heat_input_indicator[i]
-            # )
-            #
-            # # Constraint for linking auxiliary variable and binary variable
-            # block.bin_constraint = Constraint(
-            #     t,
-            #     rule=lambda _block, i: _block.bin[i] == _block.heat_input_indicator[i]
-            # )
 
             block.heat_consumption = Var(
                 t,
