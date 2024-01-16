@@ -73,12 +73,13 @@ hydrogen_grid_data = pd.read_csv(
 
 
 # Create instance
-chp_obj = chp.Chp(chp_data)
+chp_obj = chp.Chp(chp_data, forced_operation_time=50)
 electrical_grid_obj = grid.Grid(electrical_grid_data)
 battery_storage_obj = storage.BatteryStorage(battery_storage_data)
 pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
 electrolyzer_obj = elec.Electrolyzer(electrolyzer_data)
 hydrogen_grid_obj = grid.Grid(hydrogen_grid_data)
+natural_gas_grid_obj = grid.Grid()
 # hydrogen_storage_obj = storage.HydrogenStorage(hydrogen_storage_data)
 
 
@@ -102,6 +103,7 @@ m.battery_storage = Block(rule=battery_storage_obj.battery_storage_block_rule)
 m.pv = Block(rule=pv_obj.pv_block_rule)
 m.electrolyzer = Block(rule=electrolyzer_obj.electrolyzer_block_rule)
 m.hydrogen_grid = Block(rule=hydrogen_grid_obj.hydrogen_grid_block_rule)
+m.ngas_grid = Block(rule=natural_gas_grid_obj.natural_gas_grid_block_rule)
 # m.hydrogen_storage = Block(rule=hydrogen_storage_obj.hydrogen_storage_block_rule)
 
 
@@ -156,6 +158,19 @@ instance.arc6 = Arc(
 #     source=instance.hydrogen_storage.hydrogen_out,
 #     destination=instance.hydrogen_grid.hydrogen_in
 # )
+instance.arc9 = Arc(
+    source=instance.chp.gas_in,
+    destination=instance.ngas_grid.ngas_out
+)
+instance.arc10 = Arc(
+    source=instance.chp.gas_in,
+    destination=instance.hydrogen_grid.hydrogen_out
+)
+
+# instance.ngas_grid.ngas_out.set_split_fraction(instance.arc9, 0.2)
+instance.chp.gas_in.set_split_fraction(instance.arc9, 0.8)
+instance.chp.gas_in.set_split_fraction(instance.arc10, 0.2)
+
 
 
 # Expand arcs and generate connection constraints
@@ -186,6 +201,8 @@ for parameter in instance.component_objects(Param, active=True):
 for variable in instance.component_objects(Var, active=True):
     name = variable.name
     if 'aux' in name:   # Filters auxiliary variables from the output data
+        continue
+    if 'splitfrac' in name:
         continue
     df_variables[name] = [value(variable[t]) for t in instance.t]
 

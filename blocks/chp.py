@@ -42,6 +42,9 @@ class Chp:
         block.power_out = Port()
         block.power_out.add(block.power, 'power', block.power_out.Extensive, include_splitfrac=False)
 
+        block.gas_in = Port()
+        block.gas_in.add(block.gas, 'gas', block.gas_in.Extensive)
+
 
         # Declare construction rules for constraints
         def power_max_rule(_block, i):

@@ -4,7 +4,7 @@ from pyomo.network import *
 class Grid:
     """Class for constructing grid asset objects."""
 
-    def __init__(self, data) -> None:
+    def __init__(self, data=None) -> None:
         self.data = data
 
     
@@ -72,7 +72,7 @@ class Grid:
         block.hydrogen_in = Port()
         block.hydrogen_in.add(block.feedin_hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
         block.hydrogen_out = Port()
-        block.hydrogen_out.add(block.supply_hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
+        block.hydrogen_out.add(block.supply_hydrogen, 'gas', Port.Extensive, include_splitfrac=False)
 
 
         # Declare construction rules for constraints
@@ -104,3 +104,18 @@ class Grid:
             t,
             rule=overall_hydrogen_rule
         )
+
+    
+    def natural_gas_grid_block_rule(self, block):
+        """Rule for creating a natural gas grid block with default components and 
+        constraints."""
+    
+        # Get index from model
+        t = block.model().t
+
+
+        # Declare components
+        block.overall_ngas = Var(t, domain=Reals)
+
+        block.ngas_out = Port()
+        block.ngas_out.add(block.overall_ngas, 'gas', Port.Extensive)
