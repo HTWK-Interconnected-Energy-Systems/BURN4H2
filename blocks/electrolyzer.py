@@ -25,6 +25,10 @@ class Electrolyzer:
         block.hydrogen_out = Port()
         block.hydrogen_out.add(block.hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
 
+        block.heat_out = Port()
+        block.heat_out.add(block.heat,'heat',Port.Extensive, include_splitfrac=False)
+
+
 
         # Declare construction rules for constraints
         def power_max_rule(_block, i):

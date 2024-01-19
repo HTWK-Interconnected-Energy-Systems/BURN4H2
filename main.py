@@ -6,9 +6,11 @@ from pyomo.network import *
 
 import blocks.chp as chp
 import blocks.grid as grid
+import blocks.heatgrid as heatgrid
 import blocks.storage as storage
 import blocks.res as res
 import blocks.electrolyzer as elec
+import blocks.heatpump as hp
 
 
 # Path
@@ -70,6 +72,15 @@ hydrogen_grid_data = pd.read_csv(
 #     PATH_IN + 'assets/hydrogen_storage.csv',
 #     index_col=0
 # )
+heatpump_data = pd.read_csv(
+    PATH_IN + 'assets/heatpump.csv',
+    index_col=0
+)
+heat_grid_data = pd.read_csv(
+    PATH_IN + 'assets/heat_grid.csv',
+    index_col=0
+)
+
 
 
 # Create instance
@@ -81,6 +92,8 @@ electrolyzer_obj = elec.Electrolyzer(electrolyzer_data)
 hydrogen_grid_obj = grid.Grid(hydrogen_grid_data)
 natural_gas_grid_obj = grid.Grid()
 # hydrogen_storage_obj = storage.HydrogenStorage(hydrogen_storage_data)
+heatpump_obj = hp.Heatpump(heatpump_data)
+heat_grid_obj = heatgrid.Heatgrid(heat_grid_data)
 
 
 # Define abstract model
@@ -106,6 +119,8 @@ m.hydrogen_grid = Block(rule=hydrogen_grid_obj.hydrogen_grid_block_rule)
 m.ngas_grid = Block(rule=natural_gas_grid_obj.natural_gas_grid_block_rule)
 # m.hydrogen_storage = Block(rule=hydrogen_storage_obj.hydrogen_storage_block_rule)
 
+m.hp = Block(rule=heatpump_obj.heatpump_block_rule)
+m.heatgrid = Block(rule=heat_grid_obj.heat_grid_block_rule)
 
 # Define Objective
 def obj_expression(m):
@@ -165,6 +180,14 @@ instance.arc9 = Arc(
 instance.arc10 = Arc(
     source=instance.chp.hydrogen_in,
     destination=instance.hydrogen_grid.hydrogen_out
+)
+instance.arc11 = Arc(
+    source=instance.electrolyzer.heat_out,
+    destination=instance.hp.heat_in
+)
+instance.arc12 = Arc(
+    source=instance.hp.heat_out,
+    destination=instance.heatgrid.heat_in
 )
 
 
