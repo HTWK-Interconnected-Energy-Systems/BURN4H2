@@ -73,7 +73,7 @@ hydrogen_grid_data = pd.read_csv(
 
 
 # Create instance
-chp_obj = chp.Chp(chp_data, forced_operation_time=50)
+chp_obj = chp.Chp(chp_data, forced_operation_time=50, hydrogen_admixture=0.2)
 electrical_grid_obj = grid.Grid(electrical_grid_data)
 battery_storage_obj = storage.BatteryStorage(battery_storage_data)
 pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
@@ -110,7 +110,7 @@ m.ngas_grid = Block(rule=natural_gas_grid_obj.natural_gas_grid_block_rule)
 # Define Objective
 def obj_expression(m):
     """ Objective Function """
-    return (quicksum(m.chp.gas[t] * m.gas_price[t] for t in m.t) +
+    return (quicksum(m.ngas_grid.overall_ngas[t] * m.gas_price[t] for t in m.t) +
             quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) +
             quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 5.0 for t in m.t))
 
@@ -159,18 +159,13 @@ instance.arc6 = Arc(
 #     destination=instance.hydrogen_grid.hydrogen_in
 # )
 instance.arc9 = Arc(
-    source=instance.chp.gas_in,
+    source=instance.chp.natural_gas_in,
     destination=instance.ngas_grid.ngas_out
 )
 instance.arc10 = Arc(
-    source=instance.chp.gas_in,
+    source=instance.chp.hydrogen_in,
     destination=instance.hydrogen_grid.hydrogen_out
 )
-
-# instance.ngas_grid.ngas_out.set_split_fraction(instance.arc9, 0.2)
-instance.chp.gas_in.set_split_fraction(instance.arc9, 0.8)
-instance.chp.gas_in.set_split_fraction(instance.arc10, 0.2)
-
 
 
 # Expand arcs and generate connection constraints
@@ -196,6 +191,8 @@ df_output = pd.DataFrame()
 
 for parameter in instance.component_objects(Param, active=True):
     name = parameter.name
+    if 'hydrogen_admixture_factor' in name:
+        continue
     df_parameters[name] = [value(parameter[t]) for t in instance.t]
 
 for variable in instance.component_objects(Var, active=True):

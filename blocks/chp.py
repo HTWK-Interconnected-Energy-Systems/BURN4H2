@@ -9,6 +9,11 @@ class Chp:
     forced_operation_time: integer
         Integer value (h). If declared, the forced_operation_time_constraint will be added 
         to the block construction rule.
+    
+    hydrogen_admixture: float
+        Float value with arbitrary unit. If delcared, the additional variables 
+        and constraints for the natural gas and hydrogen consumption will be
+        added to the block construction rule.
     """
 
 
@@ -19,8 +24,10 @@ class Chp:
     
 
     def validate_kwargs(self):
-        """Checks for unknown kwargs and returns a KeyError if some are found."""
-        allowed_kwargs = ['forced_operation_time']
+        """Checks for unknown kwargs and returns a KeyError if some are 
+        found."""
+
+        allowed_kwargs = ['forced_operation_time', 'hydrogen_admixture']
 
         for key in self.kwargs:
             if key not in allowed_kwargs:
@@ -28,10 +35,11 @@ class Chp:
     
 
     def chp_block_rule(self, block):
-        """Rule for creating a chp block with default components and constraints."""
+        """Rule for creating a chp block with default components and 
+        constraints."""
+
         # Get index from model
         t = block.model().t
-
 
         # Declare components
         block.bin = Var(t, within=Binary)
@@ -39,12 +47,22 @@ class Chp:
         block.power = Var(t, domain=NonNegativeReals)
         block.heat = Var(t, domain=NonNegativeReals)
 
+        block.hydrogen_admixture_factor = Param(initialize=0.2)
+
         block.power_out = Port()
-        block.power_out.add(block.power, 'power', block.power_out.Extensive, include_splitfrac=False)
-
-        block.gas_in = Port()
-        block.gas_in.add(block.gas, 'gas', block.gas_in.Extensive)
-
+        block.power_out.add(
+            block.power,
+            'power',
+            block.power_out.Extensive,
+            include_splitfrac=False
+        )
+        block.natural_gas_in = Port()
+        block.natural_gas_in.add(
+            block.gas,
+            'natural_gas',
+            block.natural_gas_in.Extensive,
+            include_splitfrac=False
+        )
 
         # Declare construction rules for constraints
         def power_max_rule(_block, i):
@@ -81,7 +99,7 @@ class Chp:
             b = heat_max - a * power_max
 
             return _block.heat[i] == a * _block.power[i] + b * _block.bin[i]
-        
+           
 
         # Declare constraints
         block.power_max_constraint = Constraint(
@@ -108,4 +126,50 @@ class Chp:
 
             block.forced_operation_time_constraint = Constraint(
                 expr=quicksum(block.bin[i] for i in t) >= kwarg_value
+            )
+
+        if 'hydrogen_admixture' in self.kwargs:
+
+            admixture_factor = self.kwargs['hydrogen_admixture']
+            if not 0 <= admixture_factor <= 1:
+                raise ValueError(
+                    'Admixture factor out of bounds. Should be >= 0 or <= 1'
+                )
+            
+            # Declare additional components
+            block.natural_gas = Var(t, domain=NonNegativeReals)
+            block.hydrogen = Var(t, domain=NonNegativeReals)
+
+            block.natural_gas_in.remove('natural_gas')
+            block.natural_gas_in.add(
+                block.natural_gas,
+                'natural_gas',
+                block.natural_gas_in.Extensive,
+                include_splitfrac=False
+            )
+
+            block.hydrogen_in = Port()
+            block.hydrogen_in.add(
+                block.hydrogen,
+                'hydrogen',
+                block.hydrogen_in.Extensive,
+                include_splitfrac=False
+            )
+
+            def hydrogen_depends_on_gas_rule(_block, i):
+                """Rule for determine the hydrogen demand for combustion."""
+                return _block.hydrogen[i] == _block.gas[i] * _block.hydrogen_admixture_factor
+            
+            def ngas_depends_on_gas_rule(_block, i):
+                """Rule for determine the ngas demand for combustion."""
+                return _block.natural_gas[i] == _block.gas[i] * (1 - _block.hydrogen_admixture_factor)
+
+            
+            block.hydrogen_depends_on_gas_constraint = Constraint(
+                t,
+                rule=hydrogen_depends_on_gas_rule
+            )
+            block.ngas_depends_on_gas_constraint = Constraint(
+                t,
+                rule=ngas_depends_on_gas_rule
             )

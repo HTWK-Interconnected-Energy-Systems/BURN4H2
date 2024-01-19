@@ -72,7 +72,7 @@ class Grid:
         block.hydrogen_in = Port()
         block.hydrogen_in.add(block.feedin_hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
         block.hydrogen_out = Port()
-        block.hydrogen_out.add(block.supply_hydrogen, 'gas', Port.Extensive, include_splitfrac=False)
+        block.hydrogen_out.add(block.supply_hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
 
 
         # Declare construction rules for constraints
@@ -118,4 +118,4 @@ class Grid:
         block.overall_ngas = Var(t, domain=Reals)
 
         block.ngas_out = Port()
-        block.ngas_out.add(block.overall_ngas, 'gas', Port.Extensive)
+        block.ngas_out.add(block.overall_ngas, 'natural_gas', Port.Extensive, include_splitfrac=False)
