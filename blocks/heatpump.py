@@ -27,7 +27,7 @@ class Heatpump:
 
         # Port 3
         block.heat_out = Port()
-        block.heat_out.add(block.heat_output,'heat_high_temperature',Port.Extensive, include_splitfrac=False)
+        block.heat_out.add(block.heat_output,'heat',Port.Extensive, include_splitfrac=False)
 
 
         def power_max_rule(_block, i):

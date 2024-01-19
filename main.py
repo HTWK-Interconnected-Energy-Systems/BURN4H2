@@ -6,7 +6,6 @@ from pyomo.network import *
 
 import blocks.chp as chp
 import blocks.grid as grid
-import blocks.heatgrid as heatgrid
 import blocks.storage as storage
 import blocks.res as res
 import blocks.electrolyzer as elec
@@ -82,22 +81,32 @@ heat_grid_data = pd.read_csv(
 )
 
 
-
 # Create instance
 chp_obj = chp.Chp(
     data=chp_data,
     forced_operation_time=50,
     hydrogen_admixture=0.2
-)
-electrical_grid_obj = grid.Grid(electrical_grid_data)
-battery_storage_obj = storage.BatteryStorage(battery_storage_data)
-pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
-electrolyzer_obj = elec.Electrolyzer(electrolyzer_data)
-hydrogen_grid_obj = grid.Grid(hydrogen_grid_data)
+    )
+electrical_grid_obj = grid.Grid(
+    data=electrical_grid_data
+    )
+battery_storage_obj = storage.BatteryStorage(
+    battery_storage_data
+    )
+pv_obj = res.Photovoltaics(
+    data=pv_data,
+    capacity_factors=pv_capacity_factors
+    )
+electrolyzer_obj = elec.Electrolyzer(
+    data=electrolyzer_data
+    )
+hydrogen_grid_obj = grid.Grid(
+    data=hydrogen_grid_data
+    )
 natural_gas_grid_obj = grid.Grid()
 # hydrogen_storage_obj = storage.HydrogenStorage(hydrogen_storage_data)
 heatpump_obj = hp.Heatpump(heatpump_data)
-heat_grid_obj = heatgrid.Heatgrid(heat_grid_data)
+heat_grid_obj = grid.Grid(heat_grid_data)
 
 
 # Define abstract model
@@ -114,17 +123,35 @@ m.power_price = Param(m.t)
 
 
 # Define block components
-m.chp = Block(rule=chp_obj.chp_block_rule)
-m.electrical_grid = Block(rule=electrical_grid_obj.electrcial_grid_block_rule)
-m.battery_storage = Block(rule=battery_storage_obj.battery_storage_block_rule)
-m.pv = Block(rule=pv_obj.pv_block_rule)
-m.electrolyzer = Block(rule=electrolyzer_obj.electrolyzer_block_rule)
-m.hydrogen_grid = Block(rule=hydrogen_grid_obj.hydrogen_grid_block_rule)
-m.ngas_grid = Block(rule=natural_gas_grid_obj.natural_gas_grid_block_rule)
+m.chp = Block(
+    rule=chp_obj.chp_block_rule
+    )
+m.electrical_grid = Block(
+    rule=electrical_grid_obj.electrcial_grid_block_rule
+    )
+m.battery_storage = Block(
+    rule=battery_storage_obj.battery_storage_block_rule
+    )
+m.pv = Block(
+    rule=pv_obj.pv_block_rule
+    )
+m.electrolyzer = Block(
+    rule=electrolyzer_obj.electrolyzer_block_rule
+    )
+m.hydrogen_grid = Block(
+    rule=hydrogen_grid_obj.hydrogen_grid_block_rule
+    )
+m.ngas_grid = Block(
+    rule=natural_gas_grid_obj.natural_gas_grid_block_rule
+    )
 # m.hydrogen_storage = Block(rule=hydrogen_storage_obj.hydrogen_storage_block_rule)
 
-m.hp = Block(rule=heatpump_obj.heatpump_block_rule)
-m.heatgrid = Block(rule=heat_grid_obj.heat_grid_block_rule)
+m.hp = Block(
+    rule=heatpump_obj.heatpump_block_rule
+    )
+m.heatgrid = Block(
+    rule=heat_grid_obj.heat_grid_block_rule
+    )
 
 # Define Objective
 def obj_expression(m):
