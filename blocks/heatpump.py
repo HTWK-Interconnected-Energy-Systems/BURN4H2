@@ -4,17 +4,8 @@ from pyomo.network import *
 class Heatpump:
     """ Class for constructing heatpump objects. """
 
-    def __init__ (self, data, **kwargs) -> None:
+    def __init__ (self, data) -> None:
         self.data = data
-        self.kwargs = kwargs
-        self.validate_kwargs()
-
-    def validate_kwargs(self):
-        allowed_kwargs = ['link_heatpump_to_electrolyzer']
-
-        for key in self.kwargs:
-            if key not in allowed_kwargs:
-                raise(KeyError(f'Unexpected kwarg "{key}" detected.'))
 
 
     def heatpump_block_rule(self, block):
@@ -50,21 +41,12 @@ class Heatpump:
 
 
         def heat_output_depends_on_heat_input_rule(_block, i):
-            """ Rule for the dependencies between heat output and power input """
-            # return _block.heat_output[i] == _block.bin[i] * (_block.heat_input[i] + 3 * _block.power[i]) # factor 3.0 considered
-            return _block.heat_output[i] == _block.heat_input[i] * 3
+            """ Rule for the dependencies between heat output and power input."""
+            return _block.heat_output[i] * _block.bin[i] == _block.heat_input[i] * 3
         
 
         def power_depends_on_heat_output_rule(_block, i):
             return _block.power[i] == _block.heat_output[i] / 3
-
-
-        def binary_rule(_block, i):
-            return (_block.heat_input[i] - 1) * _block.bin[i] >= 0
-        
-
-        def binary_2_rule(_block, i):
-            return _block.heat_output[i] * _block.bin[i] >= _block.heat_input[i]
         
 
         # Define constraints
@@ -84,37 +66,3 @@ class Heatpump:
             t,
             rule=power_depends_on_heat_output_rule
         )
-        block.binary_constraint = Constraint(
-            t,
-            rule=binary_rule
-        )
-        block.binary_2_constraint = Constraint(
-            t,
-            rule=binary_2_rule
-        )
-
-
-        # if 'link_heatpump_to_electrolyzer' in self.kwargs and self.kwargs['link_heatpump_to_electrolyzer'] == 1:
-
-        #     block.heat_consumption = Var(
-        #         t,
-        #         domain=NonNegativeReals
-        #     )
-
-        #     block.heat_input_equal_to_heat_consumption_constraint = Constraint(
-        #         t,
-        #         rule= lambda _block, i: block.heat_consumption[i] * block.bin[i] == block.heat_input[i]
-        #     )
-
-        #     block.heat_input_operation_constraint = Constraint(
-        #         t,
-        #         rule= lambda _block,i: (block.heat_input[i]-1)*block.bin[i] >= 0
-        #     )
-        #     block.heat_input_operation_constraint_2 = Constraint(
-        #         t,
-        #         rule=lambda _block, i: block.heat_input[i] >= 0.001 * block.bin[i]
-            # )
-
-        
-
-
