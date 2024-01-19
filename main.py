@@ -84,7 +84,11 @@ heat_grid_data = pd.read_csv(
 
 
 # Create instance
-chp_obj = chp.Chp(chp_data, forced_operation_time=50, hydrogen_admixture=0.2)
+chp_obj = chp.Chp(
+    data=chp_data,
+    forced_operation_time=50,
+    hydrogen_admixture=0.2
+)
 electrical_grid_obj = grid.Grid(electrical_grid_data)
 battery_storage_obj = storage.BatteryStorage(battery_storage_data)
 pv_obj = res.Photovoltaics(pv_data, pv_capacity_factors)
