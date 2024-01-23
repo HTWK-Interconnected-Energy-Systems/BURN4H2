@@ -19,7 +19,7 @@ class Heatpump:
 
         # Port 1
         block.power_in = Port()
-        block.power_in.add(block.power,'power', Port.Extensive, include_spiltfrac=False)
+        block.power_in.add(block.power,'power', Port.Extensive, include_splitfrac=False)
 
         # Port 2
         block.heat_in = Port()

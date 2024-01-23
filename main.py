@@ -146,7 +146,7 @@ m.ngas_grid = Block(
     )
 # m.hydrogen_storage = Block(rule=hydrogen_storage_obj.hydrogen_storage_block_rule)
 
-m.hp = Block(
+m.heatpump = Block(
     rule=heatpump_obj.heatpump_block_rule
     )
 m.heatgrid = Block(
@@ -172,39 +172,39 @@ instance = m.create_instance(data)
 
 
 # Define arcs
-instance.arc1 = Arc(
+instance.arc01 = Arc(
     source=instance.chp.power_out,
     destination=instance.electrical_grid.power_in
 )
-instance.arc2 = Arc(
+instance.arc02 = Arc(
     source=instance.pv.power_out,
     destination=instance.electrical_grid.power_in
 )
-instance.arc3 = Arc(
+instance.arc03 = Arc(
     source=instance.battery_storage.power_out,
     destination=instance.electrical_grid.power_in
 )
-instance.arc4 = Arc(
+instance.arc04 = Arc(
     source=instance.electrical_grid.power_out,
     destination=instance.battery_storage.power_in
 )
-instance.arc5 = Arc(
+instance.arc05 = Arc(
     source=instance.electrical_grid.power_out,
     destination=instance.electrolyzer.power_in
 )
-instance.arc6 = Arc(
+instance.arc06 = Arc(
     source=instance.electrolyzer.hydrogen_out,
     destination=instance.hydrogen_grid.hydrogen_in
 )
-# instance.arc7 = Arc(
+# instance.arc07 = Arc(
 #     source=instance.hydrogen_grid.hydrogen_out,
 #     destination=instance.hydrogen_storage.hydrogen_in
 # )
-# instance.arc8 = Arc(
+# instance.arc08 = Arc(
 #     source=instance.hydrogen_storage.hydrogen_out,
 #     destination=instance.hydrogen_grid.hydrogen_in
 # )
-instance.arc9 = Arc(
+instance.arc09 = Arc(
     source=instance.chp.natural_gas_in,
     destination=instance.ngas_grid.ngas_out
 )
@@ -214,11 +214,19 @@ instance.arc10 = Arc(
 )
 instance.arc11 = Arc(
     source=instance.electrolyzer.heat_out,
-    destination=instance.hp.heat_in
+    destination=instance.heatpump.heat_in
 )
 instance.arc12 = Arc(
-    source=instance.hp.heat_out,
+    source=instance.heatpump.heat_out,
     destination=instance.heatgrid.heat_in
+)
+instance.arc13 = Arc(
+    source=instance.chp.heat_out,
+    destination=instance.heatgrid.heat_in
+)
+instance.arc14 = Arc(
+    source=instance.electrical_grid.power_out,
+    destination=instance.heatpump.power_in
 )
 
 

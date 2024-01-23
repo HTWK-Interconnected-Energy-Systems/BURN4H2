@@ -53,14 +53,21 @@ class Chp:
         block.power_out.add(
             block.power,
             'power',
-            block.power_out.Extensive,
+            Port.Extensive,
             include_splitfrac=False
         )
         block.natural_gas_in = Port()
         block.natural_gas_in.add(
             block.gas,
             'natural_gas',
-            block.natural_gas_in.Extensive,
+            Port.Extensive,
+            include_splitfrac=False
+        )
+        block.heat_out = Port()
+        block.heat_out.add(
+            block.heat,
+            'heat',
+            Port.Extensive,
             include_splitfrac=False
         )
 
@@ -144,7 +151,7 @@ class Chp:
             block.natural_gas_in.add(
                 block.natural_gas,
                 'natural_gas',
-                block.natural_gas_in.Extensive,
+                Port.Extensive,
                 include_splitfrac=False
             )
 
@@ -152,7 +159,7 @@ class Chp:
             block.hydrogen_in.add(
                 block.hydrogen,
                 'hydrogen',
-                block.hydrogen_in.Extensive,
+                Port.Extensive,
                 include_splitfrac=False
             )
 
