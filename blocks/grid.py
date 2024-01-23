@@ -143,8 +143,7 @@ class Grid:
         t = block.model().t
 
         # Declare components
-        block.overall_heat = Var(t, domain=Reals)
-        block.supply_heat = Var(t, domain=NonNegativeReals)
+        block.overall_heat = Var(t, domain=NonNegativeReals)
         block.feedin_heat = Var(t, domain=NonNegativeReals)
 
         block.heat_in = Port()
@@ -154,21 +153,30 @@ class Grid:
             Port.Extensive,
             include_splitfrac=False
             )
-        block.heat_out = Port()
-        block.heat_out.add(
-            block.supply_heat,
-            'heat',
-             Port.Extensive,
-             include_splitfrac=False
-            )
+        # block.heat_out = Port()
+        # block.heat_out.add(
+        #     block.supply_heat,
+        #     'heat',
+        #      Port.Extensive,
+        #      include_splitfrac=False
+        #     )
         
         # Define construction rules for constraints
         def overall_heat_rule(_block, i):
             """Rule for calculating the overall power."""
-            return _block.overall_heat[i] == _block.supply_heat[i] - _block.feedin_heat[i]
+            return _block.overall_heat[i] == _block.model().heat_demand[i] - _block.feedin_heat[i]
+        
+        def supply_heat_demand_rule(_block, i):
+            """Rule for fully suppling the heat demand."""
+            return _block.overall_heat[i] == 0
+        
 
         # Define constraints
         block.overall_power_constraint = Constraint(
             t,
             rule=overall_heat_rule
+        )
+        block.supply_heat_demand_constraint = Constraint(
+            t,
+            rule=supply_heat_demand_rule
         )

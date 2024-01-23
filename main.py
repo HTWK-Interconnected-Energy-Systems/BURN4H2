@@ -36,6 +36,11 @@ data.load(
     index='t',
     param='power_price'
 )
+data.load(
+    filename=PATH_IN + 'demands/heat.csv',
+    index='t',
+    param='heat_demand'
+)
 
 
 # Get performance parameters for the assets
@@ -120,6 +125,7 @@ m.t = Set(ordered=True)
 # Define parameters
 m.gas_price = Param(m.t)
 m.power_price = Param(m.t)
+m.heat_demand = Param(m.t)
 
 
 # Define block components
