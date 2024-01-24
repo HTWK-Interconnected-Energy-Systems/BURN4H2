@@ -8,7 +8,7 @@ class Grid:
         self.data = data
 
     
-    def electrcial_grid_block_rule(self, block):
+    def electrical_grid_block_rule(self, block):
         """Rule for creating a electrical power grid block with default 
         components and constraints."""
 
@@ -153,13 +153,7 @@ class Grid:
             Port.Extensive,
             include_splitfrac=False
             )
-        # block.heat_out = Port()
-        # block.heat_out.add(
-        #     block.supply_heat,
-        #     'heat',
-        #      Port.Extensive,
-        #      include_splitfrac=False
-        #     )
+
         
         # Define construction rules for constraints
         def overall_heat_rule(_block, i):
