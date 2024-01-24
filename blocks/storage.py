@@ -234,6 +234,7 @@ class HydrogenStorage:
         block.hydrogen_out.add(block.discharging_hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
 
 
+        # Declare construction rules for constraints
         def max_charging_capacity_rule(_block, i):
             """Rule for the maximum charging capacity of hydrogen."""
             return _block.charging_hydrogen[i] <= self.data.loc['max', 'hydrogen'] * _block.charge_bin[i]
@@ -246,7 +247,7 @@ class HydrogenStorage:
 
         def hydrogen_balance_rule(_block, i):
             """Rule for calculating the overall hydrogen capacity balance."""
-            return _block.hydrogen_balance[i] ==  _block.discharging_hydrogen[i] - _block.charging_hydrogen[i]
+            return _block.hydrogen_balance[i] == _block.discharging_hydrogen[i] - _block.charging_hydrogen[i]
 
 
         def binary_rule(_block, i):
@@ -265,7 +266,7 @@ class HydrogenStorage:
         
 
         def actual_hydrogen_content_rule(_block, i):
-            """Rule for calculating the actual energy content of the battery storage."""
+            """Rule for calculating the actual energy content of the hydrogen storage."""
             if i == 1:
                 return _block.hydrogen_content[i] == 0 - _block.hydrogen_balance[i]
             else:
@@ -300,4 +301,102 @@ class HydrogenStorage:
         block.actual_hydrogen_content_rule = Constraint(
             t,
             rule=actual_hydrogen_content_rule
+        )
+    
+
+class HeatStorage:
+    """Class for constructing heat storage asset objects."""
+
+    def __init__(self, data) -> None:
+        self.data = data
+    
+
+    def heat_storage_block_rule(self, block):
+        """Rule for creating a heat storage block with default components
+        and constraints."""
+
+        # Get index from model
+        t = block.model().t
+
+        # Declare components
+        block.heat_balance = Var(t, domain=Reals)
+        block.charging_heat = Var(t, domain=NonNegativeReals)
+        block.discharging_heat = Var(t, domain=NonNegativeReals)
+        block.heat_content = Var(t, domain=NonNegativeReals)
+        block.charge_bin = Var(t, within=Binary)
+        block.discharge_bin = Var(t, within=Binary)
+
+        block.heat_in = Port()
+        block.heat_in.add(block.charging_heat, 'heat', Port.Extensive, include_splitfrac=False)
+        block.heat_out = Port()
+        block.heat_out.add(block.discharging_heat, 'heat', Port.Extensive, include_splitfrac=False)
+
+
+        # Declare construction rules for constraints
+        def max_charging_capacity_rule(_block, i):
+            """Rule for the maximum charging capacity of heat."""
+            return _block.charging_heat[i] <= self.data.loc['max', 'heat'] * _block.charge_bin[i]
+                
+
+        def max_discharging_capacity_rule(_block, i):
+            """Rule for the maximum discharging capacity of heat."""
+            return _block.discharging_heat[i] <= self.data.loc['max', 'heat'] * _block.discharge_bin[i]
+
+
+        def heat_balance_rule(_block, i):
+            """Rule for calculating the overall heat capacity balance."""
+            return _block.heat_balance[i] == _block.discharging_heat[i] - _block.charging_heat[i]
+
+
+        def binary_rule(_block, i):
+            """Rule for restricting simultaneous charging and discharging."""
+            return _block.charge_bin[i] + _block.discharge_bin[i] == 1
+        
+
+        def max_heat_content_rule(_block, i):
+            """Rule for the maximum amount of heat in the heat storage."""
+            return _block.heat_content[i] <= self.data.loc['max', 'content']
+        
+
+        def min_heat_content_rule(_block, i):
+            """Rule for the minimum amount of heat in the heat storage."""
+            return _block.heat_content[i] >= self.data.loc['min', 'content']
+        
+
+        def actual_heat_content_rule(_block, i):
+            """Rule for calculating the actual energy content of the heat storage."""
+            if i == 1:
+                return _block.heat_content[i] == 0 - _block.heat_balance[i]
+            else:
+                return _block.heat_content[i] == _block.heat_content[i - 1] - _block.heat_balance[i]
+        
+
+        # Declare constraints
+        block.max_charging_capacity_constraint = Constraint(
+            t,
+            rule=max_charging_capacity_rule
+        )
+        block.max_discharging_capacity_constraint = Constraint(
+            t,
+            rule=max_discharging_capacity_rule
+        )
+        block.heat_balance_constraint = Constraint(
+            t,
+            rule=heat_balance_rule
+        )
+        block.binary_constraint = Constraint(
+            t,
+            rule=binary_rule
+        )
+        block.max_heat_content_constraint = Constraint(
+            t,
+            rule=max_heat_content_rule
+        )
+        block.min_heat_content_rule = Constraint(
+            t,
+            rule=min_heat_content_rule
+        )
+        block.actual_heat_content_constraint = Constraint(
+            t,
+            rule=actual_heat_content_rule
         )
