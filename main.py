@@ -155,7 +155,7 @@ m.ngas_grid = Block(
 m.heatpump = Block(
     rule=heatpump_obj.heatpump_block_rule
     )
-m.heatgrid = Block(
+m.heat_grid = Block(
     rule=heat_grid_obj.heat_grid_block_rule
     )
 
@@ -164,7 +164,8 @@ def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.ngas_grid.overall_ngas[t] * m.gas_price[t] for t in m.t) +
             quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) +
-            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 5.0 for t in m.t))
+            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 5.0 for t in m.t) -
+            quicksum(m.heat_grid.feedin_heat[t] * 150 for t in m.t))
 
 
 m.obj = Objective(
@@ -224,11 +225,11 @@ instance.arc11 = Arc(
 )
 instance.arc12 = Arc(
     source=instance.heatpump.heat_out,
-    destination=instance.heatgrid.heat_in
+    destination=instance.heat_grid.heat_in
 )
 instance.arc13 = Arc(
     source=instance.chp.heat_out,
-    destination=instance.heatgrid.heat_in
+    destination=instance.heat_grid.heat_in
 )
 instance.arc14 = Arc(
     source=instance.electrical_grid.power_out,
