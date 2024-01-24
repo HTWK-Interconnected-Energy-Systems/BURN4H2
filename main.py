@@ -84,6 +84,10 @@ heat_grid_data = pd.read_csv(
     PATH_IN + 'assets/heat_grid.csv',
     index_col=0
 )
+heat_storage_data = pd.read_csv(
+    PATH_IN + 'assets/heat_storage.csv',
+    index_col=0
+)
 
 
 # Create instance
@@ -109,9 +113,18 @@ hydrogen_grid_obj = grid.Grid(
     data=hydrogen_grid_data
     )
 natural_gas_grid_obj = grid.Grid()
-# hydrogen_storage_obj = storage.HydrogenStorage(hydrogen_storage_data)
-heatpump_obj = hp.Heatpump(heatpump_data)
-heat_grid_obj = grid.Grid(heat_grid_data)
+# hydrogen_storage_obj = storage.HydrogenStorage(
+#     data=hydrogen_storage_data
+#     )
+heatpump_obj = hp.Heatpump(
+    data=heatpump_data
+    )
+heat_grid_obj = grid.Grid(
+    data=heat_grid_data
+    )
+heat_storage_obj = storage.HeatStorage(
+    data=heat_storage_data
+)
 
 
 # Define abstract model
@@ -133,7 +146,7 @@ m.chp = Block(
     rule=chp_obj.chp_block_rule
     )
 m.electrical_grid = Block(
-    rule=electrical_grid_obj.electrcial_grid_block_rule
+    rule=electrical_grid_obj.electrical_grid_block_rule
     )
 m.battery_storage = Block(
     rule=battery_storage_obj.battery_storage_block_rule
@@ -150,14 +163,19 @@ m.hydrogen_grid = Block(
 m.ngas_grid = Block(
     rule=natural_gas_grid_obj.natural_gas_grid_block_rule
     )
-# m.hydrogen_storage = Block(rule=hydrogen_storage_obj.hydrogen_storage_block_rule)
-
+# m.hydrogen_storage = Block(
+#     rule=hydrogen_storage_obj.hydrogen_storage_block_rule
+#     )
 m.heatpump = Block(
     rule=heatpump_obj.heatpump_block_rule
     )
 m.heat_grid = Block(
     rule=heat_grid_obj.heat_grid_block_rule
     )
+m.heat_storage = Block(
+    rule=heat_storage_obj.heat_storage_block_rule
+    )
+
 
 # Define Objective
 def obj_expression(m):
@@ -165,7 +183,7 @@ def obj_expression(m):
     return (quicksum(m.ngas_grid.overall_ngas[t] * m.gas_price[t] for t in m.t) +
             quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) +
             quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 5.0 for t in m.t) -
-            quicksum(m.heat_grid.feedin_heat[t] * 150 for t in m.t))
+            quicksum(m.heat_grid.feedin_heat[t] * 100 for t in m.t))
 
 
 m.obj = Objective(
@@ -234,6 +252,14 @@ instance.arc13 = Arc(
 instance.arc14 = Arc(
     source=instance.electrical_grid.power_out,
     destination=instance.heatpump.power_in
+)
+instance.arc15 = Arc(
+    source=instance.heat_storage.heat_out,
+    destination=instance.heat_grid.heat_in
+)
+instance.arc16 = Arc(
+    source=instance.heat_grid.heat_out,
+    destination=instance.heat_storage.heat_in
 )
 
 
