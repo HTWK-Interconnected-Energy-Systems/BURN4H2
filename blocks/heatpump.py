@@ -14,7 +14,7 @@ class Heatpump:
         # Define components
         block.bin = Var(t, within=Binary)
         block.power = Var(t, domain=NonNegativeReals)
-        block.heat_output = Var(t, domain=NonNegativeReals)
+        block.heat = Var(t, domain=NonNegativeReals)
         block.heat_input = Var(t, domain=NonNegativeReals)
 
         # Port 1
@@ -27,15 +27,12 @@ class Heatpump:
 
         # Port 3
         block.heat_out = Port()
-        block.heat_out.add(block.heat_output,'heat',Port.Extensive, include_splitfrac=False)
+        block.heat_out.add(block.heat,'heat',Port.Extensive, include_splitfrac=False)
 
 
         def power_max_rule(_block, i):
             """Rule for the maximal power input."""
-            return _block.power[i] <= max(
-                self.data.loc['max', 'power'] * _block.bin[i],
-                self.data.loc['max', 'power'] * _block.bin[i] * 0.5 + 50
-                )
+            return _block.power[i] <= self.data.loc['max', 'power'] * _block.bin[i]
 
 
         def power_min_rule(_block, i):
@@ -45,11 +42,11 @@ class Heatpump:
 
         def heat_output_depends_on_heat_input_rule(_block, i):
             """ Rule for the dependencies between heat output and power input."""
-            return _block.heat_output[i] == _block.heat_input[i] * 3 * _block.bin[i]
+            return _block.heat[i] == _block.heat_input[i] * 3 * _block.bin[i]
         
 
         def power_depends_on_heat_output_rule(_block, i):
-            return _block.power[i] == _block.heat_output[i] / 3
+            return _block.power[i] == _block.heat[i] / 3
         
 
         # Define constraints
