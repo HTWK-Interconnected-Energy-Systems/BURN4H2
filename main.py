@@ -180,10 +180,10 @@ m.heat_storage = Block(
 # Define Objective
 def obj_expression(m):
     """ Objective Function """
-    return (quicksum(m.ngas_grid.overall_ngas[t] * m.gas_price[t] for t in m.t) +
-            quicksum(m.electrical_grid.overall_power[t] * m.power_price[t] for t in m.t) +
-            quicksum(m.hydrogen_grid.overall_hydrogen[t] * m.gas_price[t] * 5.0 for t in m.t) -
-            quicksum(m.heat_grid.feedin_heat[t] * 100 for t in m.t))
+    return (quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t) +
+            quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t) +
+            quicksum(m.hydrogen_grid.hydrogen_balance[t] * m.gas_price[t] * 5.0 for t in m.t) -
+            quicksum(m.heat_grid.heat_feedin[t] * 100 for t in m.t))
 
 
 m.obj = Objective(
