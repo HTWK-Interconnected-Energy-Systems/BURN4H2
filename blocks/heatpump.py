@@ -32,7 +32,10 @@ class Heatpump:
 
         def power_max_rule(_block, i):
             """Rule for the maximal power input."""
-            return _block.power[i] <= self.data.loc['max', 'power'] * _block.bin[i]
+            return _block.power[i] <= max(
+                self.data.loc['max', 'power'] * _block.bin[i],
+                self.data.loc['max', 'power'] * _block.bin[i] * 0.5 + 50
+                )
 
 
         def power_min_rule(_block, i):
@@ -42,7 +45,7 @@ class Heatpump:
 
         def heat_output_depends_on_heat_input_rule(_block, i):
             """ Rule for the dependencies between heat output and power input."""
-            return _block.heat_output[i] * _block.bin[i] == _block.heat_input[i] * 3
+            return _block.heat_output[i] == _block.heat_input[i] * 3 * _block.bin[i]
         
 
         def power_depends_on_heat_output_rule(_block, i):
