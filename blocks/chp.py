@@ -46,7 +46,7 @@ class Chp:
         block.gas = Var(t, domain=NonNegativeReals)
         block.power = Var(t, domain=NonNegativeReals)
         block.heat = Var(t, domain=NonNegativeReals)
-        # block.co2 = Var(t, domain=NonNegativeReals)
+        block.co2 = Var(t, domain=NonNegativeReals)
 
 
         block.power_out = Port()
@@ -96,7 +96,7 @@ class Chp:
 
 
         def heat_depends_on_power_rule(_block, i):
-            """Rule for the dependencies betwwen heat and power output."""
+            """Rule for the dependencies between heat and power output."""
             heat_max = self.data.loc['max', 'heat']
             heat_min = self.data.loc['min', 'heat']
             power_max = self.data.loc['max', 'power']
@@ -106,7 +106,20 @@ class Chp:
             b = heat_max - a * power_max
 
             return _block.heat[i] == a * _block.power[i] + b * _block.bin[i]
-           
+        
+
+        def co2_depends_on_power_rule(_block, i):
+            """Rule for calculating the co2 emissions."""
+            co2_max = self.data.loc['max', 'co2']
+            co2_min = self.data.loc['min', 'co2']
+            power_max = self.data.loc['max', 'power']
+            power_min = self.data.loc['min', 'power']
+
+            a = (co2_max - co2_min) / (power_max - power_min)
+            b = co2_max - a * power_max
+
+            return _block.co2[i] == a * _block.power[i] + b * _block.bin[i]
+        
 
         # Declare constraints
         block.power_max_constraint = Constraint(
@@ -124,6 +137,10 @@ class Chp:
         block.heat_depends_on_power_constraint = Constraint(
             t,
             rule = heat_depends_on_power_rule
+        )
+        block.co2_depends_on_power_constraint = Constraint(
+            t,
+            rule=co2_depends_on_power_rule
         )
 
 
@@ -143,6 +160,31 @@ class Chp:
                     'Admixture factor out of bounds. Should be >= 0 or <= 1'
                 )
             
+            # Delete components
+            block.del_component("co2_depends_on_power_constraint")
+            
+            def co2_when_admixtured_depends_on_power_rule(_block, i):
+                """Rule for calculating the co2 emissions when hydrogen is 
+                admixtured."""
+                co2_max = self.data.loc['max', 'co2']
+                co2_min = self.data.loc['min', 'co2']
+                power_max = self.data.loc['max', 'power']
+                power_min = self.data.loc['min', 'power']
+
+                a = (co2_max - co2_min) / (power_max - power_min)
+                b = co2_max - a * power_max
+
+                return _block.co2[i] == ((
+                    a * _block.power[i] 
+                    + b * _block.bin[i])
+                    * (1 - hydrogen_admixture_factor))
+            
+            block.co2_when_admixtured_depends_on_power_constraint = Constraint(
+                t,
+                rule=co2_when_admixtured_depends_on_power_rule
+            )
+
+
             # Declare additional components
             block.natural_gas = Var(t, domain=NonNegativeReals)
             block.hydrogen = Var(t, domain=NonNegativeReals)
