@@ -46,8 +46,8 @@ class Chp:
         block.gas = Var(t, domain=NonNegativeReals)
         block.power = Var(t, domain=NonNegativeReals)
         block.heat = Var(t, domain=NonNegativeReals)
+        # block.co2 = Var(t, domain=NonNegativeReals)
 
-        block.hydrogen_admixture_factor = Param(initialize=0.2)
 
         block.power_out = Port()
         block.power_out.add(
@@ -137,8 +137,8 @@ class Chp:
 
         if 'hydrogen_admixture' in self.kwargs:
 
-            admixture_factor = self.kwargs['hydrogen_admixture']
-            if not 0 <= admixture_factor <= 1:
+            hydrogen_admixture_factor = self.kwargs['hydrogen_admixture']
+            if not 0 <= hydrogen_admixture_factor <= 1:
                 raise ValueError(
                     'Admixture factor out of bounds. Should be >= 0 or <= 1'
                 )
@@ -165,11 +165,11 @@ class Chp:
 
             def hydrogen_depends_on_gas_rule(_block, i):
                 """Rule for determine the hydrogen demand for combustion."""
-                return _block.hydrogen[i] == _block.gas[i] * _block.hydrogen_admixture_factor
+                return _block.hydrogen[i] == _block.gas[i] * hydrogen_admixture_factor
             
             def ngas_depends_on_gas_rule(_block, i):
                 """Rule for determine the ngas demand for combustion."""
-                return _block.natural_gas[i] == _block.gas[i] * (1 - _block.hydrogen_admixture_factor)
+                return _block.natural_gas[i] == _block.gas[i] * (1 - hydrogen_admixture_factor)
 
             
             block.hydrogen_depends_on_gas_constraint = Constraint(
