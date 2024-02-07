@@ -22,8 +22,8 @@ opt = SolverFactory('gurobi')
 
 
 # Declare constant prices
-CO2_PRICE = 180
-HEAT_PRICE = 100
+CO2_PRICE = 95.98   # price in €/t
+HEAT_PRICE = 0      # price in €/MWh
 
 # Create DataPortal
 data = DataPortal()
@@ -97,7 +97,6 @@ heat_storage_data = pd.read_csv(
 # Create instance
 chp_obj = chp.Chp(
     data=chp_data,
-    forced_operation_time=50,
     hydrogen_admixture=0
     )
 electrical_grid_obj = grid.Grid(
@@ -146,9 +145,12 @@ m.heat_demand = Param(m.t)
 
 
 # Define block components
-m.chp = Block(
+m.chp_1 = Block(
     rule=chp_obj.chp_block_rule
     )
+m.chp_2 = Block(
+    rule=chp_obj.chp_block_rule
+)
 m.electrical_grid = Block(
     rule=electrical_grid_obj.electrical_grid_block_rule
     )
@@ -158,7 +160,22 @@ m.battery_storage = Block(
 m.pv = Block(
     rule=pv_obj.pv_block_rule
     )
-m.electrolyzer = Block(
+m.electrolyzer_1 = Block(
+    rule=electrolyzer_obj.electrolyzer_block_rule
+    )
+m.electrolyzer_2 = Block(
+    rule=electrolyzer_obj.electrolyzer_block_rule
+    )
+m.electrolyzer_3 = Block(
+    rule=electrolyzer_obj.electrolyzer_block_rule
+    )
+m.electrolyzer_4 = Block(
+    rule=electrolyzer_obj.electrolyzer_block_rule
+    )
+m.electrolyzer_5 = Block(
+    rule=electrolyzer_obj.electrolyzer_block_rule
+    )
+m.electrolyzer_6 = Block(
     rule=electrolyzer_obj.electrolyzer_block_rule
     )
 m.hydrogen_grid = Block(
@@ -185,7 +202,8 @@ m.heat_storage = Block(
 def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t) +
-            quicksum(m.chp.co2[t] * CO2_PRICE for t in m.t) +
+            quicksum(m.chp_1.co2[t] * CO2_PRICE for t in m.t) +
+            quicksum(m.chp_2.co2[t] * CO2_PRICE for t in m.t) +
             quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t) +
             quicksum(m.hydrogen_grid.hydrogen_balance[t] * m.gas_price[t] * 5.0 for t in m.t) -
             quicksum(m.heat_grid.heat_feedin[t] * HEAT_PRICE for t in m.t))
@@ -203,27 +221,71 @@ instance = m.create_instance(data)
 
 # Define arcs
 instance.arc01 = Arc(
-    source=instance.chp.power_out,
+    source=instance.chp_1.power_out,
     destination=instance.electrical_grid.power_in
 )
 instance.arc02 = Arc(
-    source=instance.pv.power_out,
+    source=instance.chp_2.power_out,
     destination=instance.electrical_grid.power_in
 )
 instance.arc03 = Arc(
-    source=instance.battery_storage.power_out,
+    source=instance.pv.power_out,
     destination=instance.electrical_grid.power_in
 )
 instance.arc04 = Arc(
-    source=instance.electrical_grid.power_out,
-    destination=instance.battery_storage.power_in
+    source=instance.battery_storage.power_out,
+    destination=instance.electrical_grid.power_in
 )
 instance.arc05 = Arc(
     source=instance.electrical_grid.power_out,
-    destination=instance.electrolyzer.power_in
+    destination=instance.battery_storage.power_in
 )
 instance.arc06 = Arc(
-    source=instance.electrolyzer.hydrogen_out,
+    source=instance.electrical_grid.power_out,
+    destination=instance.electrolyzer_1.power_in
+)
+instance.arc07 = Arc(
+    source=instance.electrical_grid.power_out,
+    destination=instance.electrolyzer_2.power_in
+)
+instance.arc08 = Arc(
+    source=instance.electrical_grid.power_out,
+    destination=instance.electrolyzer_3.power_in
+)
+instance.arc09 = Arc(
+    source=instance.electrical_grid.power_out,
+    destination=instance.electrolyzer_4.power_in
+)
+instance.arc10 = Arc(
+    source=instance.electrical_grid.power_out,
+    destination=instance.electrolyzer_5.power_in
+)
+instance.arc11 = Arc(
+    source=instance.electrical_grid.power_out,
+    destination=instance.electrolyzer_6.power_in
+)
+instance.arc12 = Arc(
+    source=instance.electrolyzer_1.hydrogen_out,
+    destination=instance.hydrogen_grid.hydrogen_in
+)
+instance.arc13 = Arc(
+    source=instance.electrolyzer_2.hydrogen_out,
+    destination=instance.hydrogen_grid.hydrogen_in
+)
+instance.arc14 = Arc(
+    source=instance.electrolyzer_3.hydrogen_out,
+    destination=instance.hydrogen_grid.hydrogen_in
+)
+instance.arc15 = Arc(
+    source=instance.electrolyzer_4.hydrogen_out,
+    destination=instance.hydrogen_grid.hydrogen_in
+)
+instance.arc16 = Arc(
+    source=instance.electrolyzer_5.hydrogen_out,
+    destination=instance.hydrogen_grid.hydrogen_in
+)
+instance.arc17 = Arc(
+    source=instance.electrolyzer_6.hydrogen_out,
     destination=instance.hydrogen_grid.hydrogen_in
 )
 # instance.arc07 = Arc(
@@ -234,35 +296,67 @@ instance.arc06 = Arc(
 #     source=instance.hydrogen_storage.hydrogen_out,
 #     destination=instance.hydrogen_grid.hydrogen_in
 # )
-instance.arc09 = Arc(
-    source=instance.chp.natural_gas_in,
+instance.arc18 = Arc(
+    source=instance.chp_1.natural_gas_in,
     destination=instance.ngas_grid.ngas_out
 )
-instance.arc10 = Arc(
-    source=instance.chp.hydrogen_in,
+instance.arc19 = Arc(
+    source=instance.chp_2.natural_gas_in,
+    destination=instance.ngas_grid.ngas_out
+)
+instance.arc20 = Arc(
+    source=instance.chp_1.hydrogen_in,
     destination=instance.hydrogen_grid.hydrogen_out
 )
-instance.arc11 = Arc(
-    source=instance.electrolyzer.heat_out,
+instance.arc21 = Arc(
+    source=instance.chp_2.hydrogen_in,
+    destination=instance.hydrogen_grid.hydrogen_out
+)
+instance.arc22 = Arc(
+    source=instance.electrolyzer_1.heat_out,
     destination=instance.heatpump.heat_in
 )
-instance.arc12 = Arc(
+instance.arc23 = Arc(
+    source=instance.electrolyzer_2.heat_out,
+    destination=instance.heatpump.heat_in
+)
+instance.arc24 = Arc(
+    source=instance.electrolyzer_3.heat_out,
+    destination=instance.heatpump.heat_in
+)
+instance.arc25 = Arc(
+    source=instance.electrolyzer_4.heat_out,
+    destination=instance.heatpump.heat_in
+)
+instance.arc26 = Arc(
+    source=instance.electrolyzer_5.heat_out,
+    destination=instance.heatpump.heat_in
+)
+instance.arc27 = Arc(
+    source=instance.electrolyzer_6.heat_out,
+    destination=instance.heatpump.heat_in
+)
+instance.arc28 = Arc(
     source=instance.heatpump.heat_out,
     destination=instance.heat_grid.heat_in
 )
-instance.arc13 = Arc(
-    source=instance.chp.heat_out,
+instance.arc29 = Arc(
+    source=instance.chp_1.heat_out,
     destination=instance.heat_grid.heat_in
 )
-instance.arc14 = Arc(
+instance.arc30 = Arc(
+    source=instance.chp_2.heat_out,
+    destination=instance.heat_grid.heat_in
+)
+instance.arc31 = Arc(
     source=instance.electrical_grid.power_out,
     destination=instance.heatpump.power_in
 )
-instance.arc15 = Arc(
+instance.arc32 = Arc(
     source=instance.heat_storage.heat_out,
     destination=instance.heat_grid.heat_in
 )
-instance.arc16 = Arc(
+instance.arc33 = Arc(
     source=instance.heat_grid.heat_out,
     destination=instance.heat_storage.heat_in
 )
