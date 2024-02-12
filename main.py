@@ -24,6 +24,7 @@ opt = SolverFactory('gurobi')
 # Declare constant prices
 CO2_PRICE = 95.98   # price in €/t
 HEAT_PRICE = 0      # price in €/MWh
+H2_PRICE = 81.01    # price in €/MWh
 
 # Create DataPortal
 data = DataPortal()
@@ -205,7 +206,7 @@ def obj_expression(m):
             quicksum(m.chp_1.co2[t] * CO2_PRICE for t in m.t) +
             quicksum(m.chp_2.co2[t] * CO2_PRICE for t in m.t) +
             quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t) +
-            quicksum(m.hydrogen_grid.hydrogen_balance[t] * m.gas_price[t] * 5.0 for t in m.t) -
+            quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t) -
             quicksum(m.heat_grid.heat_feedin[t] * HEAT_PRICE for t in m.t))
 
 
