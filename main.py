@@ -19,6 +19,8 @@ PATH_OUT = 'data/output/'
 
 # Select Solver
 opt = SolverFactory('gurobi')
+opt.options['TimeLimit'] = 3600   # solver will stop after x seconds
+opt.options['MIPGap'] = 0.01      # solver will stop if gap <= 1%
 
 
 # Declare constant prices
@@ -32,12 +34,14 @@ data = DataPortal()
 
 # Read Time Series
 data.load(
-    filename=PATH_IN + 'prices/dummy/gas_price.csv',
+    # filename=PATH_IN + 'prices/dummy/gas_price.csv',
+    filename=PATH_IN + 'prices/gee23/gas_price_2024.csv',
     index='t',
     param='gas_price'
 )
 data.load(
-    filename=PATH_IN + 'prices/dummy/power_price.csv',
+    # filename=PATH_IN + 'prices/dummy/power_price.csv',
+    filename=PATH_IN + 'prices/gee23/power_price_2024.csv',
     index='t',
     param='power_price'
 )
@@ -366,6 +370,7 @@ instance.arc33 = Arc(
 # Expand arcs and generate connection constraints
 TransformationFactory('network.expand_arcs').apply_to(instance)
 
+print('START SOLVING...')
 
 # Solve the optimization problem
 results = opt.solve(
