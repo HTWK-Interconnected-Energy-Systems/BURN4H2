@@ -56,7 +56,7 @@ class Heatpump:
             a = (power_max - power_min) / (heat_max - heat_min)
             b = power_max - a * heat_max
 
-            return _block.power[i] == (a * _block.heat[i] + b) * _block.bin[i]
+            return _block.power[i] == a * _block.heat[i] + b * _block.bin[i]
 
 
         # Define constraints
