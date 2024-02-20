@@ -64,7 +64,7 @@ class Electrolyzer:
             a = (water_max - water_min) / (hydrogen_max - hydrogen_min)
             b = water_max - a * hydrogen_max
 
-            return _block.water[i] == a * _block.hydrogen[i] + b
+            return _block.water[i] == a * _block.hydrogen[i] + b * _block.bin[i]
         
 
         def heat_depends_on_power_rule(_block, i):
