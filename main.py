@@ -18,8 +18,9 @@ PATH_OUT = 'data/output/'
 
 
 # Select Solver
+print('SELECTING SOLVER...')
 opt = SolverFactory('gurobi')
-opt.options['TimeLimit'] = 3600   # solver will stop after x seconds
+opt.options['TimeLimit'] = 1800   # solver will stop after x seconds
 opt.options['MIPGap'] = 0.01      # solver will stop if gap <= 1%
 
 
@@ -33,20 +34,22 @@ data = DataPortal()
 
 
 # Read Time Series
+print('LOADING DATA...')
 data.load(
-    # filename=PATH_IN + 'prices/dummy/gas_price.csv',
-    filename=PATH_IN + 'prices/gee23/gas_price_2024.csv',
+    filename=PATH_IN + 'prices/dummy/gas_price.csv',
+    # filename=PATH_IN + 'prices/gee23/gas_price_2024.csv',
     index='t',
     param='gas_price'
 )
 data.load(
-    # filename=PATH_IN + 'prices/dummy/power_price.csv',
-    filename=PATH_IN + 'prices/gee23/power_price_2024.csv',
+    filename=PATH_IN + 'prices/dummy/power_price.csv',
+    # filename=PATH_IN + 'prices/gee23/power_price_2024.csv',
     index='t',
     param='power_price'
 )
 data.load(
-    filename=PATH_IN + 'demands/heat.csv',
+    filename=PATH_IN + 'demands/heat_short.csv',
+    # filename=PATH_IN + 'demands/heat.csv',
     index='t',
     param='heat_demand'
 )
@@ -100,9 +103,10 @@ heat_storage_data = pd.read_csv(
 
 
 # Create instance
+print('DECLARING ASSET INSTANCES...')
 chp_obj = chp.Chp(
     data=chp_data,
-    hydrogen_admixture=0
+    hydrogen_admixture=0.0
     )
 electrical_grid_obj = grid.Grid(
     data=electrical_grid_data
@@ -136,6 +140,7 @@ heat_storage_obj = storage.HeatStorage(
 
 
 # Define abstract model
+print('DECLARING ABSTRACT MODEL...')
 m = AbstractModel()
 
 
@@ -150,6 +155,7 @@ m.heat_demand = Param(m.t)
 
 
 # Define block components
+print('CREATING BLOCKS...')
 m.chp_1 = Block(
     rule=chp_obj.chp_block_rule
     )
@@ -204,6 +210,7 @@ m.heat_storage = Block(
 
 
 # Define Objective
+print('DECLARING OBJECTIVE...')
 def obj_expression(m):
     """ Objective Function """
     return (quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t) +
@@ -221,10 +228,12 @@ m.obj = Objective(
 
 
 # Create instance
+print('CREATING INSTANCE...')
 instance = m.create_instance(data)
 
 
 # Define arcs
+print('DECLARING ARCS...')
 instance.arc01 = Arc(
     source=instance.chp_1.power_out,
     destination=instance.electrical_grid.power_in
