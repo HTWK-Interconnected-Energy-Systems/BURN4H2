@@ -1,6 +1,9 @@
 from pyomo.environ import *
 from pyomo.network import *
 
+import pandas as pd
+
+
 class Chp:
     """Class for constructing chp asset objects.
     
@@ -17,8 +20,9 @@ class Chp:
     """
 
 
-    def __init__(self, data, **kwargs) -> None:
-        self.data = data
+    def __init__(self, name, filepath, index_col=0, **kwargs) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
         self.kwargs = kwargs
         self.validate_kwargs()
     
@@ -32,6 +36,21 @@ class Chp:
         for key in self.kwargs:
             if key not in allowed_kwargs:
                 raise(KeyError(f'Unexpected kwarg "{key}" detected.'))
+    
+
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.chp_block_rule))
     
 
     def chp_block_rule(self, block):
