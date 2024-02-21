@@ -1,11 +1,31 @@
 from pyomo.environ import *
 from pyomo.network import *
 
+import pandas as pd
+
+
 class Heatpump:
     """ Class for constructing heatpump objects. """
 
-    def __init__ (self, data) -> None:
-        self.data = data
+    def __init__ (self, name, filepath, index_col=0) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
+    
+
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.heatpump_block_rule)
+        )
 
 
     def heatpump_block_rule(self, block):
