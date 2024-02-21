@@ -30,8 +30,6 @@ class Model:
         self.instance = None
         self.solver = None
         self.timeseries_data = None
-        self.asset_data = None
-        self.asset_objects = {}
         self.results = None
         self.result_data = None
     
@@ -42,67 +40,268 @@ class Model:
 
         for key in kwargs:
             self.solver.options[key] = kwargs[key]
+    
 
-
-    def prepare_timeseries_data(self, timeseries_data_dict):
-        """Declare timeseries data for the optimization model.
-        
-        Parameters
-        ----------
-        timeseries_data_dict : dict
-            A nested dictionary containing informations of the data files that
-            should be loaded. Keys of the top level dictionary have to be the
-            names of the parameter within the AbstractModel. Keys on the second 
-            level have to be filename, index and param.
-
-            # TODO: Methode für das Anlegen/Kontrollieren von dem dict 
-            erstellen.
-
-        """
+    def load_timeseries_data(self):
+        """Declare timeseries data for the optimization model."""
         self.timeseries_data = DataPortal()
 
-        for key in timeseries_data_dict:
-            self.timeseries_data.load(
-                filename=timeseries_data_dict[key]['filename'],
-                index=timeseries_data_dict[key]['index'],
-                param=key
+        self.timeseries_data.load(
+                # filename=PATH_IN + 'prices/dummy/gas_price.csv',
+                filename=PATH_IN + 'prices/gee23/gas_price_2024.csv',
+                index='t',
+                param='gas_price'
             )
-    
-
-    def prepare_asset_data(self, asset_data_dict):
-        """Declare asset data for the optimization model."""
-        self.asset_data = {}
-    
-        for key, value in asset_data_dict.items():
-            self.asset_data[key] = pd.read_csv(
-                value,
-                index_col=0
+        self.timeseries_data.load(
+                # filename=PATH_IN + 'prices/dummy/power_price.csv',
+                filename=PATH_IN + 'prices/gee23/power_price_2024.csv',
+                index='t',
+                param='power_price'
             )
+        self.timeseries_data.load(
+                # filename=PATH_IN + PATH_IN + 'demands/heat_short.csv',
+                filename=PATH_IN + 'demands/heat.csv',
+                index='t',
+                param='heat_demand'
+            )
+
+
+    def add_components(self):
+        """Adds pyomo component to the model."""
+
+        # Define sets
+        self.model.t = Set(ordered=True)
+
+        # Define parameters
+        self.model.gas_price = Param(self.model.t)
+        self.model.power_price = Param(self.model.t)
+        self.model.heat_demand = Param(self.model.t)
+
+        # Define block components
+        chp1 = chp.Chp(
+            'chp_1', PATH_IN + 'assets/chp.csv', hydrogen_admixture=0.0
+        )
+        chp2 = chp.Chp(
+            'chp_2', PATH_IN + 'assets/chp.csv', hydrogen_admixture=0.0
+        )
+        electrolyzer1 = elec.Electrolyzer(
+            'electrolyzer_1', PATH_IN + 'assets/electrolyzer.csv'
+        )
+        electrolyzer2 = elec.Electrolyzer(
+            'electrolyzer_2', PATH_IN + 'assets/electrolyzer.csv'
+        )
+        electrolyzer3 = elec.Electrolyzer(
+            'electrolyzer_3', PATH_IN + 'assets/electrolyzer.csv'
+        )
+        electrolyzer4 = elec.Electrolyzer(
+            'electrolyzer_4', PATH_IN + 'assets/electrolyzer.csv'
+        )
+        electrolyzer5 = elec.Electrolyzer(
+            'electrolyzer_5', PATH_IN + 'assets/electrolyzer.csv'
+        )
+        electrolyzer6 = elec.Electrolyzer(
+            'electrolyzer_6', PATH_IN + 'assets/electrolyzer.csv'
+        )
+        h2_grid = grid.HydrogenGrid(
+            'hydrogen_grid', PATH_IN + 'assets/hydrogen_grid.csv'
+        )
+        n_grid = grid.NGasGrid(
+            'ngas_grid'
+        )
+        e_grid = grid.ElectricalGrid(
+            'electrical_grid', PATH_IN + 'assets/electrical_grid.csv'
+        )
+        h_grid = grid.HeatGrid(
+            'heat_grid', PATH_IN + 'assets/heat_grid.csv'
+        )
+        b_storage = storage.BatteryStorage(
+            'battery_storage', PATH_IN + 'assets/battery_storage.csv'
+        )
+        h_storage = storage.HeatStorage(
+            'heat_storage', PATH_IN + 'assets/heat_storage.csv'
+        )
+        heatpump = hp.Heatpump(
+            'heatpump', PATH_IN + 'assets/heatpump.csv'
+        )
+        pv = res.Photovoltaics(
+            'pv', PATH_IN + 'assets/pv.csv', PATH_IN + 'pv_capacity_factors/leipzig_t45_a180.csv'
+        )
+
+        chp1.add_to_model(self.model)
+        chp2.add_to_model(self.model)
+        electrolyzer1.add_to_model(self.model)
+        electrolyzer2.add_to_model(self.model)
+        electrolyzer3.add_to_model(self.model)
+        electrolyzer4.add_to_model(self.model)
+        electrolyzer5.add_to_model(self.model)
+        electrolyzer6.add_to_model(self.model)
+        e_grid.add_to_model(self.model)
+        h2_grid.add_to_model(self.model)
+        n_grid.add_to_model(self.model)
+        h_grid.add_to_model(self.model)    
+        b_storage.add_to_model(self.model)  
+        h_storage.add_to_model(self.model)
+        heatpump.add_to_model(self.model)
+        pv.add_to_model(self.model)
     
 
-    def add_asset_object(self, asset_name, asset_object):
-        """Adds a asset constructor object to the model."""
-        self.asset_objects[asset_name] = asset_object
-
-
-    def add_model_component(self, component_name, component):
-        """Adds a pyomo component to the model."""
-        self.model.add_component(component_name, component)
-
-
-    def add_instance_component(self, component_name, component):
-        """Adds a pyomo component to the model instance."""
-        self.instance.add_component(component_name, component)
-
+    def add_objective(self):
+        """Adds the objective to the abstract model."""
+        self.model.objective = Objective(
+            rule=self.obj_expression,
+            sense=minimize
+        )
+    
 
     def instantiate(self):
         """Creates a concrete model from the abstract model."""
         self.instance = self.model.create_instance(self.timeseries_data)
 
 
-    def transform(self):
+    def expand_arcs(self):
         """Expands arcs and generate connection constraints."""
         TransformationFactory('network.expand_arcs').apply_to(self.instance)
+    
+
+    def add_instance_component(self, component_name, component):
+        """Adds a pyomo component to the model instance."""
+        self.instance.add_component(component_name, component)
+
+
+    def add_arcs(self):
+
+        self.instance.arc01 = Arc(
+            source=self.instance.chp_1.power_out,
+            destination=self.instance.electrical_grid.power_in
+        )
+        self.instance.arc02 = Arc(
+            source=self.instance.chp_2.power_out,
+            destination=self.instance.electrical_grid.power_in
+        )
+        self.instance.arc03 = Arc(
+            source=self.instance.pv.power_out,
+            destination=self.instance.electrical_grid.power_in
+        )
+        self.instance.arc04 = Arc(
+            source=self.instance.battery_storage.power_out,
+            destination=self.instance.electrical_grid.power_in
+        )
+        self.instance.arc05 = Arc(
+            source=self.instance.electrical_grid.power_out,
+            destination=self.instance.battery_storage.power_in
+        )
+        self.instance.arc06 = Arc(
+            source=self.instance.electrical_grid.power_out,
+            destination=self.instance.electrolyzer_1.power_in
+        )
+        self.instance.arc07 = Arc(
+            source=self.instance.electrical_grid.power_out,
+            destination=self.instance.electrolyzer_2.power_in
+        )
+        self.instance.arc08 = Arc(
+            source=self.instance.electrical_grid.power_out,
+            destination=self.instance.electrolyzer_3.power_in
+        )
+        self.instance.arc09 = Arc(
+            source=self.instance.electrical_grid.power_out,
+            destination=self.instance.electrolyzer_4.power_in
+        )
+        self.instance.arc10 = Arc(
+            source=self.instance.electrical_grid.power_out,
+            destination=self.instance.electrolyzer_5.power_in
+        )
+        self.instance.arc11 = Arc(
+            source=self.instance.electrical_grid.power_out,
+            destination=self.instance.electrolyzer_6.power_in
+        )
+        self.instance.arc12 = Arc(
+            source=self.instance.electrolyzer_1.hydrogen_out,
+            destination=self.instance.hydrogen_grid.hydrogen_in
+        )
+        self.instance.arc13 = Arc(
+            source=self.instance.electrolyzer_2.hydrogen_out,
+            destination=self.instance.hydrogen_grid.hydrogen_in
+        )
+        self.instance.arc14 = Arc(
+            source=self.instance.electrolyzer_3.hydrogen_out,
+            destination=self.instance.hydrogen_grid.hydrogen_in
+        )
+        self.instance.arc15 = Arc(
+            source=self.instance.electrolyzer_4.hydrogen_out,
+            destination=self.instance.hydrogen_grid.hydrogen_in
+        )
+        self.instance.arc16 = Arc(
+            source=self.instance.electrolyzer_5.hydrogen_out,
+            destination=self.instance.hydrogen_grid.hydrogen_in
+        )
+        self.instance.arc17 = Arc(
+            source=self.instance.electrolyzer_6.hydrogen_out,
+            destination=self.instance.hydrogen_grid.hydrogen_in
+        )
+        self.instance.arc18 = Arc(
+            source=self.instance.chp_1.natural_gas_in,
+            destination=self.instance.ngas_grid.ngas_out
+        )
+        self.instance.arc19 = Arc(
+            source=self.instance.chp_2.natural_gas_in,
+            destination=self.instance.ngas_grid.ngas_out
+        )
+        self.instance.arc20 = Arc(
+            source=self.instance.chp_1.hydrogen_in,
+            destination=self.instance.hydrogen_grid.hydrogen_out
+        )
+        self.instance.arc21 = Arc(
+            source=self.instance.chp_2.hydrogen_in,
+            destination=self.instance.hydrogen_grid.hydrogen_out
+        )
+        self.instance.arc22 = Arc(
+            source=self.instance.electrolyzer_1.heat_out,
+            destination=self.instance.heatpump.heat_in
+        )
+        self.instance.arc23 = Arc(
+            source=self.instance.electrolyzer_2.heat_out,
+            destination=self.instance.heatpump.heat_in
+        )
+        self.instance.arc24 = Arc(
+            source=self.instance.electrolyzer_3.heat_out,
+            destination=self.instance.heatpump.heat_in
+        )
+        self.instance.arc25 = Arc(
+            source=self.instance.electrolyzer_4.heat_out,
+            destination=self.instance.heatpump.heat_in
+        )
+        self.instance.arc26 = Arc(
+            source=self.instance.electrolyzer_5.heat_out,
+            destination=self.instance.heatpump.heat_in
+        )
+        self.instance.arc27 = Arc(
+            source=self.instance.electrolyzer_6.heat_out,
+            destination=self.instance.heatpump.heat_in
+        )
+        self.instance.arc28 = Arc(
+            source=self.instance.heatpump.heat_out,
+            destination=self.instance.heat_grid.heat_in
+        )
+        self.instance.arc29 = Arc(
+            source=self.instance.chp_1.heat_out,
+            destination=self.instance.heat_grid.heat_in
+        )
+        self.instance.arc30 = Arc(
+            source=self.instance.chp_2.heat_out,
+            destination=self.instance.heat_grid.heat_in
+        )
+        self.instance.arc31 = Arc(
+            source=self.instance.electrical_grid.power_out,
+            destination=self.instance.heatpump.power_in
+        )
+        self.instance.arc32 = Arc(
+            source=self.instance.heat_storage.heat_out,
+            destination=self.instance.heat_grid.heat_in
+        )
+        self.instance.arc33 = Arc(
+            source=self.instance.heat_grid.heat_out,
+            destination=self.instance.heat_storage.heat_in
+        )
     
 
     def solve(self):
@@ -114,6 +313,7 @@ class Model:
             logfile=PATH_OUT + 'solver.log', 
             load_solutions=True,
             report_timing=True)
+
 
     def write_results(self):
         """Writes the resulting time series to a dataframe."""
@@ -145,235 +345,12 @@ class Model:
     
 
     def save_result_data(self, filepath):
-        """Saves the result data as csv to the given file path"""
+        """Saves the result data as csv to the given file path."""
         self.result_data.to_csv(filepath)
 
 
-if __name__ == "__main__":
-    model = Model()
-
-    model.set_solver(
-        solver_name='gurobi',
-        TimeLimit=1800,    # solver will stop after x seconds
-        MIPGap=0.01)       # solver will stop if gap <= 1%
-    
-    timeseries_data_dict = {
-        'gas_price' : {
-            # 'filename' : PATH_IN + 'prices/dummy/gas_price.csv',
-            'filename' : PATH_IN + 'prices/gee23/gas_price_2024.csv',
-            'index' : 't'
-            },
-        'power_price' : {
-            # 'filename' : PATH_IN + 'prices/dummy/power_price.csv',
-            'filename' : PATH_IN + 'prices/gee23/power_price_2024.csv',
-            'index' : 't'
-            },
-        'heat_demand' : {
-            # 'filename' : PATH_IN + 'demands/heat_short.csv',
-            'filename' : PATH_IN + 'demands/heat.csv',
-            'index' : 't'
-        }
-    }
-
-    asset_data_dict = {
-        'chp' : PATH_IN + 'assets/chp.csv',
-        'electrical_grid' : PATH_IN + 'assets/electrical_grid.csv',
-        'battery_storage' : PATH_IN + 'assets/battery_storage.csv',
-        'pv' : PATH_IN + 'assets/pv.csv',
-        'pv_capacity_factors' : PATH_IN + 'pv_capacity_factors/leipzig_t45_a180.csv',
-        'electrolyzer' : PATH_IN + 'assets/electrolyzer.csv',
-        'hydrogen_grid' : PATH_IN + 'assets/hydrogen_grid.csv',
-        'heatpump' : PATH_IN + 'assets/heatpump.csv',
-        'heat_grid' : PATH_IN + 'assets/heat_grid.csv',
-        'heat_storage' : PATH_IN + 'assets/heat_storage.csv'
-    }
-
-    model.prepare_timeseries_data(timeseries_data_dict)
-    model.prepare_asset_data(asset_data_dict)
-
-    model.add_asset_object(
-        asset_name='chp',
-        asset_object=chp.Chp(
-            data=model.asset_data['chp'],
-            hydrogen_admixture=0.0
-        )
-    )
-    model.add_asset_object(
-        asset_name='electrical_grid',
-        asset_object=grid.Grid(
-            data=model.asset_data['electrical_grid']
-        )
-    )
-    model.add_asset_object(
-        asset_name='battery_storage',
-        asset_object=storage.BatteryStorage(
-            data=model.asset_data['battery_storage']
-            )
-    )
-    model.add_asset_object(
-        asset_name='pv',
-        asset_object=res.Photovoltaics(
-            data=model.asset_data['pv'],
-            capacity_factors=model.asset_data['pv_capacity_factors']
-        )
-    )
-    model.add_asset_object(
-        asset_name='electrolyzer',
-        asset_object=elec.Electrolyzer(
-            data=model.asset_data['electrolyzer']
-        )
-    )
-    model.add_asset_object(
-        asset_name='hydrogen_grid',
-        asset_object=grid.Grid(
-            data=model.asset_data['hydrogen_grid']
-        )
-    )
-    model.add_asset_object(
-        asset_name='ngas_grid',
-        asset_object=grid.Grid()
-    )
-    model.add_asset_object(
-        asset_name='heatpump',
-        asset_object=hp.Heatpump(
-            data=model.asset_data['heatpump']
-        )
-    )
-    model.add_asset_object(
-        asset_name='heat_grid',
-        asset_object=grid.Grid(
-            data=model.asset_data['heat_grid']
-        )
-    )
-    model.add_asset_object(
-        asset_name='heat_storage',
-        asset_object=storage.HeatStorage(
-            data=model.asset_data['heat_storage']
-        )
-    )
-
-    # Define sets
-    model.add_model_component(
-        component_name='t',
-        component=Set(ordered=True)
-    )
-
-    # Define parameters
-    model.add_model_component(
-        component_name='gas_price',
-        component=Param(model.model.t)
-    )
-    model.add_model_component(
-        component_name='power_price',
-        component=Param(model.model.t)
-    )
-    model.add_model_component(
-        component_name='heat_demand',
-        component=Param(model.model.t)
-    )
-
-    # Define block components
-    model.add_model_component(
-        component_name='chp_1',
-        component=Block(
-            rule=model.asset_objects['chp'].chp_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='chp_2',
-        component=Block(
-            rule=model.asset_objects['chp'].chp_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='electrical_grid',
-        component=Block(
-            rule=model.asset_objects['electrical_grid'].electrical_grid_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='battery_storage',
-        component=Block(
-            rule=model.asset_objects['battery_storage'].battery_storage_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='pv',
-        component=Block(
-            rule=model.asset_objects['pv'].pv_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='electrolyzer_1',
-        component=Block(
-            rule=model.asset_objects['electrolyzer'].electrolyzer_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='electrolyzer_2',
-        component=Block(
-            rule=model.asset_objects['electrolyzer'].electrolyzer_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='electrolyzer_3',
-        component=Block(
-            rule=model.asset_objects['electrolyzer'].electrolyzer_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='electrolyzer_4',
-        component=Block(
-            rule=model.asset_objects['electrolyzer'].electrolyzer_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='electrolyzer_5',
-        component=Block(
-            rule=model.asset_objects['electrolyzer'].electrolyzer_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='electrolyzer_6',
-        component=Block(
-            rule=model.asset_objects['electrolyzer'].electrolyzer_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='hydrogen_grid',
-        component=Block(
-            rule=model.asset_objects['hydrogen_grid'].hydrogen_grid_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='ngas_grid',
-        component=Block(
-            rule=model.asset_objects['ngas_grid'].natural_gas_grid_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='heatpump',
-        component=Block(
-            rule=model.asset_objects['heatpump'].heatpump_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='heat_grid',
-        component=Block(
-            rule=model.asset_objects['heat_grid'].heat_grid_block_rule
-        )
-    )
-    model.add_model_component(
-        component_name='heat_storage',
-        component=Block(
-            rule=model.asset_objects['heat_storage'].heat_storage_block_rule
-        )
-    )
-
-    # Define Objective
-    print('DECLARING OBJECTIVE...')
-    def obj_expression(m):
-        """ Objective Function """
+    def obj_expression(self, m):
+        """Rule for the model objective."""
         return (quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t) +
                 quicksum(m.chp_1.co2[t] * CO2_PRICE for t in m.t) +
                 quicksum(m.chp_2.co2[t] * CO2_PRICE for t in m.t) +
@@ -381,258 +358,39 @@ if __name__ == "__main__":
                 quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t) -
                 quicksum(m.heat_grid.heat_feedin[t] * HEAT_PRICE for t in m.t))
 
-    model.add_model_component(
-        component_name='obj',
-        component=Objective(
-            rule=obj_expression,
-            sense=minimize
-        )
-    )
+    
+
+if __name__ == "__main__":
+    lp = Model()
+
+    lp.set_solver(
+        solver_name='gurobi',
+        TimeLimit=1800,    # solver will stop after x seconds
+        MIPGap=0.01)       # solver will stop if gap <= 1%
+    
+    lp.load_timeseries_data()
+    lp.add_components()
+
+    # Define Objective
+    print('DECLARING OBJECTIVE...')
+    lp.add_objective()
+
 
     # Create instance
     print('CREATING INSTANCE...')
-    model.instantiate()
+    lp.instantiate()
 
 
     # Define arcs
     print('DECLARING ARCS...')
-    model.add_instance_component(
-        component_name='arc01',
-        component=Arc(
-            source=model.instance.chp_1.power_out,
-            destination=model.instance.electrical_grid.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc02',
-        component=Arc(
-            source=model.instance.chp_2.power_out,
-            destination=model.instance.electrical_grid.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc03',
-        component=Arc(
-            source=model.instance.pv.power_out,
-            destination=model.instance.electrical_grid.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc04',
-        component=Arc(
-            source=model.instance.battery_storage.power_out,
-            destination=model.instance.electrical_grid.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc05',
-        component=Arc(
-            source=model.instance.electrical_grid.power_out,
-            destination=model.instance.battery_storage.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc06',
-        component=Arc(
-            source=model.instance.electrical_grid.power_out,
-            destination=model.instance.electrolyzer_1.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc07',
-        component=Arc(
-            source=model.instance.electrical_grid.power_out,
-            destination=model.instance.electrolyzer_2.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc08',
-        component=Arc(
-            source=model.instance.electrical_grid.power_out,
-            destination=model.instance.electrolyzer_3.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc09',
-        component=Arc(
-            source=model.instance.electrical_grid.power_out,
-            destination=model.instance.electrolyzer_4.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc10',
-        component=Arc(
-            source=model.instance.electrical_grid.power_out,
-            destination=model.instance.electrolyzer_5.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc11',
-        component=Arc(
-            source=model.instance.electrical_grid.power_out,
-            destination=model.instance.electrolyzer_6.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc12',
-        component=Arc(
-            source=model.instance.electrolyzer_1.hydrogen_out,
-            destination=model.instance.hydrogen_grid.hydrogen_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc13',
-        component=Arc(
-            source=model.instance.electrolyzer_2.hydrogen_out,
-            destination=model.instance.hydrogen_grid.hydrogen_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc14',
-        component=Arc(
-            source=model.instance.electrolyzer_3.hydrogen_out,
-            destination=model.instance.hydrogen_grid.hydrogen_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc15',
-        component=Arc(
-            source=model.instance.electrolyzer_4.hydrogen_out,
-            destination=model.instance.hydrogen_grid.hydrogen_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc16',
-        component=Arc(
-            source=model.instance.electrolyzer_5.hydrogen_out,
-            destination=model.instance.hydrogen_grid.hydrogen_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc17',
-        component=Arc(
-            source=model.instance.electrolyzer_6.hydrogen_out,
-            destination=model.instance.hydrogen_grid.hydrogen_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc18',
-        component=Arc(
-            source=model.instance.chp_1.natural_gas_in,
-            destination=model.instance.ngas_grid.ngas_out
-        )
-    )
-    model.add_instance_component(
-        component_name='arc19',
-        component=Arc(
-            source=model.instance.chp_2.natural_gas_in,
-            destination=model.instance.ngas_grid.ngas_out
-        )
-    )
-    model.add_instance_component(
-        component_name='arc20',
-        component=Arc(
-            source=model.instance.chp_1.hydrogen_in,
-            destination=model.instance.hydrogen_grid.hydrogen_out
-        )
-    )
-    model.add_instance_component(
-        component_name='arc21',
-        component=Arc(
-            source=model.instance.chp_2.hydrogen_in,
-            destination=model.instance.hydrogen_grid.hydrogen_out
-        )
-    )
-    model.add_instance_component(
-        component_name='arc22',
-        component=Arc(
-            source=model.instance.electrolyzer_1.heat_out,
-            destination=model.instance.heatpump.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc23',
-        component=Arc(
-            source=model.instance.electrolyzer_2.heat_out,
-            destination=model.instance.heatpump.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc24',
-        component=Arc(
-            source=model.instance.electrolyzer_3.heat_out,
-            destination=model.instance.heatpump.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc25',
-        component=Arc(
-            source=model.instance.electrolyzer_4.heat_out,
-            destination=model.instance.heatpump.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc26',
-        component=Arc(
-            source=model.instance.electrolyzer_5.heat_out,
-            destination=model.instance.heatpump.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc27',
-        component=Arc(
-            source=model.instance.electrolyzer_6.heat_out,
-            destination=model.instance.heatpump.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc28',
-        component=Arc(
-            source=model.instance.heatpump.heat_out,
-            destination=model.instance.heat_grid.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc29',
-        component=Arc(
-            source=model.instance.chp_1.heat_out,
-            destination=model.instance.heat_grid.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc30',
-        component=Arc(
-            source=model.instance.chp_2.heat_out,
-            destination=model.instance.heat_grid.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc31',
-        component=Arc(
-            source=model.instance.electrical_grid.power_out,
-            destination=model.instance.heatpump.power_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc32',
-        component=Arc(
-            source=model.instance.heat_storage.heat_out,
-            destination=model.instance.heat_grid.heat_in
-        )
-    )
-    model.add_instance_component(
-        component_name='arc33',
-        component=Arc(
-            source=model.instance.heat_grid.heat_out,
-            destination=model.instance.heat_storage.heat_in
-        )
-    )
-
-    model.transform()
+    lp.add_arcs()
+    lp.expand_arcs()
+    
 
     # Solve the optimization problem
     print('START SOLVING...')
-    model.solve()
+    lp.solve()
 
-    model.write_results()
-    model.save_result_data(PATH_OUT + 'output_time_series.csv')
+
+    lp.write_results()
+    lp.save_result_data(PATH_OUT + 'output_time_series.csv')
