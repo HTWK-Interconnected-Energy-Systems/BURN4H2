@@ -1,11 +1,30 @@
 from pyomo.environ import *
 from pyomo.network import *
 
-class Grid:
-    """Class for constructing grid asset objects."""
+import pandas as pd
 
-    def __init__(self, data=None) -> None:
-        self.data = data
+class ElectricalGrid:
+    """Class for constructing electrical grid asset objects."""
+
+    def __init__(self, name, filepath, index_col=0) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
+    
+    
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.electrical_grid_block_rule)
+        )
 
     
     def electrical_grid_block_rule(self, block):
@@ -62,6 +81,29 @@ class Grid:
             rule=power_balance_rule
         )
     
+class HydrogenGrid:
+    """Class for constructing hydrogen grid asset objects."""
+
+    def __init__(self, name, filepath, index_col=0) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
+    
+    
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.hydrogen_grid_block_rule)
+        )
+
 
     def hydrogen_grid_block_rule(self, block):
         """Rule for creating a hydrogen gas grid block with default components 
@@ -118,6 +160,20 @@ class Grid:
         )
 
 
+class NGasGrid:
+    """Class for constructing natural gas grid asset objects."""
+
+    def __init__(self, name) -> None:
+        self.name = name
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.natural_gas_grid_block_rule))
+
+
     def natural_gas_grid_block_rule(self, block):
         """Rule for creating a natural gas grid block with default components 
         and constraints."""
@@ -136,6 +192,29 @@ class Grid:
             include_splitfrac=False
             )
     
+
+class HeatGrid:
+    """Class for constructing heat grid asset objects."""
+
+    def __init__(self, name, filepath, index_col=0) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
+    
+    
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.heat_grid_block_rule))
+
 
     def heat_grid_block_rule(self, block):
 
