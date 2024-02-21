@@ -1,11 +1,15 @@
 from pyomo.environ import *
 from pyomo.network import *
 
+import pandas as pd
+
+
 class BatteryStorage:
     """Class for constructing battery storage asset objects."""
 
-    def __init__(self, data, **kwargs) -> None:
-        self.data = data
+    def __init__(self, name, filepath, index_col=0, **kwargs) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
         self.kwargs = kwargs
         self.validate_kwargs()
     
@@ -17,6 +21,22 @@ class BatteryStorage:
         for key in self.kwargs:
             if key not in allowed_kwargs:
                 raise(KeyError(f'Unexpected kwarg "{key}" detected.'))
+    
+
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.battery_storage_block_rule)
+        )
 
     
     def battery_storage_block_rule(self, block):
@@ -210,8 +230,25 @@ class BatteryStorage:
 class HydrogenStorage:
     """Class for constructing hydrogen storage asset objects."""
 
-    def __init__(self, data) -> None:
-        self.data = data
+    def __init__(self, name, filepath, index_col=0) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
+
+
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.hydrogen_storage_block_rule)
+        )
     
 
     def hydrogen_storage_block_rule(self, block):
@@ -307,9 +344,26 @@ class HydrogenStorage:
 class HeatStorage:
     """Class for constructing heat storage asset objects."""
 
-    def __init__(self, data) -> None:
-        self.data = data
+    def __init__(self, name, filepath, index_col=0) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
     
+
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.heat_storage_block_rule)
+        )
+
 
     def heat_storage_block_rule(self, block):
         """Rule for creating a heat storage block with default components
