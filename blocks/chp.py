@@ -50,7 +50,8 @@ class Chp:
         """Adds the asset as a pyomo block component to a given model."""
         model.add_component(
             self.name,
-            Block(rule=self.chp_block_rule))
+            Block(rule=self.chp_block_rule)
+        )
     
 
     def chp_block_rule(self, block):
