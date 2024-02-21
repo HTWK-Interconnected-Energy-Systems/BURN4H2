@@ -1,12 +1,40 @@
 from pyomo.environ import *
 from pyomo.network import *
 
+import pandas as pd
+
+
 class Photovoltaics:
     """Class for constructing photovoltaics asset objects"""
 
-    def __init__(self, data, capacity_factors) -> None:
-        self.data = data
-        self.capacity_factors = capacity_factors
+    def __init__(self, name, filepath, capacity_factors, index_col=0) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
+        self.get_capacity_factors(capacity_factors, index_col)
+    
+
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def get_capacity_factors(self, capacity_factors, index_col):
+        """Collects data for the capacity factors from a csv."""
+        self.capacity_factors = pd.read_csv(
+            capacity_factors,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.pv_block_rule)
+        )
     
 
     def pv_block_rule(self, block):
