@@ -79,10 +79,10 @@ class Model:
 
         # Define block components
         chp1 = chp.Chp(
-            'chp_1', PATH_IN + 'assets/chp.csv', hydrogen_admixture=0.0
+            'chp_1', PATH_IN + 'assets/chp.csv', hydrogen_admixture=1
         )
         chp2 = chp.Chp(
-            'chp_2', PATH_IN + 'assets/chp.csv', hydrogen_admixture=0.0
+            'chp_2', PATH_IN + 'assets/chp.csv', hydrogen_admixture=1
         )
         electrolyzer1 = elec.Electrolyzer(
             'electrolyzer_1', PATH_IN + 'assets/electrolyzer.csv'
@@ -363,20 +363,27 @@ class Model:
 if __name__ == "__main__":
     lp = Model()
 
+    print('SETTING SOLVER OPTIONS')
     lp.set_solver(
         solver_name='gurobi',
         TimeLimit=1800,    # solver will stop after x seconds
         MIPGap=0.01)       # solver will stop if gap <= 1%
     
+
+    print('PREPARING DATA')
     lp.load_timeseries_data()
+
+
+    print('DECLARING MODEL')
     lp.add_components()
 
-    # Define Objective
+
+    # Declare Objective
     print('DECLARING OBJECTIVE...')
     lp.add_objective()
 
 
-    # Create instance
+    # Create model instance
     print('CREATING INSTANCE...')
     lp.instantiate()
 
