@@ -310,7 +310,7 @@ class Model:
             self.instance,
             symbolic_solver_labels=True,
             tee=True,
-            logfile=PATH_OUT + 'solver.log', 
+            logfile=PATH_OUT + 'solver.log',
             load_solutions=True,
             report_timing=True)
 
@@ -392,7 +392,7 @@ if __name__ == "__main__":
     print('DECLARING ARCS...')
     lp.add_arcs()
     lp.expand_arcs()
-    
+
 
     # Solve the optimization problem
     print('START SOLVING...')
