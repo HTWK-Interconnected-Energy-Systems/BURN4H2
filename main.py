@@ -339,6 +339,7 @@ class Model:
         """Saves the result data as csv to the given file path."""
         self.result_data.to_csv(filepath)
 
+    # Sophia Zielfunktion
     def obj_expression(self, m):
         """Rule for the model objective."""
         return (
