@@ -14,7 +14,7 @@ class Chp:
         to the block construction rule.
     
     hydrogen_admixture: float
-        Float value with arbitrary unit. If delcared, the additional variables 
+        Float value with arbitrary unit. If declared, the additional variables 
         and constraints for the natural gas and hydrogen consumption will be
         added to the block construction rule.
     """
