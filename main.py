@@ -79,10 +79,10 @@ class Model:
 
         # Define block components
         chp1 = chp.Chp(
-            'chp_1', PATH_IN + 'assets/chp.csv', hydrogen_admixture=1
+            'chp_1', PATH_IN + 'assets/chp.csv', hydrogen_admixture=0
         )
         chp2 = chp.Chp(
-            'chp_2', PATH_IN + 'assets/chp.csv', hydrogen_admixture=1
+            'chp_2', PATH_IN + 'assets/chp.csv', hydrogen_admixture=0
         )
         electrolyzer1 = elec.Electrolyzer(
             'electrolyzer_1', PATH_IN + 'assets/electrolyzer.csv'
@@ -120,28 +120,28 @@ class Model:
         h_storage = storage.HeatStorage(
             'heat_storage', PATH_IN + 'assets/heat_storage.csv'
         )
-        heatpump = hp.Heatpump(
-            'heatpump', PATH_IN + 'assets/heatpump.csv'
-        )
+        # heatpump = hp.Heatpump(
+        #     'heatpump', PATH_IN + 'assets/heatpump.csv'
+        # )
         pv = res.Photovoltaics(
             'pv', PATH_IN + 'assets/pv.csv', PATH_IN + 'pv_capacity_factors/leipzig_t45_a180.csv'
         )
 
         chp1.add_to_model(self.model)
         chp2.add_to_model(self.model)
-        electrolyzer1.add_to_model(self.model)
-        electrolyzer2.add_to_model(self.model)
-        electrolyzer3.add_to_model(self.model)
-        electrolyzer4.add_to_model(self.model)
-        electrolyzer5.add_to_model(self.model)
-        electrolyzer6.add_to_model(self.model)
+        # electrolyzer1.add_to_model(self.model)
+        # electrolyzer2.add_to_model(self.model)
+        # electrolyzer3.add_to_model(self.model)
+        # electrolyzer4.add_to_model(self.model)
+        # electrolyzer5.add_to_model(self.model)
+        # electrolyzer6.add_to_model(self.model)
         e_grid.add_to_model(self.model)
-        h2_grid.add_to_model(self.model)
+        # h2_grid.add_to_model(self.model)
         n_grid.add_to_model(self.model)
         h_grid.add_to_model(self.model)    
         b_storage.add_to_model(self.model)  
         h_storage.add_to_model(self.model)
-        heatpump.add_to_model(self.model)
+        #heatpump.add_to_model(self.model)
         pv.add_to_model(self.model)
     
 
@@ -190,54 +190,54 @@ class Model:
             source=self.instance.electrical_grid.power_out,
             destination=self.instance.battery_storage.power_in
         )
-        self.instance.arc06 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_1.power_in
-        )
-        self.instance.arc07 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_2.power_in
-        )
-        self.instance.arc08 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_3.power_in
-        )
-        self.instance.arc09 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_4.power_in
-        )
-        self.instance.arc10 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_5.power_in
-        )
-        self.instance.arc11 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_6.power_in
-        )
-        self.instance.arc12 = Arc(
-            source=self.instance.electrolyzer_1.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in
-        )
-        self.instance.arc13 = Arc(
-            source=self.instance.electrolyzer_2.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in
-        )
-        self.instance.arc14 = Arc(
-            source=self.instance.electrolyzer_3.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in
-        )
-        self.instance.arc15 = Arc(
-            source=self.instance.electrolyzer_4.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in
-        )
-        self.instance.arc16 = Arc(
-            source=self.instance.electrolyzer_5.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in
-        )
-        self.instance.arc17 = Arc(
-            source=self.instance.electrolyzer_6.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in
-        )
+        # self.instance.arc06 = Arc(
+        #     source=self.instance.electrical_grid.power_out,
+        #     destination=self.instance.electrolyzer_1.power_in
+        # )
+        # self.instance.arc07 = Arc(
+        #     source=self.instance.electrical_grid.power_out,
+        #     destination=self.instance.electrolyzer_2.power_in
+        # )
+        # self.instance.arc08 = Arc(
+        #     source=self.instance.electrical_grid.power_out,
+        #     destination=self.instance.electrolyzer_3.power_in
+        # )
+        # self.instance.arc09 = Arc(
+        #     source=self.instance.electrical_grid.power_out,
+        #     destination=self.instance.electrolyzer_4.power_in
+        # )
+        # self.instance.arc10 = Arc(
+        #     source=self.instance.electrical_grid.power_out,
+        #     destination=self.instance.electrolyzer_5.power_in
+        # )
+        # self.instance.arc11 = Arc(
+        #     source=self.instance.electrical_grid.power_out,
+        #     destination=self.instance.electrolyzer_6.power_in
+        # )
+        # self.instance.arc12 = Arc(
+        #     source=self.instance.electrolyzer_1.hydrogen_out,
+        #     destination=self.instance.hydrogen_grid.hydrogen_in
+        # )
+        # self.instance.arc13 = Arc(
+        #     source=self.instance.electrolyzer_2.hydrogen_out,
+        #     destination=self.instance.hydrogen_grid.hydrogen_in
+        # )
+        # self.instance.arc14 = Arc(
+        #     source=self.instance.electrolyzer_3.hydrogen_out,
+        #     destination=self.instance.hydrogen_grid.hydrogen_in
+        # )
+        # self.instance.arc15 = Arc(
+        #     source=self.instance.electrolyzer_4.hydrogen_out,
+        #     destination=self.instance.hydrogen_grid.hydrogen_in
+        # )
+        # self.instance.arc16 = Arc(
+        #     source=self.instance.electrolyzer_5.hydrogen_out,
+        #     destination=self.instance.hydrogen_grid.hydrogen_in
+        # )
+        # self.instance.arc17 = Arc(
+        #     source=self.instance.electrolyzer_6.hydrogen_out,
+        #     destination=self.instance.hydrogen_grid.hydrogen_in
+        # )
         self.instance.arc18 = Arc(
             source=self.instance.chp_1.natural_gas_in,
             destination=self.instance.ngas_grid.ngas_out
@@ -254,34 +254,34 @@ class Model:
             source=self.instance.chp_2.hydrogen_in,
             destination=self.instance.hydrogen_grid.hydrogen_out
         )
-        self.instance.arc22 = Arc(
-            source=self.instance.electrolyzer_1.heat_out,
-            destination=self.instance.heatpump.heat_in
-        )
-        self.instance.arc23 = Arc(
-            source=self.instance.electrolyzer_2.heat_out,
-            destination=self.instance.heatpump.heat_in
-        )
-        self.instance.arc24 = Arc(
-            source=self.instance.electrolyzer_3.heat_out,
-            destination=self.instance.heatpump.heat_in
-        )
-        self.instance.arc25 = Arc(
-            source=self.instance.electrolyzer_4.heat_out,
-            destination=self.instance.heatpump.heat_in
-        )
-        self.instance.arc26 = Arc(
-            source=self.instance.electrolyzer_5.heat_out,
-            destination=self.instance.heatpump.heat_in
-        )
-        self.instance.arc27 = Arc(
-            source=self.instance.electrolyzer_6.heat_out,
-            destination=self.instance.heatpump.heat_in
-        )
-        self.instance.arc28 = Arc(
-            source=self.instance.heatpump.heat_out,
-            destination=self.instance.heat_grid.heat_in
-        )
+        # self.instance.arc22 = Arc(
+        #     source=self.instance.electrolyzer_1.heat_out,
+        #     destination=self.instance.heatpump.heat_in
+        # )
+        # self.instance.arc23 = Arc(
+        #     source=self.instance.electrolyzer_2.heat_out,
+        #     destination=self.instance.heatpump.heat_in
+        # )
+        # self.instance.arc24 = Arc(
+        #     source=self.instance.electrolyzer_3.heat_out,
+        #     destination=self.instance.heatpump.heat_in
+        # )
+        # self.instance.arc25 = Arc(
+        #     source=self.instance.electrolyzer_4.heat_out,
+        #     destination=self.instance.heatpump.heat_in
+        # )
+        # self.instance.arc26 = Arc(
+        #     source=self.instance.electrolyzer_5.heat_out,
+        #     destination=self.instance.heatpump.heat_in
+        # )
+        # self.instance.arc27 = Arc(
+        #     source=self.instance.electrolyzer_6.heat_out,
+        #     destination=self.instance.heatpump.heat_in
+        # )
+        # self.instance.arc28 = Arc(
+        #     source=self.instance.heatpump.heat_out,
+        #     destination=self.instance.heat_grid.heat_in
+        # )
         self.instance.arc29 = Arc(
             source=self.instance.chp_1.heat_out,
             destination=self.instance.heat_grid.heat_in
@@ -290,10 +290,10 @@ class Model:
             source=self.instance.chp_2.heat_out,
             destination=self.instance.heat_grid.heat_in
         )
-        self.instance.arc31 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.heatpump.power_in
-        )
+        # self.instance.arc31 = Arc(
+        #     source=self.instance.electrical_grid.power_out,
+        #     destination=self.instance.heatpump.power_in
+        # )
         self.instance.arc32 = Arc(
             source=self.instance.heat_storage.heat_out,
             destination=self.instance.heat_grid.heat_in
@@ -348,8 +348,8 @@ class Model:
         """Saves the result data as csv to the given file path."""
         self.result_data.to_csv(filepath)
 
-
-    def obj_expression(self, m):
+    # Zielfunktion definieren für Sophia 
+    def obj_expression(self, m): 
         """Rule for the model objective."""
         return (quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t) +
                 quicksum(m.chp_1.co2[t] * CO2_PRICE for t in m.t) +
