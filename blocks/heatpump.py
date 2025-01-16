@@ -37,6 +37,7 @@ class Heatpump:
         block.heat = Var(t, domain=NonNegativeReals)
         block.heat_input = Var(t, domain=NonNegativeReals)
 
+
         # Port 1
         block.power_in = Port()
         block.power_in.add(block.power,'power', Port.Extensive, include_splitfrac=False)
@@ -77,6 +78,7 @@ class Heatpump:
             b = power_max - a * heat_max
 
             return _block.power[i] == a * _block.heat[i] + b * _block.bin[i]
+
 
 
         # Define constraints

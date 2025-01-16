@@ -1,7 +1,9 @@
 """Main script for the optimization of the energy system."""
 
+# Import default libraries
 import pandas as pd
 
+# Import external libraries
 from pyomo.opt import SolverFactory
 from pyomo.environ import (
     AbstractModel,
@@ -17,6 +19,7 @@ from pyomo.environ import (
 )
 from pyomo.network import Arc
 
+# import internal modules 
 from blocks import chp, grid, storage, res
 import blocks.electrolyzer as elec
 import blocks.heatpump as hp
@@ -86,32 +89,22 @@ class Model:
         self.model.heat_demand = Param(self.model.t)
 
         # Define block components
-        chp1 = chp.Chp("chp_1", PATH_IN + "assets/chp.csv", hydrogen_admixture=1)
-        chp2 = chp.Chp("chp_2", PATH_IN + "assets/chp.csv", hydrogen_admixture=1)
-        electrolyzer1 = elec.Electrolyzer(
-            "electrolyzer_1", PATH_IN + "assets/electrolyzer.csv"
-        )
-        electrolyzer2 = elec.Electrolyzer(
-            "electrolyzer_2", PATH_IN + "assets/electrolyzer.csv"
-        )
-        electrolyzer3 = elec.Electrolyzer(
-            "electrolyzer_3", PATH_IN + "assets/electrolyzer.csv"
-        )
-        electrolyzer4 = elec.Electrolyzer(
-            "electrolyzer_4", PATH_IN + "assets/electrolyzer.csv"
-        )
-        electrolyzer5 = elec.Electrolyzer(
-            "electrolyzer_5", PATH_IN + "assets/electrolyzer.csv"
-        )
-        electrolyzer6 = elec.Electrolyzer(
-            "electrolyzer_6", PATH_IN + "assets/electrolyzer.csv"
-        )
+        chp1 = chp.Chp("chp_1", 
+                       PATH_IN + "assets/chp.csv", 
+                       hydrogen_admixture=0)
+        chp2 = chp.Chp("chp_2", 
+                       PATH_IN + "assets/chp.csv", 
+                       hydrogen_admixture=0)
         h2_grid = grid.HydrogenGrid(
-            "hydrogen_grid", PATH_IN + "assets/hydrogen_grid.csv"
+            "hydrogen_grid", 
+            PATH_IN + "assets/hydrogen_grid.csv"
         )
         n_grid = grid.NGasGrid("ngas_grid")
+        wh_grid = grid.WasteHeatGrid("waste_heat_grid", 
+                                     PATH_IN + "assets/waste_heat_grid.csv") 
         e_grid = grid.ElectricalGrid(
-            "electrical_grid", PATH_IN + "assets/electrical_grid.csv"
+            "electrical_grid", 
+            PATH_IN + "assets/electrical_grid.csv"
         )
         h_grid = grid.HeatGrid("heat_grid", PATH_IN + "assets/heat_grid.csv")
         b_storage = storage.BatteryStorage(
@@ -120,7 +113,6 @@ class Model:
         h_storage = storage.HeatStorage(
             "heat_storage", PATH_IN + "assets/heat_storage.csv"
         )
-        heatpump = hp.Heatpump("heatpump", PATH_IN + "assets/heatpump.csv")
         pv = res.Photovoltaics(
             "pv",
             PATH_IN + "assets/pv.csv",
@@ -129,19 +121,13 @@ class Model:
 
         chp1.add_to_model(self.model)
         chp2.add_to_model(self.model)
-        # electrolyzer1.add_to_model(self.model)
-        # electrolyzer2.add_to_model(self.model)
-        # electrolyzer3.add_to_model(self.model)
-        # electrolyzer4.add_to_model(self.model)
-        # electrolyzer5.add_to_model(self.model)
-        # electrolyzer6.add_to_model(self.model)
         e_grid.add_to_model(self.model)
-        # h2_grid.add_to_model(self.model)
+        h2_grid.add_to_model(self.model)
+        wh_grid.add_to_model(self.model)
         n_grid.add_to_model(self.model)
         h_grid.add_to_model(self.model)
         b_storage.add_to_model(self.model)
         h_storage.add_to_model(self.model)
-        #heatpump.add_to_model(self.model)
         pv.add_to_model(self.model)
 
     def add_objective(self):
@@ -162,139 +148,84 @@ class Model:
 
     def add_arcs(self):
         """Adds arcs to the model instance."""
-
+        
+        # POWER: CHP 1 -> Electrical Grid
         self.instance.arc01 = Arc(
             source=self.instance.chp_1.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
+        # POWER: CHP 2 -> Electrical Grid
         self.instance.arc02 = Arc(
             source=self.instance.chp_2.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
+        # POWER: PV -> Electrical Grid
         self.instance.arc03 = Arc(
             source=self.instance.pv.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
+        # POWER: Battery Storage -> Electrical Grid
         self.instance.arc04 = Arc(
             source=self.instance.battery_storage.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
+        # POWER: Electrical Grid -> Battery Storage
         self.instance.arc05 = Arc(
             source=self.instance.electrical_grid.power_out,
             destination=self.instance.battery_storage.power_in,
         )
+        # NGAS: NGAS Grid -> CHP 1
         self.instance.arc06 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_1.power_in,
+            source=self.instance.ngas_grid.ngas_out,
+            destination=self.instance.chp_1.natural_gas_in,
         )
+        # NGAS: NGAS Grid -> CHP 2
         self.instance.arc07 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_2.power_in,
+            source=self.instance.ngas_grid.ngas_out,
+            destination=self.instance.chp_2.natural_gas_in,
         )
+        # HYDROGEN: Hydrogen Grid -> CHP 1
         self.instance.arc08 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_3.power_in,
+            source=self.instance.hydrogen_grid.hydrogen_out,
+            destination=self.instance.chp_1.hydrogen_in,
         )
+        # HYDROGEN: Hydrogen Grid -> CHP 2
         self.instance.arc09 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_4.power_in,
+            source=self.instance.hydrogen_grid.hydrogen_out,
+            destination=self.instance.chp_2.hydrogen_in,
         )
+        # HEAT: CHP 1 -> Heat Grid
         self.instance.arc10 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_5.power_in,
-        )
-        self.instance.arc11 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.electrolyzer_6.power_in,
-        )
-        self.instance.arc12 = Arc(
-            source=self.instance.electrolyzer_1.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in,
-        )
-        self.instance.arc13 = Arc(
-            source=self.instance.electrolyzer_2.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in,
-        )
-        self.instance.arc14 = Arc(
-            source=self.instance.electrolyzer_3.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in,
-        )
-        self.instance.arc15 = Arc(
-            source=self.instance.electrolyzer_4.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in,
-        )
-        self.instance.arc16 = Arc(
-            source=self.instance.electrolyzer_5.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in,
-        )
-        self.instance.arc17 = Arc(
-            source=self.instance.electrolyzer_6.hydrogen_out,
-            destination=self.instance.hydrogen_grid.hydrogen_in,
-        )
-        self.instance.arc18 = Arc(
-            source=self.instance.chp_1.natural_gas_in,
-            destination=self.instance.ngas_grid.ngas_out,
-        )
-        self.instance.arc19 = Arc(
-            source=self.instance.chp_2.natural_gas_in,
-            destination=self.instance.ngas_grid.ngas_out,
-        )
-        self.instance.arc20 = Arc(
-            source=self.instance.chp_1.hydrogen_in,
-            destination=self.instance.hydrogen_grid.hydrogen_out,
-        )
-        self.instance.arc21 = Arc(
-            source=self.instance.chp_2.hydrogen_in,
-            destination=self.instance.hydrogen_grid.hydrogen_out,
-        )
-        self.instance.arc22 = Arc(
-            source=self.instance.electrolyzer_1.heat_out,
-            destination=self.instance.heatpump.heat_in,
-        )
-        self.instance.arc23 = Arc(
-            source=self.instance.electrolyzer_2.heat_out,
-            destination=self.instance.heatpump.heat_in,
-        )
-        self.instance.arc24 = Arc(
-            source=self.instance.electrolyzer_3.heat_out,
-            destination=self.instance.heatpump.heat_in,
-        )
-        self.instance.arc25 = Arc(
-            source=self.instance.electrolyzer_4.heat_out,
-            destination=self.instance.heatpump.heat_in,
-        )
-        self.instance.arc26 = Arc(
-            source=self.instance.electrolyzer_5.heat_out,
-            destination=self.instance.heatpump.heat_in,
-        )
-        self.instance.arc27 = Arc(
-            source=self.instance.electrolyzer_6.heat_out,
-            destination=self.instance.heatpump.heat_in,
-        )
-        self.instance.arc28 = Arc(
-            source=self.instance.heatpump.heat_out,
-            destination=self.instance.heat_grid.heat_in,
-        )
-        self.instance.arc29 = Arc(
             source=self.instance.chp_1.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
-        self.instance.arc30 = Arc(
+        # HEAT: CHP 2 -> Heat Grid
+        self.instance.arc11 = Arc(
             source=self.instance.chp_2.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
-        self.instance.arc31 = Arc(
-            source=self.instance.electrical_grid.power_out,
-            destination=self.instance.heatpump.power_in,
-        )
-        self.instance.arc32 = Arc(
+        # HEAT: Heat Storage -> Heat Grid
+        self.instance.arc12 = Arc(
             source=self.instance.heat_storage.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
-        self.instance.arc33 = Arc(
+        # HEAT: Heat Grid -> Heat Storage
+        self.instance.arc13 = Arc(
             source=self.instance.heat_grid.heat_out,
             destination=self.instance.heat_storage.heat_in,
         )
+        # WASTE: CHP 1 -> Waste Grid
+        self.instance.arc14 = Arc(
+            source=self.instance.chp_1.waste_heat_out,
+            destination=self.instance.waste_heat_grid.waste_heat_in,
+        )
+        # WASTE: CHP 2 -> Waste Grid
+        self.instance.arc15 = Arc(
+            source=self.instance.chp_2.waste_heat_out,
+            destination=self.instance.waste_heat_grid.waste_heat_in,
+        )
+
+
 
     def solve(self):
         """Solves the optimization problem."""
@@ -346,10 +277,7 @@ class Model:
             quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t)
             + quicksum(m.chp_1.co2[t] * CO2_PRICE for t in m.t)
             + quicksum(m.chp_2.co2[t] * CO2_PRICE for t in m.t)
-            + quicksum(
-                m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t
-            )
-            + quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t)
+            + quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t)
             - quicksum(m.heat_grid.heat_feedin[t] * HEAT_PRICE for t in m.t)
         )
 
@@ -360,7 +288,7 @@ if __name__ == "__main__":
     print("SETTING SOLVER OPTIONS")
     lp.set_solver(
         solver_name="gurobi",
-        TimeLimit=1800,  # solver will stop after x seconds
+        TimeLimit=40,  # solver will stop after x seconds
         MIPGap=0.01,
     )  # solver will stop if gap <= 1%
 
