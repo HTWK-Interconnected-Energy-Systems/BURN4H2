@@ -8,13 +8,14 @@ class Collector:
     def __init__(self, name, filepath, index_col=0) -> None:
         self.name = name
         self.get_data(filepath, index_col)
+        
 
     def get_data(self, filepath, index_col):
         """Collects data from a csv."""
         self.data = pd.read_csv(
             filepath,
             index_col=index_col
-        )
+        )   
 
     def add_to_model(self, model):
         """Adds the asset as a pyomo block component to a given model."""
@@ -28,32 +29,51 @@ class Collector:
         """Rule for creating a collector block with default components and constraints."""
         # Get index from model
         t = block.model().t
-        
+
+        # Get profile from model
+        #heat_profile = block.model().solar_thermal_heat_profile
+
         # Declare components
-        block.bin = Var(t, within=Binary)
         block.heat = Var(t, domain=NonNegativeReals)
+        block.bin = Var(t, initialize=0, within=Binary)
+    
+        # Declare blocks
+        block.heat_out = Port()
+        block.heat_out.add(
+            block.heat,
+            'heat',
+            Port.Extensive,
+            include_splitfrac=False
+        )
 
+        def bin_rule(_block, i):
+            """Rule for the binary variable."""
+            if _block.heat_test[i] == 0:
+                return _block.bin[i] == 0
+            else:
+                return _block.bin[i] == 1
+            
 
-
-        # Declare construction rules for constraints
-        def heat_max_rule(_block, i):
-            """Rule for the maximal heat production."""
-            return _block.heat[i] <= self.data.loc['max', 'heat'] * _block.bin[i]
+        def heat_rule(_block, i):
+            """Rule for the heat output."""
+            return _block.heat[i] == self.data.loc[i, 'value'] 
         
-        def heat_min_rule(_block, i):
-            """Rule for the minimal heat production."""
-            return self.data.loc['min', 'heat'] * _block.bin[i] <= _block.heat[i]
-        
-        def heat_depends_on_radiation_rule(_block, i):
-            """Rule heat production, which depends on the solar radiation."""
-            efficiency = self.data.loc['value', 'efficiency']
-            area = self.data.loc['value', 'area']
-            radiation = self.data.loc['value', 'radiation']
-            return _block.heat[i] == radiation * area * efficiency * _block.bin[i]       
-          
+
         # Declare constraints
-        block.heat_max = Constraint(t, rule=heat_max_rule)
-        block.heat_min = Constraint(t, rule=heat_min_rule)
-        block.heat_depends_on_radiation = Constraint(t, rule=heat_depends_on_radiation_rule)
+        block.bin_rule = Constraint(
+            t, 
+            rule=bin_rule
+        )
+
+        block.heat_rule = Constraint(
+            t, 
+            rule=heat_rule
+        )
+        
+            
+
+
+
+
 
 

@@ -38,9 +38,9 @@ class Heatpump:
     
 
         # Parameters
-        block.Tenv  = Param(t, initialize=20)
-        block.Tflow = Param(t, initialize=50)
-        block.cop = Param(t)
+        block.Tin  = Param(t, initialize=20) # Quelle
+        block.Tout = Param(t, initialize=50) # Senke
+        block.cop = Param(t, initialize=5.77) # COP (Line)
 
         # Port 1
         block.power_in = Port()
@@ -65,51 +65,10 @@ class Heatpump:
             """Rule for the minimal heat output."""
             return self.data.loc['min', 'heat'] * _block.bin[i] <= _block.heat[i]
         
-        
-        def cop_depends_on_temperature_rule(_block, i):
-            """Rule for the dependencies between the coefficient of performance and the temperature."""
-
-           # Diskrete Stützstellen für Umgebungstemperatur und Vorlauftemperatur
-            env_temps = [0, 10, 20]       # Beispielwerte
-            flow_temps = [30, 40, 50]     # Beispielwerte
-
-            cop_data = {
-                (0, 0): 3.1, (0, 1): 2.9, (0, 2): 2.6,
-                (1, 0): 3.5, (1, 1): 3.2, (1, 2): 2.8,
-                (2, 0): 4.0, (2, 1): 3.6, (2, 2): 3.2,
-            }
-             
-            # Define Sets
-            block.I = RangeSet(0, len(env_temps) - 1)
-            block.J = RangeSet(0, len(flow_temps) - 1)
-           
-
-            # Variables for the weights (gamma_ij)
-            block.gamma = Var(block.I, block.J, bounds=(0, None))
-
-            # CoP-Variable
-            block.cop = Var()
-
-            # Weight sum == 1
-            def sum_gamma_rule(m):
-                return sum(m.gamma[i, j] for i in m.I for j in m.J) == 1
-            block.sum_gamma_con = Constraint(rule=sum_gamma_rule)
-
-            # Environment temperature as a linear combination
-            def t_env_rule(m):
-                return m.Tenv == sum(env_temps[i] * m.gamma[i, j] for i in m.I for j in m.J)
-            block.t_env_con = Constraint(rule=t_env_rule)
-
-            # Flow temperature as a linear combination
-            def t_flow_rule(m):
-                return m.Tflow == sum(flow_temps[j] * m.gamma[i, j] for i in m.I for j in m.J)
-            block.t_flow_con = Constraint(rule=t_flow_rule)
-
-            # CoP as a linear combination (linear approximation)
-            def cop_rule(m):
-                return m.cop == sum(cop_data[(i, j)] * m.gamma[i, j] for i in m.I for j in m.J)
-            block.cop_con = Constraint(rule=cop_rule)
-
+        # Default, heatpump runs constantly at "full power"
+        def heat_depends_on_cop_rule(_block, i):
+            """ Rule for the dependencies between heat output and power input."""
+            return _block.heat[i] == _block.cop[i]  * _block.power[i] * _block.bin[i]
 
 
         # Define constraints
@@ -121,11 +80,54 @@ class Heatpump:
             t,
             rule=heat_min_rule
         )
-        block.heat_output_depends_on_power_input_constraint = Constraint(
+        block.heat_depends_on_cop_constraint = Constraint(
             t,
-            rule=heat_output_depends_on_heat_input_rule
-        )
-        block.cop_depends_on_heat_output_constraint = Constraint(
-            t,
-            rule=power_depends_on_heat_output_rule
-        )
+            rule=heat_depends_on_cop_rule
+        )   
+
+        
+
+        # def cop_depends_on_temperature_rule(_block, i):
+        #     """Rule for the dependencies between the coefficient of performance and the temperature."""
+
+        #    # Diskrete Stützstellen für Umgebungstemperatur und Vorlauftemperatur
+        #     env_temps = [0, 10, 20]       # Beispielwerte
+        #     flow_temps = [30, 40, 50]     # Beispielwerte
+
+        #     cop_data = {
+        #         (0, 0): 3.1, (0, 1): 2.9, (0, 2): 2.6,
+        #         (1, 0): 3.5, (1, 1): 3.2, (1, 2): 2.8,
+        #         (2, 0): 4.0, (2, 1): 3.6, (2, 2): 3.2,
+        #     }
+             
+        #     # Define Sets
+        #     block.I = RangeSet(0, len(env_temps) - 1)
+        #     block.J = RangeSet(0, len(flow_temps) - 1)
+           
+
+        #     # Variables for the weights (gamma_ij)
+        #     block.gamma = Var(block.I, block.J, bounds=(0, None))
+
+        #     # CoP-Variable
+        #     block.cop = Var()
+
+        #     # Weight sum == 1
+        #     def sum_gamma_rule(m):
+        #         return sum(m.gamma[i, j] for i in m.I for j in m.J) == 1
+        #     block.sum_gamma_con = Constraint(rule=sum_gamma_rule)
+
+        #     # Environment temperature as a linear combination
+        #     def t_env_rule(m):
+        #         return m.Tenv == sum(env_temps[i] * m.gamma[i, j] for i in m.I for j in m.J)
+        #     block.t_env_con = Constraint(rule=t_env_rule)
+
+        #     # Flow temperature as a linear combination
+        #     def t_flow_rule(m):
+        #         return m.Tflow == sum(flow_temps[j] * m.gamma[i, j] for i in m.I for j in m.J)
+        #     block.t_flow_con = Constraint(rule=t_flow_rule)
+
+        #     # CoP as a linear combination (linear approximation)
+        #     def cop_rule(m):
+        #         return m.cop == sum(cop_data[(i, j)] * m.gamma[i, j] for i in m.I for j in m.J)
+        #     block.cop_con = Constraint(rule=cop_rule)
+
