@@ -16,7 +16,9 @@
 data/input/prices/gee23
 data/input/prices/kt23
 data/input/prices/ue23
+data/input/profiles
 data/misc/scenarios
+data/misc/profiles
 
 
 # Byte-compiled / optimized / DLL files

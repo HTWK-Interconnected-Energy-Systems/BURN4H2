@@ -226,6 +226,7 @@ class HeatGrid:
         block.heat_feedin = Var(t, domain=NonNegativeReals)
         block.heat_supply = Var(t, domain=NonNegativeReals)
 
+        # Ports
         block.heat_in = Port()
         block.heat_in.add(
             block.heat_feedin,
@@ -265,3 +266,75 @@ class HeatGrid:
             t,
             rule=supply_heat_demand_rule
         )
+
+class WasteHeatGrid:
+    """Class for constructing waste heat grid asset objects."""
+
+    def __init__(self, name, filepath, index_col=0) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
+    
+    
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.waste_heat_grid_block_rule))
+
+    
+    def waste_heat_grid_block_rule(self,block):
+        
+        # Get index from model
+        t = block.model().t
+
+        # Declare components
+        block.waste_heat_balance = Var(t, domain=NonNegativeReals)
+        block.waste_heat_supply = Var(t, domain=NonNegativeReals)
+        block.waste_heat_feedin = Var(t, domain=NonNegativeReals)
+
+        # Ports
+        block.waste_heat_in = Port()
+        block.waste_heat_in.add(
+            block.waste_heat_feedin,
+            'waste_heat',
+            Port.Extensive,
+            include_splitfrac=False
+        )
+        block.waste_heat_out = Port()
+        block.waste_heat_out.add(
+            block.waste_heat_supply,
+            'waste_heat',
+            Port.Extensive,
+            include_splitfrac=False
+        )
+
+        # Define construction rules for constraints
+        def waste_heat_balance_rule(_block, i):
+            """Rule for calculating the overall power."""
+            return _block.waste_heat_balance[i] == (
+                + _block.waste_heat_supply[i] 
+                - _block.waste_heat_feedin[i]
+                )
+        
+        def waste_supply_heat_demand_rule(_block, i):
+            """Rule for fully suppling the heat demand."""
+            return _block.waste_heat_balance[i] == 0
+        
+
+        # Define constraints
+        block.waste_heat_balance_constraint = Constraint(
+            t,
+            rule=waste_heat_balance_rule
+        )
+        block.waste_supply_heat_demand_constraint = Constraint(
+            t,
+            rule=waste_supply_heat_demand_rule
+        )
+

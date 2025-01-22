@@ -67,6 +67,8 @@ class Chp:
         block.power = Var(t, domain=NonNegativeReals)
         block.heat = Var(t, domain=NonNegativeReals)
         block.co2 = Var(t, domain=NonNegativeReals)
+        block.waste_heat = Var(t, domain=NonNegativeReals)
+
 
 
         block.power_out = Port()
@@ -90,6 +92,15 @@ class Chp:
             Port.Extensive,
             include_splitfrac=False
         )
+
+        block.waste_heat_out = Port()
+        block.waste_heat_out.add(
+            block.waste_heat,
+            'waste_heat',
+            Port.Extensive,
+            include_splitfrac=False
+        )
+
 
         # Declare construction rules for constraints
         def power_max_rule(_block, i):
@@ -140,6 +151,17 @@ class Chp:
 
             return _block.co2[i] == a * _block.power[i] + b * _block.bin[i]
         
+        def waste_heat_depends_on_power_rule(_block, i):
+            """Rule for calculating the waste heat."""
+            waste_heat_max = self.data.loc['max', 'waste_heat']
+            waste_heat_min = self.data.loc['min', 'waste_heat']
+            power_max = self.data.loc['max', 'power']
+            power_min = self.data.loc['min', 'power']
+
+            a = (waste_heat_max - waste_heat_min) / (power_max - power_min)
+            b = waste_heat_max - a * power_max
+            return _block.waste_heat[i] == a*_block.power[i] + b*_block.bin[i]
+        
 
         # Declare constraints
         block.power_max_constraint = Constraint(
@@ -162,6 +184,10 @@ class Chp:
             t,
             rule=co2_depends_on_power_rule
         )
+        block.waste_heat_depends_on_power_constraint = Constraint(
+            t,
+            rule=waste_heat_depends_on_power_rule
+        )   
 
 
         # Declare optional constraint via expression when right kwarg is given.
