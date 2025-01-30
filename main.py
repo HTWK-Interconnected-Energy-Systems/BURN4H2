@@ -12,6 +12,7 @@ from pyomo.environ import (
     Param,
     Objective,
     Var,
+    Expression,
     quicksum,
     value,
     minimize,
@@ -22,7 +23,7 @@ from pyomo.network import Arc
 # import internal modules 
 from blocks import chp, grid, storage, res
 import blocks.electrolyzer as elec
-import blocks.heatpump as hp
+import blocks.heatpump_new as hp
 import blocks.collector as st
 
 
@@ -60,22 +61,28 @@ class Model:
         self.timeseries_data = DataPortal()
 
         self.timeseries_data.load(
-            # filename=PATH_IN + 'prices/dummy/gas_price.csv',
-            filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
+            filename=PATH_IN + 'prices/dummy/gas_price.csv',
+            # filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
             index="t",
             param="gas_price",
         )
         self.timeseries_data.load(
-            # filename=PATH_IN + 'prices/dummy/power_price.csv',
-            filename=PATH_IN + "prices/gee23/power_price_2028.csv",
+            filename=PATH_IN + 'prices/dummy/power_price.csv',
+            # filename=PATH_IN + "prices/gee23/power_price_2028.csv",
             index="t",
             param="power_price",
         )
         self.timeseries_data.load(
-            # filename=PATH_IN + PATH_IN + 'demands/heat_short.csv',
-            filename=PATH_IN + "demands/heat.csv",
+            filename=PATH_IN + 'demands/heat_short.csv',
+            # filename=PATH_IN + "demands/heat.csv",
             index="t",
             param="heat_demand",
+        )
+        self.timeseries_data.load(
+            filename = PATH_IN + 'demands/local_heat_short.csv',
+            # filename = PATH_IN + 'demands/local_heat_2028.csv',
+            index = 't',
+            param = 'local_heat_demand',
         )
 
         # Another example for loading a profile with DataPortal
@@ -98,6 +105,7 @@ class Model:
         self.model.gas_price = Param(self.model.t)
         self.model.power_price = Param(self.model.t)
         self.model.heat_demand = Param(self.model.t)
+        self.model.local_heat_demand = Param(self.model.t)
 
         # Define profiles 
         #self.model.solar_thermal_heat_profile = Param(self.model.t)
@@ -116,6 +124,9 @@ class Model:
         n_grid = grid.NGasGrid("ngas_grid")
         wh_grid = grid.WasteHeatGrid("waste_heat_grid", 
                                      PATH_IN + "assets/waste_heat_grid.csv") 
+        lh_grid = grid.LocalHeatGrid("local_heat_grid", 
+                                     PATH_IN + "assets/local_heat_grid.csv")
+        
         e_grid = grid.ElectricalGrid(
             "electrical_grid", 
             PATH_IN + "assets/electrical_grid.csv"
@@ -134,8 +145,25 @@ class Model:
         )
         solar_thermal = st.Collector(
             "solar_thermal",
-            PATH_IN + 'profiles/max_solarthermal_profil_2028.csv'
+            #PATH_IN + 'profiles/max_solarthermal_profil_2028.csv'
+            PATH_IN + 'profiles/dummy_solarthermal_profil.csv'
         )
+        heatpump1 = hp.Heatpump(
+            "heatpump_1", 
+            PATH_IN + "assets/heatpump.csv"
+        )
+        heatpump2 = hp.Heatpump(
+            "heatpump_2", 
+            PATH_IN + "assets/heatpump.csv"
+        )
+        lh_storage = storage.LocalHeatStorage(
+            "local_heat_storage", 
+            PATH_IN + "assets/local_heat_storage.csv"
+        )
+
+
+
+
 
 
         chp1.add_to_model(self.model)
@@ -143,12 +171,16 @@ class Model:
         e_grid.add_to_model(self.model)
         h2_grid.add_to_model(self.model)
         wh_grid.add_to_model(self.model)
+        lh_grid.add_to_model(self.model)
         n_grid.add_to_model(self.model)
         h_grid.add_to_model(self.model)
         b_storage.add_to_model(self.model)
         h_storage.add_to_model(self.model)
         pv.add_to_model(self.model)
         solar_thermal.add_to_model(self.model)
+        heatpump1.add_to_model(self.model)
+        heatpump2.add_to_model(self.model)
+        lh_storage.add_to_model(self.model)
 
     def add_objective(self):
         """Adds the objective to the abstract model."""
@@ -237,18 +269,60 @@ class Model:
         # WASTE: CHP 1 -> Waste Grid
         self.instance.arc14 = Arc(
             source=self.instance.chp_1.waste_heat_out,
-            destination=self.instance.waste_heat_grid.waste_heat_in,
+            destination=self.instance.waste_heat_grid.heat_in,
         )
         # WASTE: CHP 2 -> Waste Grid
         self.instance.arc15 = Arc(
             source=self.instance.chp_2.waste_heat_out,
-            destination=self.instance.waste_heat_grid.waste_heat_in,
+            destination=self.instance.waste_heat_grid.heat_in,
         )
-        # HEAT: Solar Thermal -> Heat Grid
+        # WASTE: Waste Grid -> Heat Pump 1
         self.instance.arc16 = Arc(
-            source = self.instance.solar_thermal.heat_out,
-            destination = self.instance.heat_grid.heat_in,
+            source=self.instance.waste_heat_grid.heat_out,
+            destination=self.instance.heatpump_1.heat_in,
+        )   
+        # WASTE: Waste Grid -> Heat Pump 2
+        self.instance.arc17 = Arc(
+            source=self.instance.waste_heat_grid.heat_out,
+            destination=self.instance.heatpump_2.heat_in,
         )
+        # POWER: Electrical Grid -> Heat Pump 1
+        self.instance.arc18 = Arc(
+            source=self.instance.electrical_grid.power_out,
+            destination=self.instance.heatpump_1.power_in,
+        )
+        
+        # LOCAL HEAT: Solar Thermal -> LOCAL HEAT STORAGE
+        self.instance.arc19 = Arc(
+            source = self.instance.solar_thermal.heat_out,
+            destination = self.instance.local_heat_storage.heat_in,
+        )
+        # LOCAL HEAT: Heat Pump 1 -> Local HEAT STORAGE
+        self.instance.arc20 = Arc(
+            source=self.instance.heatpump_1.heat_out,
+            destination=self.instance.local_heat_storage.heat_in,
+        )
+
+        # LOCAL HEAT: Heat Pump 2 -> Local HEAT STORAGE
+        self.instance.arc21 = Arc(
+            source=self.instance.heatpump_2.heat_out,
+            destination=self.instance.local_heat_storage.heat_in,
+        )
+
+        # LOCAL HEAT: Local HEAT STORAGE -> Local Heat Grid
+        self.instance.arc22 = Arc(
+            source=self.instance.local_heat_storage.heat_out,
+            destination=self.instance.local_heat_grid.heat_in,
+        )
+
+
+
+
+         
+
+
+
+
 
     def solve(self):
         """Solves the optimization problem."""
@@ -267,6 +341,7 @@ class Model:
 
         df_variables = pd.DataFrame()
         df_parameters = pd.DataFrame()
+        df_expressions = pd.DataFrame()
         df_output = pd.DataFrame()
 
         for parameter in self.instance.component_objects(Param, active=True):
@@ -281,11 +356,36 @@ class Model:
                 continue
             if "splitfrac" in name:
                 continue
-            df_variables[name] = [value(variable[t]) for t in self.instance.t]
+            
+            # Füge nur berechnete Variablen hinzu
+            values = []
+            for t in self.instance.t:
+                v = value(variable[t], exception=False)  # Gibt None zurück, wenn nicht initialisiert
+                if v is not None:  # Nur initialisierte Variablen hinzufügen
+                    values.append(v)
+                else:
+                    values.append(None)  # Optional: None hinzufügen, um Lücken zu markieren
+            if any(v is not None for v in values):  # Nur hinzufügen, wenn mindestens ein Wert gesetzt ist
+                df_variables[name] = values
+        
+         # Get expressions
+        for expr in self.instance.component_objects(Expression, active=True):
+            name = expr.name
+            values = []
+            for t in self.instance.t:
+                try:
+                    v = value(expr[t])
+                    values.append(v)
+                except:
+                    values.append(None)
+            df_expressions[name] = values
 
-        df_output = pd.concat([df_parameters, df_variables], axis=1)
+
+        df_output = pd.concat([df_parameters, df_variables, df_expressions], axis=1)
         df_output.index = self.instance.t
         df_output.index.name = "t"
+
+        
 
         self.result_data = df_output
 
@@ -311,7 +411,7 @@ if __name__ == "__main__":
     print("SETTING SOLVER OPTIONS")
     lp.set_solver(
         solver_name="gurobi",
-        TimeLimit=40,  # solver will stop after x seconds
+        TimeLimit=200,  # solver will stop after x seconds
         MIPGap=0.01,
     )  # solver will stop if gap <= 1%
 

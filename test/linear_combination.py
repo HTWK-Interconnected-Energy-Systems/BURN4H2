@@ -29,7 +29,10 @@ model.cop = pyo.Var()
 # model.Tflow = pyo.Var()
 
 model.Tenv = pyo.Param(initialize=20)
+#model.Tenv = pyo.Param()
 model.Tflow = pyo.Param(initialize=40)
+
+model.linear = pyo.Var()
 
 # Gewichtssumme == 1
 def sum_gamma_rule(m):
@@ -50,8 +53,18 @@ def cop_rule(m):
     return m.cop == sum(cop_data[(i, j)] * m.gamma[i, j] for i in m.I for j in m.J)
 model.cop_con = pyo.Constraint(rule=cop_rule)
 
+
+# def linear_rule_1(m):
+#     return m.linear == m.Tflow * m.Tenv * m.cop
+# model.linear_con = pyo.Constraint(rule=linear_rule_1)
+
+
+def linear_rule_2(m):
+    return m.linear == m.Tflow * m.Tenv + m.cop
+model.linear_con = pyo.Constraint(rule=linear_rule_2)
+
 # Beispiel: Maximierung des CoP
-model.obj = pyo.Objective(expr=model.cop, sense=pyo.maximize)
+model.obj = pyo.Objective(expr=model.linear, sense=pyo.maximize)
 
 # Danach wie gewohnt lösen (z.B. mit CBC oder GLPK)
 solver = pyo.SolverFactory('gurobi')

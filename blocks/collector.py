@@ -41,17 +41,17 @@ class Collector:
         block.heat_out = Port()
         block.heat_out.add(
             block.heat,
-            'heat',
+            'local_heat',
             Port.Extensive,
             include_splitfrac=False
         )
 
-        def bin_rule(_block, i):
-            """Rule for the binary variable."""
-            if _block.heat_test[i] == 0:
-                return _block.bin[i] == 0
-            else:
-                return _block.bin[i] == 1
+        # def bin_rule(_block, i):
+        #     """Rule for the binary variable."""
+        #     if _block.heat[i] == 0:
+        #         return _block.bin[i] == 0
+        #     else:
+        #         return _block.bin[i] == 1
             
 
         def heat_rule(_block, i):
@@ -60,10 +60,10 @@ class Collector:
         
 
         # Declare constraints
-        block.bin_rule = Constraint(
-            t, 
-            rule=bin_rule
-        )
+        # block.bin_rule = Constraint(
+        #     t, 
+        #     rule=bin_rule
+        # )
 
         block.heat_rule = Constraint(
             t, 
