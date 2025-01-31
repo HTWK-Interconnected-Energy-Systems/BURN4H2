@@ -870,7 +870,7 @@ print("Periods / Month we consider: ", periods)
 - save_plot
 
 **plot_shares_of_supply**:  
-In this function we finally plot our extracted and defined data as a stacked box plot. We need our asset values, supply_shares, colors, periods, font sizes and other strings for our plot. Here everything of our box plot format is defined. Also our color_dict is updated because the function is called up here for color of bar. We can set a text label with our share in percent if we like when defining key_to_label. If it stays as Default value "None", no label is set. This function gives back a figure from plt if we like to save it in the next step.
+In this function we finally plot our extracted and defined data as a stacked box plot. We need our asset values, supply_shares, colors, periods, font sizes and other strings for our plot. Here everything of our box plot format is defined and input variables define labels of our title, axis etc. Also our color_dict is updated because the function is called up here for color of bar. We can set a text label with our share in percent if we like when defining key_to_label. If it stays as Default value "None", no label is set. This function gives back a figure from plt if we like to save it in the next step.
 
 *Note: If we don't save the figure and call up "save_plot", we need to turn on "plt.show()" in the function "plot_shares_of_supply", so we can see the result in our output.*
 
