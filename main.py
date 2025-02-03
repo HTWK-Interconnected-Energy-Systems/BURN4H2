@@ -269,12 +269,12 @@ class Model:
         # WASTE: CHP 1 -> Waste Grid
         self.instance.arc14 = Arc(
             source=self.instance.chp_1.waste_heat_out,
-            destination=self.instance.waste_heat_grid.heat_in,
+            destination=self.instance.waste_heat_grid.waste_heat_in,
         )
         # WASTE: CHP 2 -> Waste Grid
         self.instance.arc15 = Arc(
             source=self.instance.chp_2.waste_heat_out,
-            destination=self.instance.waste_heat_grid.heat_in,
+            destination=self.instance.waste_heat_grid.waste_heat_in,
         )
         # WASTE: Waste Grid -> Heat Pump 1
         self.instance.arc16 = Arc(
