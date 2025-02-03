@@ -93,8 +93,8 @@ class Heatpump:
         block.power_in.add(block.power,'power', Port.Extensive, include_splitfrac=False)
 
         # Port 2
-        block.heat_in = Port()
-        block.heat_in.add(block.heat_input,'waste_heat',Port.Extensive,include_splitfrac=False)
+        block.waste_heat_in = Port()
+        block.waste_heat_in.add(block.heat_input,'waste_heat',Port.Extensive,include_splitfrac=False)
 
         # Port 3
         block.heat_out = Port()
