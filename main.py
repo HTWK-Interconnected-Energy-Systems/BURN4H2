@@ -73,13 +73,13 @@ class Model:
             param="power_price",
         )
         self.timeseries_data.load(
-            filename=PATH_IN + 'demands/heat_short.csv',
+            filename=PATH_IN + 'demands/district_heating/dummy/heat_short.csv',
             # filename=PATH_IN + "demands/heat.csv",
             index="t",
             param="heat_demand",
         )
         self.timeseries_data.load(
-            filename = PATH_IN + 'demands/local_heat_short.csv',
+            filename = PATH_IN + 'demands/local_heating/dummy/local_heat_short.csv',
             # filename = PATH_IN + 'demands/local_heat_2028.csv',
             index = 't',
             param = 'local_heat_demand',
@@ -146,7 +146,7 @@ class Model:
         solar_thermal = st.Collector(
             "solar_thermal",
             #PATH_IN + 'profiles/max_solarthermal_profil_2028.csv'
-            PATH_IN + 'profiles/dummy_solarthermal_profil.csv'
+            PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv'
         )
         heatpump1 = hp.Heatpump(
             "heatpump_1", 
@@ -160,11 +160,6 @@ class Model:
             "local_heat_storage", 
             PATH_IN + "assets/local_heat_storage.csv"
         )
-
-
-
-
-
 
         chp1.add_to_model(self.model)
         chp2.add_to_model(self.model)
@@ -314,15 +309,6 @@ class Model:
             source=self.instance.local_heat_storage.heat_out,
             destination=self.instance.local_heat_grid.heat_in,
         )
-
-
-
-
-         
-
-
-
-
 
     def solve(self):
         """Solves the optimization problem."""
