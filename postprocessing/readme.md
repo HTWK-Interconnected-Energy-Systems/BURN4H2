@@ -1,12 +1,57 @@
-# Postprocessing
-## General information: 
+# Burn4H2 Module: Postprocessing
+# Table of Contents
+- [1 General information](#1-general-information)
+- [2 Installation](#2-installation)
+- [3 share_of_assets.ipynb](#3-share_of_assets.ipynb)
+    - [3.1 What is it for?](#3.1-what-is-it-for?)
+    - [3.2 Structure](#3.2-Structure)
+    - [3.3 Import of packages](#3.3-Import-of-packages)
+    - [3.4 General Helpers](#3.4-General-Helpers)
+    - [3.5 Helpers for Colormaps](#3.5-Helpers-for-Colormaps)
+    - [3.6 Load data from csv output](#3.6-Load-data-from-csv-output)
+    - [3.7 Functions for filtering and calculating values for set time granularity](#3.7-Functions-for-filtering-and-calculating-values-for-set-time-granularity)
+    - [3.8 Functions for setting assets and parameters to be visualized](#3.8-Functions-for-setting-assets-and-parameters-to-be-visualized)
+    - [3.9 Functions for plotting and saving bar chart for share of assets](#3.9-Functions-for-plotting-and-saving-bar-chart-for-share-of-assets)
+    - [3.10 Functions for plotting additionally storage values](#Functions-for-plotting-additionally-storage-values)
+    - [3.11 Main Script](#3.11-Main-Script)
+- [4 clean_spark_spread.ipynb](#4-clean_spark_spread.ipynb)  
+    - [4.1 What is it for?](#4.1-What-is-it-for?)
+    - [4.2 Structure](#4.2-Structure)
+    - [4.3 Import of packages](#4.3-Import-of-packages)  
+    - [4.4 General Helpers](#4.4-General-Helpers)
+    - [4.5 Load data from csv output](#4.5-Load-data-from-csv-output)
+    - [4.6 Functions for filtering and extracting values](#4.6-Functions-for-filtering-and-extracting-values)  
+    - [4.7 Calculate CSS](#4.7-Calculate-CSS)
+    - [4.8 Plot economic data](#4.8-Plot-economic-data)
+    - [4.9 Main Script](#4.9-Main-Script)
+
+
+## 1 General information: 
 Postprocessing is a folder with scripts that process data from folder output. 
 It is coded in jupyter notebook. Typically it generates diagrams and plots for visualization results of linear optimization. 
 The following document explains the structure, script functions and what users need to know and keep in mind to use the script. 
 Detailed input and output information are documented in docstrings of functions. 
 
-## Installation
-Apart from standard installations like a python interpreter and jupyter notebook the following packages are necessary for installation:
+## 2 Installation
+Apart from standard installations like a python interpreter and jupyter notebook please check in each script the section "Import of packages" for list of necessary libraries. 
+
+## 3 share_of_assets.ipynb
+### 3.1 What is it for?
+This script processes data from output_time_series.csv. 
+Focus lies on generating stacked box plots, that show supply of different assets for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply.
+
+### 3.2 Structure
+- Import of packages
+- General Helpers
+- Helpers for Colormaps
+- Load data from csv output
+- Functions for filtering and calculating values for set time granularity
+- Functions for setting assets and parameters to be visualized
+- Functions for plotting and saving bar chart for share of assets
+- Main Script
+
+### 3.3 Import of packages
+Code needs to be executed to load necessary libraries:
 - pandas
 - numpy
 - matplotlib.pyplot 
@@ -17,25 +62,20 @@ Apart from standard installations like a python interpreter and jupyter notebook
 - json
 - Image
 
-## share_of_assets.ipynb
-### What is it for?
-This script processes data from output_time_series.csv. 
-Focus lies on generating stacked box plots, that show supply of different assets for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply.
+#### Code Example:
+````python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt 
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+import colorcet as cc
+import os
+from datetime import datetime
+import json
+from PIL import Image
+````
 
-### Structure
-- 0.0 Import of packages
-- 0.1 General Helpers
-- 0.2 Helpers for Colormaps
-- 0.3 Load data from csv output
-- 1 Functions for filtering and calculating values for set time granularity
-- 2 Functions for setting assets and parameters to be visualized
-- 3 Functions for plotting and saving bar chart for share of assets
-- 4 Main Script
-
-### 0.0 Import of packages
-Needs to be executed to load necessary libraries for following code.
-
-### 0.1 General Helpers
+### 3.4 General Helpers
 **functions**: 
 - print_df
 - change_energy_units
@@ -68,7 +108,7 @@ If a list of timestamps with months in this format is given ['YYYY-MM', ...], th
 #### Output example:
 <img src="../data/postprocessing/zzz_pictures/get_months_example.png" alt="get_months_example" width="1090">
 
-### 0.2 Helpers for Colormaps
+### 3.5 Helpers for Colormaps
 **functions**:
 - register_colormap
 - shift_colormap
@@ -396,7 +436,7 @@ show_color_rgba(example_rgba)
 #### Output example:  
 <img src="../data/postprocessing/zzz_pictures/show_color_rgba.png" alt="show_color_rgba" width="700">
 
-### 0.3 Load data from csv output:  
+### 3.6 Load data from csv output:  
 All postprocessing scripts refer to results from optimization model. Mostly, as in this case, they refer to the file output_time_series.csv. In this case the function loads data from csv to a processable df, that's easy to read. See example below: 
 
 #### Code example: 
@@ -427,7 +467,7 @@ df = load_csv_results_in_df(input_path=INPUT_PATH)
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures/print_df_example.png" alt="print_df_example" width="900">
 
-### 1 Functions for filtering and calculating values for set time granularity
+### 3.7 Functions for filtering and calculating values for set time granularity
 
 **functions**:  
 - add_timestamp_and_filter
@@ -602,7 +642,7 @@ print_df(result_df)
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures/sums_by_granularity_example.png" alt="sums_by_granularity_example" width="900">
 
-### 2 Functions for setting assets and parameters to be visualized
+### 3.8 Functions for setting assets and parameters to be visualized
 **functions**: 
 - extract_assets_to_dict
 - calculate_asset_share_of_supply
@@ -864,7 +904,7 @@ print("Periods / Month we consider: ", periods)
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures/get_asset_data_for_plot_example.png" alt="get_asset_data_for_plot_example" width="1200">
 
-### 3 Functions for plotting and saving bar chart for share of assets
+### 3.09 Functions for plotting and saving bar chart for share of assets
 **functions**:  
 - plot_shares_of_supply
 - save_plot
@@ -1084,8 +1124,10 @@ When our figure is saved, we get a notification with the path, where it was save
 
 <img src="../data/postprocessing/zzz_pictures/save_plot_example2.png" alt="save_plot_example2" width="1200">
 
+### 3.10 Functions for plotting additionally storage values
+*ergänzen um: get_data_for_storage_plot, plot_shares_and_storage!*
 
-### 4 Main Script
+### 3.11 Main Script
 **Structure**: 
 - Input values
 - Main script
@@ -1145,6 +1187,8 @@ colormap = 'nipy_spectral'
 **Main script**:  
 We always need to update out input values before executing our main script. 
 Normally we don't need to change anything in this script, if we want to follow the workflow of generating a plot for shares of different assets on supply and save it later on with defined colors. See the example below: 
+
+*ergänzen um: decide_for_diagram_and_plot!*
 
 #### Code example: 
 ````python
@@ -1212,5 +1256,46 @@ save_colors_for_key_json(
 
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures/main_example.png" alt="main_example" width="1000">
+
+## 4 clean_spark_spread.ipynb
+### 4.1 What is it for?
+This script processes data from output_time_series.csv. 
+Focus lies on generating stacked box plots, that show supply of different assets for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply.
+
+### 4.2 Structure
+- Import Packages
+- General Helpers
+- Load data from csv output
+- Functions for filtering and extracting values
+- Calculate CSS
+- Plot economic data
+- Main Script
+
+### 4.3 Import of packages
+Needs to be executed to load necessary libraries for following code:
+- pandas
+- matplotlib.pyplot
+- datetime 
+- os
+
+#### Code example:
+````python 
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
+import os
+````
+### 4.4 General Helpers
+
+### 4.5 Load data from csv output
+
+### 4.6 Functions for filtering and extracting values
+
+### 4.7 Calculate CSS
+
+### 4.8 Plot economic data
+
+### 4.9 Main Script
+
 
 *written by: Sophia Reker*
