@@ -274,12 +274,12 @@ class Model:
         # WASTE: Waste Grid -> Heat Pump 1
         self.instance.arc16 = Arc(
             source=self.instance.waste_heat_grid.heat_out,
-            destination=self.instance.heatpump_1.heat_in,
+            destination=self.instance.heatpump_1.waste_heat_in,
         )   
         # WASTE: Waste Grid -> Heat Pump 2
         self.instance.arc17 = Arc(
             source=self.instance.waste_heat_grid.heat_out,
-            destination=self.instance.heatpump_2.heat_in,
+            destination=self.instance.heatpump_2.waste_heat_in,
         )
         # POWER: Electrical Grid -> Heat Pump 1
         self.instance.arc18 = Arc(
@@ -321,7 +321,7 @@ class Model:
             report_timing=True,
         )
 
-    def write_results(self):
+    def write_results(self, include_arcs=False):
         """Writes the resulting time series to a dataframe."""
         self.results.write()
 
@@ -341,6 +341,9 @@ class Model:
             if "aux" in name:  # Filters auxiliary variables from the output data
                 continue
             if "splitfrac" in name:
+                continue
+            # Skip arc variables if not included
+            if not include_arcs and "arc" in name.lower():
                 continue
             
             # Füge nur berechnete Variablen hinzu

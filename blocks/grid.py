@@ -300,8 +300,8 @@ class WasteHeatGrid:
         block.heat_feedin = Var(t, domain=NonNegativeReals)
 
         # Ports
-        block.heat_in = Port()
-        block.heat_in.add(
+        block.waste_heat_in = Port()
+        block.waste_heat_in.add(
             block.heat_feedin,
             'waste_heat',
             Port.Extensive,
