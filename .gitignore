@@ -16,10 +16,13 @@
 data/input/prices/gee23
 data/input/prices/kt23
 data/input/prices/ue23
-data/input/profiles
+data/input/profiles/ST Süd_max
+data/input/profiles/ST Süd_min
 data/misc/scenarios
 data/misc/profiles
-
+data/input/demands/district_heating/default
+data/input/demands/local_heating/Bedarf NW-Netz
+data/input/demands/local_heating/Bedarf NW-Netz_zusätzl Abnehmer
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -69,6 +69,7 @@ class Heatpump:
         def cop_depends_on_temperature_rule(_block, i):
             """Rule for the dependencies between the coefficient of performance and the temperature."""
 
+
            # Diskrete Stützstellen für Umgebungstemperatur und Vorlauftemperatur
             env_temps = [0, 10, 20]       # Beispielwerte
             flow_temps = [30, 40, 50]     # Beispielwerte
