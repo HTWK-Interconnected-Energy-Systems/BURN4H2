@@ -61,26 +61,26 @@ class Model:
         self.timeseries_data = DataPortal()
 
         self.timeseries_data.load(
-            filename=PATH_IN + 'prices/dummy/gas_price.csv',
-            # filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
+            # filename=PATH_IN + 'prices/dummy/gas_price.csv',
+            filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
             index="t",
             param="gas_price",
         )
         self.timeseries_data.load(
-            filename=PATH_IN + 'prices/dummy/power_price.csv',
-            # filename=PATH_IN + "prices/gee23/power_price_2028.csv",
+            # filename=PATH_IN + 'prices/dummy/power_price.csv',
+            filename=PATH_IN + "prices/gee23/power_price_2028.csv",
             index="t",
             param="power_price",
         )
         self.timeseries_data.load(
-            filename=PATH_IN + 'demands/heat_short.csv',
-            # filename=PATH_IN + "demands/heat.csv",
+            # filename=PATH_IN + 'demands/district_heating/dummy/heat_short.csv',
+            filename=PATH_IN + "demands/district_heating/default/heat.csv",
             index="t",
             param="heat_demand",
         )
         self.timeseries_data.load(
-            filename = PATH_IN + 'demands/local_heat_short.csv',
-            # filename = PATH_IN + 'demands/local_heat_2028.csv',
+            # filename = PATH_IN + 'demands/local_heating/dummy/local_heat_short.csv',
+            filename = PATH_IN + "demands/local_heating/Bedarf NW-Netz/local_heat_2028.csv",
             index = 't',
             param = 'local_heat_demand',
         )
@@ -145,8 +145,8 @@ class Model:
         )
         solar_thermal = st.Collector(
             "solar_thermal",
-            #PATH_IN + 'profiles/max_solarthermal_profil_2028.csv'
-            PATH_IN + 'profiles/dummy_solarthermal_profil.csv'
+            PATH_IN + 'profiles/ST Süd_max/max_solarthermal_profil_2028.csv'
+            # PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv'
         )
         heatpump1 = hp.Heatpump(
             "heatpump_1", 
@@ -160,11 +160,6 @@ class Model:
             "local_heat_storage", 
             PATH_IN + "assets/local_heat_storage.csv"
         )
-
-
-
-
-
 
         chp1.add_to_model(self.model)
         chp2.add_to_model(self.model)
@@ -269,22 +264,22 @@ class Model:
         # WASTE: CHP 1 -> Waste Grid
         self.instance.arc14 = Arc(
             source=self.instance.chp_1.waste_heat_out,
-            destination=self.instance.waste_heat_grid.heat_in,
+            destination=self.instance.waste_heat_grid.waste_heat_in,
         )
         # WASTE: CHP 2 -> Waste Grid
         self.instance.arc15 = Arc(
             source=self.instance.chp_2.waste_heat_out,
-            destination=self.instance.waste_heat_grid.heat_in,
+            destination=self.instance.waste_heat_grid.waste_heat_in,
         )
         # WASTE: Waste Grid -> Heat Pump 1
         self.instance.arc16 = Arc(
             source=self.instance.waste_heat_grid.heat_out,
-            destination=self.instance.heatpump_1.heat_in,
+            destination=self.instance.heatpump_1.waste_heat_in,
         )   
         # WASTE: Waste Grid -> Heat Pump 2
         self.instance.arc17 = Arc(
             source=self.instance.waste_heat_grid.heat_out,
-            destination=self.instance.heatpump_2.heat_in,
+            destination=self.instance.heatpump_2.waste_heat_in,
         )
         # POWER: Electrical Grid -> Heat Pump 1
         self.instance.arc18 = Arc(
@@ -315,15 +310,6 @@ class Model:
             destination=self.instance.local_heat_grid.heat_in,
         )
 
-
-
-
-         
-
-
-
-
-
     def solve(self):
         """Solves the optimization problem."""
         self.results = self.solver.solve(
@@ -335,7 +321,7 @@ class Model:
             report_timing=True,
         )
 
-    def write_results(self):
+    def write_results(self, include_arcs=False):
         """Writes the resulting time series to a dataframe."""
         self.results.write()
 
@@ -355,6 +341,9 @@ class Model:
             if "aux" in name:  # Filters auxiliary variables from the output data
                 continue
             if "splitfrac" in name:
+                continue
+            # Skip arc variables if not included
+            if not include_arcs and "arc" in name.lower():
                 continue
             
             # Füge nur berechnete Variablen hinzu
