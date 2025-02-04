@@ -46,12 +46,10 @@ class Collector:
             include_splitfrac=False
         )
 
-         # Profile constraint
+        # Constraints
         def profile_rule(_block, i):
             """Rule for the profile constraint. """
             return _block.heat[i] == solar_profile[i] 
-            
-        block.profile_constraint = Constraint(t, rule=profile_rule)
         
         def bin_rule(_block, i):
             """Rule for the binary variable."""
@@ -59,6 +57,7 @@ class Collector:
                 return _block.bin[i] == 0
             else:
                 return _block.bin[i] == 1
+
 
         # Declare constraints
         block.bin_rule = Constraint(

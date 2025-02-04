@@ -2,6 +2,7 @@
 
 # Import default libraries
 import pandas as pd
+import json
 
 # Import external libraries
 from pyomo.opt import SolverFactory
@@ -23,19 +24,23 @@ from pyomo.network import Arc
 # import internal modules 
 from blocks import chp, grid, storage, res
 import blocks.electrolyzer as elec
-import blocks.heatpump_new as hp
+import blocks.heatpump as hp
 import blocks.collector as st
 
 
 # Path
 PATH_IN = "data/input/"
 PATH_OUT = "data/output/"
-
+PATH_CONFIG = "data/config/"
 
 # Declare constant prices
 CO2_PRICE = 95.98  # price in €/t
 HEAT_PRICE = 0  # price in €/MWh
 H2_PRICE = 81.01  # price in €/MWh
+
+
+# config file
+config_file = "dummy.json"
 
 
 class Model:
@@ -56,40 +61,54 @@ class Model:
         for key in kwargs:
             self.solver.options[key] = kwargs[key]
 
-    def load_timeseries_data(self):
+    def load_timeseries_data(self, config_file=config_file):
         """Declare timeseries data for the optimization model."""
         self.timeseries_data = DataPortal()
 
-        self.timeseries_data.load(
-            filename=PATH_IN + 'prices/dummy/gas_price.csv',
-            # filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
-            index="t",
-            param="gas_price",
-        )
-        self.timeseries_data.load(
-            filename=PATH_IN + 'prices/dummy/power_price.csv',
-            # filename=PATH_IN + "prices/gee23/power_price_2028.csv",
-            index="t",
-            param="power_price",
-        )
-        self.timeseries_data.load(
-            filename=PATH_IN + 'demands/district_heating/dummy/heat_short.csv',
-            # filename=PATH_IN + "demands/district_heating/default/heat.csv",
-            index="t",
-            param="heat_demand",
-        )
-        self.timeseries_data.load(
-            filename = PATH_IN + 'demands/local_heating/dummy/local_heat_short.csv',
-            # filename = PATH_IN + "demands/local_heating/Bedarf NW-Netz/local_heat_2028.csv",
-            index = 't',
-            param = 'local_heat_demand',
-        )
+        # Load config
+        with open(PATH_CONFIG + config_file, "r") as f:
+            config = json.load(f)
 
-        self.timeseries_data.load(
-            filename=PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv',
-            index='t',
-            param='solar_thermal_heat_profile',
-        )
+        for param_name, param_config in config.items():
+            self.timeseries_data.load(
+                filename=PATH_IN + param_config["file"],
+                index=param_config["index"],
+                param=param_config["param"], 
+            )
+        
+        ######## OLD Structure ########
+
+        # self.timeseries_data.load(
+        #     filename=PATH_IN + 'prices/dummy/gas_price.csv',
+        #     # filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
+        #     index="t",
+        #     param="gas_price",
+        # )
+        # self.timeseries_data.load(
+        #     filename=PATH_IN + 'prices/dummy/power_price.csv',
+        #     # filename=PATH_IN + "prices/gee23/power_price_2028.csv",
+        #     index="t",
+        #     param="power_price",
+        # )
+        # self.timeseries_data.load(
+        #     filename=PATH_IN + 'demands/district_heating/dummy/heat_short.csv',
+        #     # filename=PATH_IN + "demands/district_heating/default/heat.csv",
+        #     index="t",
+        #     param="heat_demand",
+        # )
+        # self.timeseries_data.load(
+        #     filename=PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv',
+        #     index='t',
+        #     param='solar_thermal_heat_profile',
+        # )
+        # self.timeseries_data.load(
+        #     filename = PATH_IN + 'demands/local_heating/dummy/local_heat_short.csv',
+        #     # filename = PATH_IN + "demands/local_heating/Bedarf NW-Netz/local_heat_2028.csv",
+        #     index = 't',
+        #     param = 'local_heat_demand',
+        # )
+
+        ######## OLD Structure ########
       
       
     def add_components(self):
@@ -198,86 +217,103 @@ class Model:
             source=self.instance.chp_1.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
+        
         # POWER: CHP 2 -> Electrical Grid
         self.instance.arc02 = Arc(
             source=self.instance.chp_2.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
+        
         # POWER: PV -> Electrical Grid
         self.instance.arc03 = Arc(
             source=self.instance.pv.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
+        
         # POWER: Battery Storage -> Electrical Grid
         self.instance.arc04 = Arc(
             source=self.instance.battery_storage.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
+        
         # POWER: Electrical Grid -> Battery Storage
         self.instance.arc05 = Arc(
             source=self.instance.electrical_grid.power_out,
             destination=self.instance.battery_storage.power_in,
         )
+        
         # NGAS: NGAS Grid -> CHP 1
         self.instance.arc06 = Arc(
             source=self.instance.ngas_grid.ngas_out,
             destination=self.instance.chp_1.natural_gas_in,
         )
+        
         # NGAS: NGAS Grid -> CHP 2
         self.instance.arc07 = Arc(
             source=self.instance.ngas_grid.ngas_out,
             destination=self.instance.chp_2.natural_gas_in,
         )
+        
         # HYDROGEN: Hydrogen Grid -> CHP 1
         self.instance.arc08 = Arc(
             source=self.instance.hydrogen_grid.hydrogen_out,
             destination=self.instance.chp_1.hydrogen_in,
         )
+        
         # HYDROGEN: Hydrogen Grid -> CHP 2
         self.instance.arc09 = Arc(
             source=self.instance.hydrogen_grid.hydrogen_out,
             destination=self.instance.chp_2.hydrogen_in,
         )
+        
         # HEAT: CHP 1 -> Heat Grid
         self.instance.arc10 = Arc(
             source=self.instance.chp_1.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
+        
         # HEAT: CHP 2 -> Heat Grid
         self.instance.arc11 = Arc(
             source=self.instance.chp_2.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
+        
         # HEAT: Heat Storage -> Heat Grid
         self.instance.arc12 = Arc(
             source=self.instance.heat_storage.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
+        
         # HEAT: Heat Grid -> Heat Storage
         self.instance.arc13 = Arc(
             source=self.instance.heat_grid.heat_out,
             destination=self.instance.heat_storage.heat_in,
         )
+        
         # WASTE: CHP 1 -> Waste Grid
         self.instance.arc14 = Arc(
             source=self.instance.chp_1.waste_heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
+        
         # WASTE: CHP 2 -> Waste Grid
         self.instance.arc15 = Arc(
             source=self.instance.chp_2.waste_heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
+        
         # WASTE: Waste Grid -> Heat Pump 1
         self.instance.arc16 = Arc(
             source=self.instance.waste_heat_grid.heat_out,
             destination=self.instance.heatpump_1.waste_heat_in,
         )   
+        
         # WASTE: Waste Grid -> Heat Pump 2
         self.instance.arc17 = Arc(
             source=self.instance.waste_heat_grid.heat_out,
             destination=self.instance.heatpump_2.waste_heat_in,
         )
+        
         # POWER: Electrical Grid -> Heat Pump 1
         self.instance.arc18 = Arc(
             source=self.instance.electrical_grid.power_out,
@@ -289,6 +325,7 @@ class Model:
             source = self.instance.solar_thermal.heat_out,
             destination = self.instance.local_heat_storage.heat_in,
         )
+        
         # LOCAL HEAT: Heat Pump 1 -> Local HEAT STORAGE
         self.instance.arc20 = Arc(
             source=self.instance.heatpump_1.heat_out,
@@ -306,6 +343,7 @@ class Model:
             source=self.instance.local_heat_storage.heat_out,
             destination=self.instance.local_heat_grid.heat_in,
         )
+
 
     def solve(self):
         """Solves the optimization problem."""

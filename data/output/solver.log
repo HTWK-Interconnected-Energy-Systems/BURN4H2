@@ -2,8 +2,8 @@ Solver command line: ['C:\\Program Files\\gurobi1102\\win64\\bin\\gurobi.bat']
 
 Set parameter Username
 Academic license - for non-commercial use only - expires 2025-07-11
-Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmpf0lho4hm.pyomo.lp
-Reading time = 0.21 seconds
+Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmpvrl4qyqs.pyomo.lp
+Reading time = 0.12 seconds
 objective: 15961 rows, 15119 columns, 35937 nonzeros
 Set parameter TimeLimit to value 200
 Set parameter MIPGap to value 0.01
@@ -13,7 +13,7 @@ CPU model: Intel(R) Xeon(R) CPU E5-1607 v2 @ 3.00GHz, instruction set [SSE2|AVX]
 Thread count: 4 physical cores, 4 logical processors, using up to 4 threads
 
 Optimize a model with 15961 rows, 15119 columns and 35937 nonzeros
-Model fingerprint: 0xc4ff891c
+Model fingerprint: 0x1c1836e4
 Model has 167 quadratic constraints
 Variable types: 13104 continuous, 2015 integer (1680 binary)
 Coefficient statistics:
@@ -23,12 +23,12 @@ Coefficient statistics:
   Bounds range     [1e+00, 3e+00]
   RHS range        [4e-04, 1e+04]
 Presolve removed 14558 rows and 13650 columns
-Presolve time: 0.16s
+Presolve time: 0.15s
 Presolved: 1403 rows, 1469 columns, 4298 nonzeros
 Variable types: 968 continuous, 501 integer (501 binary)
 Found heuristic solution: objective 1230646.7167
 
-Root relaxation: objective 5.142502e+05, 523 iterations, 0.01 seconds (0.00 work units)
+Root relaxation: objective 5.142502e+05, 523 iterations, 0.02 seconds (0.00 work units)
 
     Nodes    |    Current Node    |     Objective Bounds      |     Work
  Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
@@ -36,7 +36,7 @@ Root relaxation: objective 5.142502e+05, 523 iterations, 0.01 seconds (0.00 work
      0     0 514250.240    0   13 1230646.72 514250.240  58.2%     -    0s
 H    0     0                    518958.74213 514250.240  0.91%     -    0s
 
-Explored 1 nodes (623 simplex iterations) in 0.22 seconds (0.08 work units)
+Explored 1 nodes (623 simplex iterations) in 0.20 seconds (0.08 work units)
 Thread count was 4 (of 4 available processors)
 
 Solution count 2: 518959 1.23065e+06 
