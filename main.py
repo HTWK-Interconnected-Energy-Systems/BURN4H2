@@ -77,6 +77,7 @@ class Model:
         with open(PATH_CONFIG + self.config_file, "r") as f:
             config = json.load(f)
 
+        # Load timeseries data from config
         for param_name, param_config in config.items():
             self.timeseries_data.load(
                 filename=PATH_IN + param_config["file"],
@@ -169,8 +170,8 @@ class Model:
         )
         solar_thermal = st.Collector(
             "solar_thermal",
-            # PATH_IN + 'profiles/ST Süd_max/max_solarthermal_profil_2028.csv'
-            PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv'
+            # PATH_IN + 'profiles/ST Süd_max/max_solarthermal_profil_2028.csv' # Not necessary anymore
+            PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv' # Not necessary anymore
         )
         heatpump1 = hp.Heatpump(
             "heatpump_1", 
@@ -352,6 +353,19 @@ class Model:
             destination=self.instance.local_heat_grid.heat_in,
         )
 
+        # EXCESS LOCAL HEAT: Local Heat Storage -> Heat Grid
+        self.instance.arc23 = Arc(
+            source=self.instance.local_heat_storage.excess_heat_out,
+            destination=self.instance.heat_grid.excess_heat_in 
+        )
+
+        # HEAT: Heat Grid -> Local Heat Grid
+        self.instance.arc24 = Arc(
+            source=self.instance.heat_grid.heat_grid_to_local_out,
+            destination=self.instance.local_heat_grid.district_heat_in,
+        )
+
+
 
     def solve(self):
         """Solves the optimization problem."""
@@ -457,8 +471,8 @@ if __name__ == "__main__":
     print("SETTING SOLVER OPTIONS")
     lp.set_solver(
         solver_name="gurobi",
-        TimeLimit=200,  # solver will stop after x seconds
-        MIPGap=0.01,
+        # TimeLimit=1000,  # solver will stop after x seconds
+        MIPGap=0.03,
     )  # solver will stop if gap <= 1%
 
     print("PREPARING DATA")

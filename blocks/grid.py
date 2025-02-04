@@ -225,6 +225,10 @@ class HeatGrid:
         block.heat_balance = Var(t, domain=Reals)
         block.heat_feedin = Var(t, domain=NonNegativeReals)
         block.heat_supply = Var(t, domain=NonNegativeReals)
+        
+        # Heat transfer between local grid and heat grid
+        block.excess_heat_feedin = Var(t, domain=NonNegativeReals)
+        block.heat_grid_to_local = Var(t, domain=NonNegativeReals)
 
         # Ports
         block.heat_in = Port()
@@ -242,6 +246,22 @@ class HeatGrid:
             include_splitfrac=False
         )
 
+        block.excess_heat_in = Port()
+        block.excess_heat_in.add(
+            block.excess_heat_feedin,
+            'excess_heat',
+            Port.Extensive,
+            include_splitfrac=False
+        )
+
+        block.heat_grid_to_local_out = Port()
+        block.heat_grid_to_local_out.add(
+            block.heat_grid_to_local,
+            'district_heat',
+            Port.Extensive,
+            include_splitfrac=False
+        )
+
         
         # Define construction rules for constraints
         def heat_balance_rule(_block, i):
@@ -249,7 +269,9 @@ class HeatGrid:
             return _block.heat_balance[i] == (
                 _block.model().heat_demand[i] 
                 + _block.heat_supply[i] 
-                - _block.heat_feedin[i]
+                + _block.heat_grid_to_local[i]
+                - _block.heat_feedin[i] 
+                - _block.excess_heat_feedin[i]
                 )
         
         def supply_heat_demand_rule(_block, i):
@@ -298,7 +320,7 @@ class WasteHeatGrid:
         block.heat_balance = Var(t, domain=Reals)
         block.heat_supply = Var(t, domain=NonNegativeReals)
         block.heat_feedin = Var(t, domain=NonNegativeReals)
-
+       
         # Ports
         block.waste_heat_in = Port()
         block.waste_heat_in.add(
@@ -314,6 +336,7 @@ class WasteHeatGrid:
             Port.Extensive,
             include_splitfrac=False
         )
+
 
         # Define construction rules for constraints
         def waste_heat_balance_rule(_block, i):
@@ -365,6 +388,8 @@ class LocalHeatGrid:
         block.heat_balance = Var(t, domain=Reals)
         block.heat_supply = Var(t, domain=NonNegativeReals)
         block.heat_feedin = Var(t, domain=NonNegativeReals)
+        block.district_heat_feedin = Var(t, domain=NonNegativeReals)
+
 
         block.heat_in = Port()
         block.heat_in.add(
@@ -380,6 +405,13 @@ class LocalHeatGrid:
             'local_heat',
             Port.Extensive,
             include_splitfrac=False
+        )
+
+        block.district_heat_in = Port()
+        block.district_heat_in.add(
+            block.district_heat_feedin,
+            'district_heat',
+            Port.Extensive,
         )
 
         def heat_balance_rule(_block, i):
@@ -398,8 +430,30 @@ class LocalHeatGrid:
             """Rule for fully suppling the heat demand."""
             return _block.heat_balance[i] == (
                 + _block.heat_feedin[i]
+                + _block.district_heat_feedin[i]
                 - _block.model().local_heat_demand[i]
             )
+        
+        def annual_local_heat_share_rule(_block):
+            """Rule for ensuring 80% annual share from local sources."""
+            return (
+                sum(_block.heat_feedin[i] for i in _block.model().t) >= 
+                0.8 * sum(_block.model().local_heat_demand[i] for i in _block.model().t)
+            )
+
+        # Add constraint without timestep index
+        block.annual_local_heat_share_constraint = Constraint(
+            rule=annual_local_heat_share_rule
+        )
+        
+        def minimum_local_heat_share_rule(_block, i):
+            """Rule for the minimal heat supply."""
+            return _block.heat_feedin[i] >= _block.model().local_heat_demand[i] * 0.8
+        
+        # block.minimum_local_heat_share_constraint = Constraint(
+        #     t,
+        #     rule=minimum_local_heat_share_rule
+        # )
 
         block.supply_heat_demand_constraint = Constraint(
             t,
