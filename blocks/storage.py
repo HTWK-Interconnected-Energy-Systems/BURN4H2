@@ -496,6 +496,7 @@ class LocalHeatStorage:
 
         block.heat_in = Port()
         block.heat_in.add(block.heat_charging, 'local_heat', Port.Extensive, include_splitfrac=False)
+        
         block.heat_out = Port()
         block.heat_out.add(block.heat_discharging, 'local_heat', Port.Extensive, include_splitfrac=False)
 
@@ -514,11 +515,6 @@ class LocalHeatStorage:
         def heat_balance_rule(_block, i):
             """Rule for calculating the overall heat balance."""
             return _block.heat_balance[i] == _block.heat_discharging[i] - _block.heat_charging[i]
-
-
-        def binary_rule(_block, i):
-            """Rule for restricting simultaneous charging and discharging."""
-            return _block.bin_charge[i] + _block.bin_discharge[i] == 1
         
 
         def max_heat_content_rule(_block, i):
@@ -552,10 +548,6 @@ class LocalHeatStorage:
             t,
             rule=heat_balance_rule
         )
-        # block.binary_constraint = Constraint(
-        #     t,
-        #     rule=binary_rule
-        # )
         block.max_heat_content_constraint = Constraint(
             t,
             rule=max_heat_content_rule

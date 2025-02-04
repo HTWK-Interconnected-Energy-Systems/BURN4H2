@@ -389,11 +389,33 @@ class LocalHeatGrid:
                 + _block.heat_supply[i] 
                 - _block.heat_feedin[i]
             )
+        
+        def supply_heat_demand_balance_rule(_block, i):
+            """Rule for fully suppling the heat demand."""
+            return _block.heat_balance[i] == 0
+        
+        def supply_heat_demand_rule(_block, i):
+            """Rule for fully suppling the heat demand."""
+            return _block.heat_balance[i] == (
+                + _block.heat_feedin[i]
+                - _block.model().local_heat_demand[i]
+            )
 
-        block.heat_balance_constraint = Constraint(
+        block.supply_heat_demand_constraint = Constraint(
             t,
-            rule=heat_balance_rule
+            rule=supply_heat_demand_rule
         )
+
+        block.supply_heat_demand_balance_constraint = Constraint(
+            t,
+            rule=supply_heat_demand_balance_rule
+        )
+
+
+        # block.heat_balance_constraint = Constraint(
+        #     t,
+        #     rule=heat_balance_rule
+        # )
 
 
     
