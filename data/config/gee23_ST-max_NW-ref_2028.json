@@ -15,7 +15,7 @@
       "param": "heat_demand"
     },
     "solar_thermal_heat_profile":{ 
-      "file": "profiles/ST Süd_max/max_solarthermal_profil_2028.csv",
+      "file": "profiles/ST Sued_max/max_solarthermal_profil_2028.csv",
       "index": "t",
       "param": "solar_thermal_heat_profile"
     },

@@ -15,12 +15,12 @@
       "param": "heat_demand"
     },
     "solar_thermal_heat_profile":{ 
-      "file": "profiles/ST Süd_max/max_solarthermal_profil_2028.csv",
+      "file": "profiles/ST Sued_max/max_solarthermal_profil_2028.csv",
       "index": "t",
       "param": "solar_thermal_heat_profile"
     },
     "local_heat_demand": {
-      "file": "demands/local_heating/Bedarf NW-Netz_zusätzl Abnehmer/local_heat_ext_2028.csv",
+      "file": "demands/local_heating/Bedarf NW-Netz_zusaetzl Abnehmer/local_heat_ext_2028.csv",
       "index": "t",
       "param": "local_heat_demand"
     }

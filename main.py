@@ -3,6 +3,8 @@
 # Import default libraries
 import pandas as pd
 import json
+import os
+import argparse
 
 # Import external libraries
 from pyomo.opt import SolverFactory
@@ -39,20 +41,26 @@ HEAT_PRICE = 0  # price in €/MWh
 H2_PRICE = 81.01  # price in €/MWh
 
 
-# config file
-config_file = "dummy.json"
-
+# config files
+AVAILABLE_CONFIGS = [
+    "dummy.json",
+    "gee23_ST-min_NW-ref_2028.json",
+    "gee23_ST-max_NW-ref_2028.json",
+    "gee23_ST-min_NW-ext_2028.json",
+    "gee23_ST-max_NW-ext_2028.json"
+]
 
 class Model:
     """Main class for the creation of the optimization model."""
 
-    def __init__(self) -> None:
+    def __init__(self, config_file: str) -> None:
         self.model = AbstractModel()
         self.instance = None
         self.solver = None
         self.timeseries_data = None
         self.results = None
         self.result_data = None
+        self.config_file = config_file
 
     def set_solver(self, solver_name, **kwargs):
         """Declare solver and solver options."""
@@ -61,12 +69,12 @@ class Model:
         for key in kwargs:
             self.solver.options[key] = kwargs[key]
 
-    def load_timeseries_data(self, config_file=config_file):
+    def load_timeseries_data(self):
         """Declare timeseries data for the optimization model."""
         self.timeseries_data = DataPortal()
 
         # Load config
-        with open(PATH_CONFIG + config_file, "r") as f:
+        with open(PATH_CONFIG + self.config_file, "r") as f:
             config = json.load(f)
 
         for param_name, param_config in config.items():
@@ -413,9 +421,12 @@ class Model:
 
         self.result_data = df_output
 
-    def save_result_data(self, filepath):
+    def save_result_data(self, output_dir):
         """Saves the result data as csv to the given file path."""
-        self.result_data.to_csv(filepath)
+        config_name = os.path.basename(self.config_file).replace('.json','')
+        output_filename = f"{config_name}_output.csv"
+        output_filepath = os.path.join(output_dir, output_filename)
+        self.result_data.to_csv(output_filepath)
 
     # Sophia Zielfunktion
     def obj_expression(self, m):
@@ -430,7 +441,18 @@ class Model:
 
 
 if __name__ == "__main__":
-    lp = Model()
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='Run energy system optimization')
+    parser.add_argument('--config', 
+                       choices=AVAILABLE_CONFIGS,
+                       default="dummy.json",
+                       help='Configuration file to use')
+    args = parser.parse_args()
+    
+    print(f"Running scenario: {args.config}")
+    
+    # Create model instance
+    lp = Model(config_file=args.config)
 
     print("SETTING SOLVER OPTIONS")
     lp.set_solver(
@@ -463,4 +485,4 @@ if __name__ == "__main__":
     lp.solve()
 
     lp.write_results()
-    lp.save_result_data(PATH_OUT + "output_time_series.csv")
+    lp.save_result_data(output_dir=PATH_OUT)
