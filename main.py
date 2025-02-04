@@ -61,40 +61,37 @@ class Model:
         self.timeseries_data = DataPortal()
 
         self.timeseries_data.load(
-            # filename=PATH_IN + 'prices/dummy/gas_price.csv',
-            filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
+            filename=PATH_IN + 'prices/dummy/gas_price.csv',
+            # filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
             index="t",
             param="gas_price",
         )
         self.timeseries_data.load(
-            # filename=PATH_IN + 'prices/dummy/power_price.csv',
-            filename=PATH_IN + "prices/gee23/power_price_2028.csv",
+            filename=PATH_IN + 'prices/dummy/power_price.csv',
+            # filename=PATH_IN + "prices/gee23/power_price_2028.csv",
             index="t",
             param="power_price",
         )
         self.timeseries_data.load(
-            # filename=PATH_IN + 'demands/district_heating/dummy/heat_short.csv',
-            filename=PATH_IN + "demands/district_heating/default/heat.csv",
+            filename=PATH_IN + 'demands/district_heating/dummy/heat_short.csv',
+            # filename=PATH_IN + "demands/district_heating/default/heat.csv",
             index="t",
             param="heat_demand",
         )
         self.timeseries_data.load(
-            # filename = PATH_IN + 'demands/local_heating/dummy/local_heat_short.csv',
-            filename = PATH_IN + "demands/local_heating/Bedarf NW-Netz/local_heat_2028.csv",
+            filename = PATH_IN + 'demands/local_heating/dummy/local_heat_short.csv',
+            # filename = PATH_IN + "demands/local_heating/Bedarf NW-Netz/local_heat_2028.csv",
             index = 't',
             param = 'local_heat_demand',
         )
 
-        # Another example for loading a profile with DataPortal
-
-        # self.timeseries_data.load(
-        #     filename=PATH_IN + 'profiles/max_solarthermal_profil_2028.csv',
-        #     index='t',
-        #     param='solar_thermal_heat_profile',
-        # )
+        self.timeseries_data.load(
+            filename=PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv',
+            index='t',
+            param='solar_thermal_heat_profile',
+        )
       
-
-
+      
     def add_components(self):
         """Adds pyomo component to the model."""
 
@@ -108,7 +105,7 @@ class Model:
         self.model.local_heat_demand = Param(self.model.t)
 
         # Define profiles 
-        #self.model.solar_thermal_heat_profile = Param(self.model.t)
+        self.model.solar_thermal_heat_profile = Param(self.model.t)
 
         # Define block components
         chp1 = chp.Chp("chp_1", 
@@ -145,8 +142,8 @@ class Model:
         )
         solar_thermal = st.Collector(
             "solar_thermal",
-            PATH_IN + 'profiles/ST Süd_max/max_solarthermal_profil_2028.csv'
-            # PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv'
+            # PATH_IN + 'profiles/ST Süd_max/max_solarthermal_profil_2028.csv'
+            PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv'
         )
         heatpump1 = hp.Heatpump(
             "heatpump_1", 
