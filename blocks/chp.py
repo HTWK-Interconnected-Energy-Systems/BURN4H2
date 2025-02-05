@@ -160,6 +160,7 @@ class Chp:
 
             a = (waste_heat_max - waste_heat_min) / (power_max - power_min)
             b = waste_heat_max - a * power_max
+            
             return _block.waste_heat[i] == a*_block.power[i] + b*_block.bin[i]
         
 
