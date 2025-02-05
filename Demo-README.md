@@ -7,7 +7,12 @@
 - [Components](#components)
   - [CHP Units](#chp-units)
   - [Heat Pump](#heat-pump)
-  - [Energy Storage Systems](#energy-storage-systems)
+  - [Battery Storage](#battery-storage)
+  - [Heat Storage](#heat-storage)
+  - [Local Heat Storage](#local-heat-storage)
+  - [Photovoltaics](#photovoltaics)
+  - [Collector (Solar Thermal)](#collector-solar-thermal)
+  - [Grid](#grid)
 - [Topology](#topology)
 - [Ports](#ports)
   - [Ports of each Asset](#ports-of-each-asset)
@@ -54,15 +59,24 @@ It includes:
 - Perfect forecast
 - Hourly resolution
 - No transmission losses
-- No ramp rates 
+- No ramp rates
 
 ---
 
 ## Components 
 
 ### CHP Units
-- Two identical units
+- Two identical units (chp 1, chp 2)
 - Fixed hydrogen admixture (0-100%)
+- Assumptions:
+  - Constant efficiency in converting fuel to both power and heat.
+  - Linear dependency between:
+    - gas consumption and power output
+    - heat and power output
+    - co2 and power output
+    - waste heat and power output
+  - Binary on/off modeling of operation.
+
   
 ### Heat Pump
 
@@ -83,14 +97,53 @@ It includes:
 4. Isenthalpic expansion through throttle valve
 5. Isothermal/isobaric heat absorption in evaporator
 
+**Additional Assumptions:**
+- Single-stage compression
+- No losses in compression, condensation, or expansion processes.
 
-### Energy Storage Systems
+### Battery Storage
 
 **Assumptions:**
 
 - Perfect charging/discharging
 - No losses
 - No cyclic degradation
+- Fixed capacity 
+
+### Heat Storage 
+
+**Assumptions:**
+
+- Fixed storage capacity with ideal charge and discharge efficiency
+- Negligible thermal losses during storage
+- Only one-directional operation per time period (charge or discharge)
+
+### Local Heat Storage
+**Assumptions:**
+
+- Fixed storage capacity with ideal charge and discharge efficiency.
+- Instantaneous response during discharging
+- bidirectional operation within the same timestep (charge and discharge)
+- Negligible thermal losses during storage
+- Ability to dispatch excess heat directly into district heating grid
+
+### Photovoltaics
+**Assumptions:**
+- Constant panel efficiency (?) -> Martin fragen
+- Ideal irradiance conditions without shading or degradation (?) -> Martin fragen
+- Negligible conversion losses beyond rated efficiency (?) -> Martin fragen
+
+### Collector (Solar Thermal)
+**Assumptions:**
+- Fixed Solar thermal capacity
+- No ambient or thermal losses considered
+- Constant collection efficiency over the operational period
+
+### Grid 
+**Assumptions:**
+- No transmission losses between assets
+- Unlimited flow capacity in network arcs
+- Perfect balancing of supply and demand
 
 ---
 
