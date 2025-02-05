@@ -490,36 +490,48 @@ class LocalHeatStorage:
         block.heat_balance = Var(t, domain=Reals)
         block.heat_charging = Var(t, domain=NonNegativeReals)
         block.heat_discharging = Var(t, domain=NonNegativeReals)
+        block.excess_heat_discharging = Var(t, domain=NonNegativeReals)
+        
         block.heat_content = Var(t, domain=NonNegativeReals)
         block.bin_charge = Var(t, within=Binary)
         block.bin_discharge = Var(t, within=Binary)
 
         block.heat_in = Port()
         block.heat_in.add(block.heat_charging, 'local_heat', Port.Extensive, include_splitfrac=False)
+        
         block.heat_out = Port()
         block.heat_out.add(block.heat_discharging, 'local_heat', Port.Extensive, include_splitfrac=False)
+    
+        block.excess_heat_out = Port()
+        block.excess_heat_out.add(block.excess_heat_discharging, 'excess_heat', Port.Extensive, include_splitfrac=False)
 
+
+        
 
         # Declare construction rules for constraints
         def max_heat_charging_rule(_block, i):
             """Rule for the maximum charging capacity of heat."""
             return _block.heat_charging[i] <= self.data.loc['max', 'heat'] * _block.bin_charge[i]
                 
-
         def max_heat_discharging_rule(_block, i):
             """Rule for the maximum discharging capacity of heat."""
-            return _block.heat_discharging[i] <= self.data.loc['max', 'heat'] * _block.bin_discharge[i]
+            max_profile = max(value(_block.model().local_heat_demand[t]) for t in _block.model().t)
+            # print(max_profile)
+            return _block.heat_discharging[i] <= max_profile * _block.bin_discharge[i]
+        
+        def max_excess_heat_discharging_rule(_block, i):
+            """Rule for the maximum discharging capacity of excess heat."""
+            max_profile = max(value(_block.model().local_heat_demand[t]) for t in _block.model().t)
+            return _block.excess_heat_discharging[i] <= max_profile * _block.bin_discharge[i]
 
+        block.max_excess_heat_discharging_constraint = Constraint(
+            t,
+            rule=max_excess_heat_discharging_rule
+        )
 
         def heat_balance_rule(_block, i):
             """Rule for calculating the overall heat balance."""
-            return _block.heat_balance[i] == _block.heat_discharging[i] - _block.heat_charging[i]
-
-
-        def binary_rule(_block, i):
-            """Rule for restricting simultaneous charging and discharging."""
-            return _block.bin_charge[i] + _block.bin_discharge[i] == 1
-        
+            return _block.heat_balance[i] == _block.heat_discharging[i] + _block.excess_heat_discharging[i] - _block.heat_charging[i]
 
         def max_heat_content_rule(_block, i):
             """Rule for the maximum amount of heat in the heat storage."""
@@ -552,10 +564,6 @@ class LocalHeatStorage:
             t,
             rule=heat_balance_rule
         )
-        # block.binary_constraint = Constraint(
-        #     t,
-        #     rule=binary_rule
-        # )
         block.max_heat_content_constraint = Constraint(
             t,
             rule=max_heat_content_rule
