@@ -413,14 +413,6 @@ class LocalHeatGrid:
             'district_heat',
             Port.Extensive,
         )
-
-        def heat_balance_rule(_block, i):
-            """Rule for calculating the overall power."""
-            return _block.heat_balance[i] == (
-                + _block.model().local_heat_demand[i]
-                + _block.heat_supply[i] 
-                - _block.heat_feedin[i]
-            )
         
         def supply_heat_demand_balance_rule(_block, i):
             """Rule for fully suppling the heat demand."""
@@ -441,20 +433,11 @@ class LocalHeatGrid:
                 0.8 * sum(_block.model().local_heat_demand[i] for i in _block.model().t)
             )
 
-        # Add constraint without timestep index
+        # Declare constraints
         block.annual_local_heat_share_constraint = Constraint(
             rule=annual_local_heat_share_rule
         )
         
-        def minimum_local_heat_share_rule(_block, i):
-            """Rule for the minimal heat supply."""
-            return _block.heat_feedin[i] >= _block.model().local_heat_demand[i] * 0.8
-        
-        # block.minimum_local_heat_share_constraint = Constraint(
-        #     t,
-        #     rule=minimum_local_heat_share_rule
-        # )
-
         block.supply_heat_demand_constraint = Constraint(
             t,
             rule=supply_heat_demand_rule
@@ -465,11 +448,6 @@ class LocalHeatGrid:
             rule=supply_heat_demand_balance_rule
         )
 
-
-        # block.heat_balance_constraint = Constraint(
-        #     t,
-        #     rule=heat_balance_rule
-        # )
 
 
     

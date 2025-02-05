@@ -96,7 +96,7 @@ It includes:
 
 ## Topology
 
-*<img src="docs/images/Demomodell_weiss.png" alt="print_df_example" width="900">
+*<img src="docs/images/Demomodell.png" alt="print_df_example" width="900">
 *Figure 2: Schematic Topology of the Demomodel**
 
 ---
