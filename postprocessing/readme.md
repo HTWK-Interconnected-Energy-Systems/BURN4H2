@@ -37,8 +37,8 @@ Apart from standard installations like a python interpreter and jupyter notebook
 
 ## 3 share_of_assets.ipynb
 ### 3.1 What is it for?
-This script processes data from output_time_series.csv. 
-Focus lies on generating stacked box plots, that show supply of different assets for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply.
+This script processes data from output csv-data with results from modeling. 
+Focus lies on generating stacked box plots, that show demand and supply of different assets, storages for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply.
 
 ### 3.2 Structure
 - Import of packages
@@ -79,8 +79,10 @@ from PIL import Image
 **functions**: 
 - print_df
 - change_energy_units
-- get_weeks_from_timestamp
 - get_months_from_timestamp
+- get_weeks_from_timestamp
+- get_days_from_timestamp
+- get_hours_from_timestamp
 
 General Helpers can be used all the time and may be **outsourced soon into a separate file** for easy access from anywhere in postprocessing.
 
@@ -96,17 +98,29 @@ If you input a list and the actual and target unit you want the data to appear y
 #### Output example:
 ![change_energy_units](../data/postprocessing/zzz_pictures/change_energy_unit_example.png)
 
+**get_months_from_timestamp**:  
+If a list of timestamps with months in this format is given ['YYYY-MM', ...], the function cuts of the string of the year, so just the month-date is left. The list of months is given back as return value. 
+
+#### Output example:
+<img src="../data/postprocessing/zzz_pictures/get_months_example.png" alt="get_months_example" width="1090">
+
 **get_weeks_from_timestamp**:  
-If a list of timestamps with start and enddates of weeks is given with the format "['YYYY-MM-DD/YYYY-MM-DD', ...]" the function takes the start date of the week and looks for fitting KW for plotting. It gives back the list with KWs. # Sagen, wieso die Werte so kommen und woher.
+If a list of timestamps with start and enddates of weeks is given with the format "['YYYY-MM-DD/YYYY-MM-DD', ...]" the function takes the start date of the week and looks for fitting KW for plotting. It gives back the list with KWs.
 
 #### Output example:
 ![get_weeks_from_timestamp](../data/postprocessing/zzz_pictures/get_weeks_example.png)
 
-**get_months_from_timestamp**:  
-If a list of timestamps with months in this format is given ['YYYY-MM', ...], the function cuts of the string of the year, so just the month-date is left. The list of months is given back as return value. # Sagen, wieso die Werte so kommen und woher.
+**get_days_from_timestamp**: 
+If a list of timestamps with months in this format is given ['YYYY-MM-DD', ...], the function cuts of the string of the year, so just the days and months are left. The list of days is given back as return value. 
 
-#### Output example:
-<img src="../data/postprocessing/zzz_pictures/get_months_example.png" alt="get_months_example" width="1090">
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures/get_days_from_timestamp.png" alt="get_days_from_timestamp" width="550">
+
+**get_hours_from_timestamp**: 
+If a list of timestamps in this format is given ['YYYY-MM-DD HH:MM', ...], the function cuts of the string of the year, so just the days, months and hours are left. The list of hours is given back as return value. 
+
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures/get_hours_from_timestamp.png" alt="get_hours_from_timestamp" width="750">
 
 ### 3.5 Helpers for Colormaps
 **functions**:
@@ -437,7 +451,7 @@ show_color_rgba(example_rgba)
 <img src="../data/postprocessing/zzz_pictures/show_color_rgba.png" alt="show_color_rgba" width="700">
 
 ### 3.6 Load data from csv output:  
-All postprocessing scripts refer to results from optimization model. Mostly, as in this case, they refer to the file output_time_series.csv. In this case the function loads data from csv to a processable df, that's easy to read. See example below: 
+All postprocessing scripts refer to results from optimization model. In this case, they refer to the old file output_time_series.csv. In this case the function loads data from this csv to a processable df, that's easy to read. Newer filenames are f. e. modeled scenarios like gee23_ST-min_NW-ref_2028_output.csv. In this case we look at the old file as there is no difference. See example below: 
 
 #### Code example: 
 ````python
@@ -494,22 +508,29 @@ def add_timestamp_and_filter(
     Args:
         df (pd.DataFrame, optional): Input Dataframe from results. Defaults to pd.DataFrame.
         start_date (str, optional): first date for filtering. Defaults to str.
-        end_date (str, optional): end date for filtering. Defaults to str.
+        end_date (str, optional): end date for filtering. It's always inkluded in time. Defaults to str.
         time_column (str, optional): name of column with time steps. Default value 'date'.
 
     Returns:
         pd.DataFrame: added colomn with dates and filtered Dataframe after time span.
     """
     # Create List of dates and hours belonging to timestep:
-    dates = list(pd.date_range('2025-01-01', periods=8784, freq='H'))
+    dates = list(pd.date_range('2025-01-01', periods=8784, freq='H')) # 168 Werte in Demooutput! 
     input_df.insert(0, time_column, dates, allow_duplicates=False)
     input_df[time_column] = pd.to_datetime(input_df[time_column])
     
     # Delete blank spaces of colomn names:
     input_df.columns = input_df.columns.str.replace(' ', '')
-    print("Inserted date columns: /n", print_df(input_df))
-    # filtered df after time span:
-    return input_df[(input_df[time_column] >= pd.Timestamp(start_date)) & (input_df[time_column] <= pd.Timestamp(end_date))]
+    # print("Inserted date columns: /n", print_df(input_df)) # show assigned dates and hours
+    
+    # Ensure that end_date covers the entire last day:
+    end_date = pd.Timestamp(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+
+    # Filter the DataFrame based on the corrected time range:
+    return input_df[
+        (input_df[time_column] >= pd.Timestamp(start_date)) & 
+        (input_df[time_column] <= end_date)
+    ]
 
 # Example execution
 INPUT_PATH = "../data/output/output_time_series.csv"
@@ -648,6 +669,8 @@ print_df(result_df)
 - calculate_asset_share_of_supply
 - get_periods_for_plot
 - Wrapper: get_asset_data_for_plot
+- get_data_for_storage_plot
+- get_demand_for_plot
 
 In this section we prepare our data for plotting especially summed up supply values. We're connecting our assets to a specific variable we're interested in, we can calculate a specific share of assets on a f.e. total supply and prepare our periods from section 1 for our plot.
 
@@ -752,8 +775,10 @@ def calculate_asset_share_of_supply(
     # save share of selected assets on total supply in dict.
     supply_share_dict[share_key] = share_values
     print("Shares of assets on supply: ", supply_share_dict)
+
     return supply_share_dict
 
+# example execution: 
 time_sums_df = calculate_sums_for_period(
     input_df=load_csv_results_in_df(input_path = INPUT_PATH), 
     start_date = "2025-01-01", 
@@ -808,11 +833,15 @@ def get_periods_for_plot(
         periods = get_months_from_timestamp(timestamps=raw_periods)
     elif granularity == 'week':
         periods = get_weeks_from_timestamp(timestamps=raw_periods)
+    elif granularity == 'day':
+        periods = get_days_from_timestamp(timestamps=raw_periods)
+    elif granularity == 'hour':
+        periods = get_hours_from_timestamp(timestamps=raw_periods)
     else: periods = raw_periods
     
     return periods
 
-# example code: 
+# example execution: 
 time_sums_df = calculate_sums_for_period(
     input_df=load_csv_results_in_df(input_path = INPUT_PATH), 
     start_date = "2025-01-01", 
@@ -877,6 +906,7 @@ def get_asset_data_for_plot(
     
     return asset_dict, calculate_asset_share_of_supply(asset_dict=asset_dict, selected_assets=selected_assets,type_of_energy=type_of_energy), get_periods_for_plot(time_series_df=time_series_df, granularity=granularity)
 
+# example execution: 
 time_sums_df = calculate_sums_for_period(
     input_df=load_csv_results_in_df(input_path = INPUT_PATH), 
     start_date = "2025-01-01", 
@@ -903,6 +933,136 @@ print("Periods / Month we consider: ", periods)
 
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures/get_asset_data_for_plot_example.png" alt="get_asset_data_for_plot_example" width="1200">
+
+**get_data_for_storage_plot**: 
+*add*
+
+#### Code example:
+````python
+def get_data_for_storage_plot(
+    type_of_energy: str,
+    type_of_heat_storage: str,
+    time_series_df: pd.DataFrame,
+    actual_unit: str, 
+    target_unit: str
+    ):
+    """gets data for storage values (heat or power, charge and discharge) from time_series_df with summed up values and filtered time span. 
+
+    Args:
+        type_of_energy (str): Type of energy. Actual storages: "heat", "power".
+        type_of_heat_storage (str): If heat is given, defines which type of grid is chosen. Either "local" or "district".
+        time_series_df (pd.DataFrame): DataFrame from output csv that is filtered by time and granularity. 
+        actual_unit (str): actual unit of input values
+        target_unit (str): target unit for values
+
+    Raises:
+        KeyError: Raise Error if the storage variable is not integrated in function. 
+
+    Returns:
+        dict: Dictionary with storage_keys for charge and discharge and belonging energy sums for set granularity in a list. 
+        It also contains difference between charge and discharge.
+        Negative values are for charging, positive for discharging. Values in lists from dict are given in target unit.
+    """
+    # select variables from names in csv: either district / local heat or power. 
+    if type_of_energy == 'heat':
+        # local heat grid variable names: 
+        if type_of_heat_storage == 'local': 
+            column_names = [f'{type_of_heat_storage}_{type_of_energy}_storage.{type_of_energy}_charging', f'{type_of_heat_storage}_{type_of_energy}_storage.{type_of_energy}_discharging'] 
+        # district heat grid variable names: 
+        else: 
+            column_names = [f'{type_of_energy}_storage.{type_of_energy}_charging', f'{type_of_energy}_storage.{type_of_energy}_discharging'] 
+    # variable names for power/battery storage: 
+    elif type_of_energy == 'power':
+        storagename = 'battery'
+        column_names = [f'{storagename}_storage.{type_of_energy}_charging', f'{storagename}_storage.{type_of_energy}_discharging']
+    else: 
+        raise KeyError("[get_data_for_storage_plot] Storage variable not found.")
+    
+    # load charging and discharging storage data in dict: 
+    data_from_columns_dict = {
+        col: list(time_series_df[col]) for col in column_names 
+        if col in time_series_df.columns
+        }
+    
+    print("storage data from df: ", data_from_columns_dict)
+    
+    # charging values get negative value.
+    storage_dict = {
+        key: [-x for x in value] if "_charging" in key else value 
+        for key, value in data_from_columns_dict.items()
+        }
+    
+    # Summing charging [0] and discharging [1] values
+    charging_values = storage_dict.get(column_names[0], [])
+    discharging_values = storage_dict.get(column_names[1], [])
+
+    # Ensure both lists are the same length
+    if len(charging_values) != len(discharging_values):
+        raise ValueError("[get_data_for_storage_plot] Charging and discharging lists have different lengths!")
+
+    # Summing corresponding elements for difference between charging and discharging values
+    net_storage_values = [round((a + b), 2) for a, b in zip(charging_values, discharging_values)]
+
+    # Debug code: 
+    # print("difference charging & discharging in MWh: ", net_storage_values)
+    
+    # Output dictionary in actual unit
+    storage_dict['difference'] = net_storage_values
+    
+    # print("Dict storage in MWh: ", negative_charging_dict)
+    
+    # change energy units from dict to target unit: 
+    for key in storage_dict.keys():
+        storage_dict[key] = change_energy_units(values=storage_dict[key], actual_unit=actual_unit, target_unit=target_unit)
+    print("Dict storage in GWh: ", storage_dict)
+ 
+    return storage_dict
+````
+
+#### Output example: 
+*add*
+
+**get_demand_for_plot**: 
+*add*
+
+#### Code example: 
+````python
+def get_demand_for_plot(
+    type_of_energy: str,
+    type_of_heat_grid: str,
+    time_series_df: pd.DataFrame,
+    actual_unit: str, 
+    target_unit: str,
+    assets_with_power_demand = None
+):
+    if type_of_energy == 'heat':
+        if type_of_heat_grid == 'local': 
+            column_names = [f'{type_of_heat_grid}_{type_of_energy}_demand'] # local_heat_demand
+        else: 
+            column_names = [f'{type_of_energy}_demand'] # district heat / general
+    elif type_of_energy == 'power':
+        column_names = [f'{asset}.{type_of_energy}' for asset in assets_with_power_demand] # Wärmeerzeger mit Strombedarf, nicht Stromerzeuger wählen, da falsche Variable gewählt mit .power!
+    else: 
+        raise KeyError("[get_demand_for_plot] Demand variable not found.")
+    
+    data_from_columns_dict = {
+        col: list(time_series_df[col]) for col in column_names 
+        if col in time_series_df.columns
+        }
+    
+    print(f"{type_of_energy} demand from df in {actual_unit}: ", data_from_columns_dict)
+    
+    # change energy units: 
+    for key in data_from_columns_dict.keys():
+        data_from_columns_dict[key] = change_energy_units(values=data_from_columns_dict[key], actual_unit=actual_unit, target_unit=target_unit)
+    
+    print(f"{type_of_energy} demand from df in {target_unit}: ", data_from_columns_dict)
+ 
+    return data_from_columns_dict
+````
+
+#### Output example: 
+*add*
 
 ### 3.09 Functions for plotting and saving bar chart for share of assets
 **functions**:  
