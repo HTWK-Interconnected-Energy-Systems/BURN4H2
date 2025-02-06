@@ -329,8 +329,8 @@ class WasteHeatGrid:
             Port.Extensive,
             include_splitfrac=False
         )
-        block.heat_out = Port()
-        block.heat_out.add(
+        block.waste_heat_out = Port()
+        block.waste_heat_out.add(
             block.heat_supply,
             'waste_heat',
             Port.Extensive,

@@ -577,3 +577,116 @@ class LocalHeatStorage:
             rule=actual_heat_content_rule
         )
     
+class GeoHeatStorage:
+    """Class for constructing geo heat storage asset objects."""
+
+    def __init__(self, name, filepath, index_col=0) -> None:
+        self.name = name
+        self.get_data(filepath, index_col)
+    
+
+    def get_data(self, filepath, index_col):
+        """Collects data from a csv."""
+        self.data = pd.read_csv(
+            filepath,
+            index_col=index_col
+        )
+    
+
+    def add_to_model(self, model):
+        """Adds the asset as a pyomo block component to a given model."""
+        model.add_component(
+            self.name,
+            Block(rule=self.geo_heat_storage_block_rule)
+        )
+
+
+    def geo_heat_storage_block_rule(self, block):
+        """Rule for creating a heat storage block with default components
+        and constraints."""
+
+        # Get index from model
+        t = block.model().t
+
+        # Declare components
+        block.heat_balance = Var(t, domain=Reals)
+        block.heat_charging = Var(t, domain=NonNegativeReals)
+        block.heat_discharging = Var(t, domain=NonNegativeReals)
+        block.heat_content = Var(t, domain=NonNegativeReals)
+        block.bin_charge = Var(t, within=Binary)
+        block.bin_discharge = Var(t, within=Binary)
+
+        block.heat_in = Port()
+        block.heat_in.add(block.heat_charging, 'waste_heat', Port.Extensive, include_splitfrac=False)
+        block.heat_out = Port()
+        block.heat_out.add(block.heat_discharging, 'waste_heat', Port.Extensive, include_splitfrac=False)
+
+
+        # Declare construction rules for constraints
+        def max_heat_charging_rule(_block, i):
+            """Rule for the maximum charging capacity of heat."""
+            return _block.heat_charging[i] <= self.data.loc['max', 'heat'] * _block.bin_charge[i]
+                
+
+        def max_heat_discharging_rule(_block, i):
+            """Rule for the maximum discharging capacity of heat."""
+            return _block.heat_discharging[i] <= self.data.loc['max', 'heat'] * _block.bin_discharge[i]
+
+
+        def heat_balance_rule(_block, i):
+            """Rule for calculating the overall heat balance."""
+            return _block.heat_balance[i] == _block.heat_discharging[i] - _block.heat_charging[i]
+
+
+        def binary_rule(_block, i):
+            """Rule for restricting simultaneous charging and discharging."""
+            return _block.bin_charge[i] + _block.bin_discharge[i] == 1
+        
+
+        def max_heat_content_rule(_block, i):
+            """Rule for the maximum amount of heat in the heat storage."""
+            return _block.heat_content[i] <= self.data.loc['max', 'content']
+        
+
+        def min_heat_content_rule(_block, i):
+            """Rule for the minimum amount of heat in the heat storage."""
+            return _block.heat_content[i] >= self.data.loc['min', 'content']
+        
+
+        def actual_heat_content_rule(_block, i):
+            """Rule for calculating the actual energy content of the heat storage."""
+            if i == 1:
+                return _block.heat_content[i] == 0 - _block.heat_balance[i]
+            else:
+                return _block.heat_content[i] == _block.heat_content[i - 1] - _block.heat_balance[i]
+        
+
+        # Declare constraints
+        block.max_heat_charging_constraint = Constraint(
+            t,
+            rule=max_heat_charging_rule
+        )
+        block.max_heat_discharging_constraint = Constraint(
+            t,
+            rule=max_heat_discharging_rule
+        )
+        block.heat_balance_constraint = Constraint(
+            t,
+            rule=heat_balance_rule
+        )
+        # block.binary_constraint = Constraint(
+        #     t,
+        #     rule=binary_rule
+        # )
+        block.max_heat_content_constraint = Constraint(
+            t,
+            rule=max_heat_content_rule
+        )
+        block.min_heat_content_rule = Constraint(
+            t,
+            rule=min_heat_content_rule
+        )
+        block.actual_heat_content_constraint = Constraint(
+            t,
+            rule=actual_heat_content_rule
+        )
