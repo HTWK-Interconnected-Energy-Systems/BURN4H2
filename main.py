@@ -26,8 +26,10 @@ from pyomo.network import Arc
 # import internal modules 
 from blocks import chp, grid, storage, res
 import blocks.electrolyzer as elec
-import blocks.heatpump as hp
+import blocks.heatpump as hp2
+import blocks.heatpump_1 as hp1
 import blocks.collector as st
+
 
 
 # Path
@@ -173,18 +175,24 @@ class Model:
             # PATH_IN + 'profiles/ST Süd_max/max_solarthermal_profil_2028.csv' # Not necessary anymore
             PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv' # Not necessary anymore
         )
-        heatpump1 = hp.Heatpump(
-            "heatpump_1", 
+        
+        hp_s1 = hp1.Heatpump(
+            "heatpump_s1", 
             PATH_IN + "assets/heatpump.csv"
         )
-        heatpump2 = hp.Heatpump(
-            "heatpump_2", 
+        hp_s2 = hp2.Heatpump(
+            "heatpump_s2", 
             PATH_IN + "assets/heatpump.csv"
         )
         lh_storage = storage.LocalHeatStorage(
             "local_heat_storage", 
             PATH_IN + "assets/local_heat_storage.csv"
         )
+        gh_storage = storage.GeoHeatStorage(
+            "geo_heat_storage", 
+            PATH_IN + "assets/geo_heat_storage.csv"
+        )
+
 
         chp1.add_to_model(self.model)
         chp2.add_to_model(self.model)
@@ -198,9 +206,10 @@ class Model:
         h_storage.add_to_model(self.model)
         pv.add_to_model(self.model)
         solar_thermal.add_to_model(self.model)
-        heatpump1.add_to_model(self.model)
-        heatpump2.add_to_model(self.model)
+        hp_s1.add_to_model(self.model)
+        hp_s2.add_to_model(self.model)
         lh_storage.add_to_model(self.model)
+        gh_storage.add_to_model(self.model)
 
     def add_objective(self):
         """Adds the objective to the abstract model."""
@@ -311,60 +320,75 @@ class Model:
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
         
-        # WASTE: Waste Grid -> Heat Pump 1
-        self.instance.arc16 = Arc(
-            source=self.instance.waste_heat_grid.heat_out,
-            destination=self.instance.heatpump_1.waste_heat_in,
-        )   
+        ############### NEW: Geo Storage ###############
+
+        # # WASTE: Waste Grid -> Geo Storage 
+        # self.instance.arc16 = Arc(
+        #     source=self.instance.waste_heat_grid.waste_heat_out,
+        #     destination=self.instance.geo_heat_storage.heat_in
+        # )
         
-        # WASTE: Waste Grid -> Heat Pump 2
-        self.instance.arc17 = Arc(
-            source=self.instance.waste_heat_grid.heat_out,
-            destination=self.instance.heatpump_2.waste_heat_in,
+        # # GEO: Geo Storage -> 1. Stage Heat Pump
+        # self.instance.arc17 = Arc(
+        #     source=self.instance.geo_heat_storage.heat_out,
+        #     destination=self.instance.heatpump_s1.heat_in
+        # )
+
+        # # GEO: 1. Stage Heat Pump -> Waste Heat Grid 
+        # self.instance.arc18 = Arc(
+        #     source=self.instance.heatpump_s1.heat_out,
+        #     destination=self.instance.waste_heat_grid.waste_heat_in
+        # )
+
+        #############################################
+
+        # WASTE: Waste Grid -> 2. Stage Heat Pump 
+        self.instance.arc19 = Arc(
+            source=self.instance.waste_heat_grid.waste_heat_out,
+            destination=self.instance.heatpump_s2.waste_heat_in,
+        )
+
+        # POWER: Electrical Grid -> 1.Stage Heat Pump
+        self.instance.arc20 = Arc(
+                source=self.instance.electrical_grid.power_out,
+                destination=self.instance.heatpump_s1.power_in,
         )
         
-        # POWER: Electrical Grid -> Heat Pump 1
-        self.instance.arc18 = Arc(
+        # POWER: Electrical Grid -> 2. Stage Heat Pump 
+        self.instance.arc21 = Arc(
             source=self.instance.electrical_grid.power_out,
-            destination=self.instance.heatpump_1.power_in,
+            destination=self.instance.heatpump_s2.power_in,
         )
         
         # LOCAL HEAT: Solar Thermal -> LOCAL HEAT STORAGE
-        self.instance.arc19 = Arc(
+        self.instance.arc22 = Arc(
             source = self.instance.solar_thermal.heat_out,
             destination = self.instance.local_heat_storage.heat_in,
         )
         
-        # LOCAL HEAT: Heat Pump 1 -> Local HEAT STORAGE
-        self.instance.arc20 = Arc(
-            source=self.instance.heatpump_1.heat_out,
-            destination=self.instance.local_heat_storage.heat_in,
-        )
-
-        # LOCAL HEAT: Heat Pump 2 -> Local HEAT STORAGE
-        self.instance.arc21 = Arc(
-            source=self.instance.heatpump_2.heat_out,
+        # LOCAL HEAT: 2. Stage Heat Pump  -> Local HEAT STORAGE
+        self.instance.arc23 = Arc(
+            source=self.instance.heatpump_s2.heat_out,
             destination=self.instance.local_heat_storage.heat_in,
         )
 
         # LOCAL HEAT: Local HEAT STORAGE -> Local Heat Grid
-        self.instance.arc22 = Arc(
+        self.instance.arc24 = Arc(
             source=self.instance.local_heat_storage.heat_out,
             destination=self.instance.local_heat_grid.heat_in,
         )
 
         # EXCESS LOCAL HEAT: Local Heat Storage -> Heat Grid
-        self.instance.arc23 = Arc(
+        self.instance.arc25 = Arc(
             source=self.instance.local_heat_storage.excess_heat_out,
             destination=self.instance.heat_grid.excess_heat_in 
         )
 
         # HEAT: Heat Grid -> Local Heat Grid
-        self.instance.arc24 = Arc(
+        self.instance.arc26 = Arc(
             source=self.instance.heat_grid.heat_grid_to_local_out,
             destination=self.instance.local_heat_grid.district_heat_in,
         )
-
 
 
     def solve(self):
@@ -472,7 +496,7 @@ if __name__ == "__main__":
     lp.set_solver(
         solver_name="gurobi",
         # TimeLimit=1000,  # solver will stop after x seconds
-        MIPGap=0.03,
+        MIPGap=0.08,
     )  # solver will stop if gap <= 1%
 
     print("PREPARING DATA")
