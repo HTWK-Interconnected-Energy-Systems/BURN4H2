@@ -11,9 +11,12 @@
     - [3.6 Load data from csv output](#3.6-Load-data-from-csv-output)
     - [3.7 Functions for filtering and calculating values for set time granularity](#3.7-Functions-for-filtering-and-calculating-values-for-set-time-granularity)
     - [3.8 Functions for setting assets and parameters to be visualized](#3.8-Functions-for-setting-assets-and-parameters-to-be-visualized)
-    - [3.9 Functions for plotting and saving bar chart for share of assets](#3.9-Functions-for-plotting-and-saving-bar-chart-for-share-of-assets)
-    - [3.10 Functions for plotting additionally storage values](#Functions-for-plotting-additionally-storage-values)
-    - [3.11 Main Script](#3.11-Main-Script)
+    - [3.09 Functions for simple plotting of supply (stacked) and demand](#3.9-Functions-for-simple-plotting-of-supply-(stacked)-and-demand)
+    - [3.10 Functions for plotting storage values (fusion or single output)](#Functions-for-plotting-storage-values-(fusion-or-single-output))
+    - [3.11 Compare two data sets from csv in one plot](#3.11-Compare-two-data-sets-from-csv-in-one-plot)
+    - [3.12 Function for saving plots of any kind.](#3.12-Function-for-saving-plots-of-any-kind.)
+    - [3.13 Wrapper for Main function - Decide for plot with input value](#3.13-Wrapper-for-Main-function-–-Decide-for-plot-with-input-value)
+    - [3.14 MAIN scripts for generating results – need to be executed!](#3.14-MAIN-scripts-for-generating-results-–-need-to-be-executed!)
 - [4 clean_spark_spread.ipynb](#4-clean_spark_spread.ipynb)  
     - [4.1 What is it for?](#4.1-What-is-it-for?)
     - [4.2 Structure](#4.2-Structure)
@@ -2774,7 +2777,7 @@ INPUT_PATH_2 = '../data/output/gee23_ST-min_NW-ref_2028_output_geo.csv'
 
 # 2 ! Decide for diagram type.!
 # side note: Just set one parameter on True / string, or both False!
-storage_diagram = 'single' # 'fusion' = zusammen in einem Plot mit Supply, 'single' nur Speicher, None = nur Supply
+storage_diagram = 'single' # 'fusion' = together in one plot with supply, ‘single’ only storage, None = only supply
 heat_demand_diagram = False # true if you want demand plot
 compare_supplies_diagram = False # true if you want to compare supplies of all assets
 
@@ -2811,8 +2814,6 @@ colormap = 'nipy_spectral'
 **Main script**:  
 We always need to update out input values before executing our main script. 
 Normally we don't need to change anything in this script, if we want to follow the workflow of generating a plot and save it later on with defined colors. See the example below: 
-
-*ergänzen um: decide_for_diagram_and_plot!*
 
 #### Code example: 
 ````python
@@ -2928,8 +2929,8 @@ ______________________________________________________________
 
 ## 4 clean_spark_spread.ipynb
 ### 4.1 What is it for?
-This script processes data from output_time_series.csv. 
-Focus lies on generating stacked box plots, that show supply of different assets for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply.
+This script processes data from output csv files in data/output. 
+The focus lies on generating stacked box plots, that show supply of different assets for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply.
 
 ### 4.2 Structure
 - Import Packages
@@ -2955,14 +2956,212 @@ from datetime import datetime
 import os
 ````
 ### 4.4 General Helpers
+Look at the explanation in section 3.4 of share_of_assets for the first 4 functions. These are the same functions as in this section.
 
 ### 4.5 Load data from csv output
+Look at the explanation in section 3.6 of share_of_assets. This function is the same as in this section.
 
 ### 4.6 Functions for filtering and extracting values
+**Functions**:  
+- add_timestamp_and_filter
+- extract_price_data_to_dict
+- get_time_data_for_plot
+
+**add_timestamp_and_filter**:  
+In this function we filter our given csv file for a set time span. In this case we're looking for hourly data and do not sum up values, as the css is a figure of the moment. Therefore dates and hours are given as an input value as well. Make sure not to use a big time span because hours are set as labels on x axis so the plot may look too overfilled.
+
+#### Code example
+````python
+def add_timestamp_and_filter(
+    input_df: pd.DataFrame, 
+    start_time: str, 
+    end_time: str, 
+    time_column = 'date'
+    ):
+    """Insert Dates (YYYY-MM-DD HH:MM) in DataFrame and filter after given start and end date.
+    Assumption: 8784 values (366 days) beginning at 01.01.2025.
+
+    Args:
+        df (pd.DataFrame, optional): Input Dataframe from results. Defaults to pd.DataFrame.
+        start_date (str, optional): first date for filtering. Defaults to str.
+        end_date (str, optional): end date for filtering. Defaults to str.
+        time_column (str, optional): name of column with time steps. Default value 'date'.
+
+    Returns:
+        pd.DataFrame: added colomn with dates and time, and filtered Dataframe after time span.
+    """
+    # Create List of dates and hours belonging to timestep:
+    dates = list(
+        pd.date_range(
+            '2025-01-01 00:00', 
+            periods=8784, #TODO: Funktion ermittlung periods normales und Schaltjahr einfügen!
+            freq='H')
+        )
+    input_df.insert(
+        0, 
+        time_column, 
+        dates, 
+        allow_duplicates=False
+        )
+    input_df[time_column] = pd.to_datetime(input_df[time_column])
+    # Delete blank spaces of colomn names:
+    input_df.columns = input_df.columns.str.replace(' ', '')
+    # print("Inserted date columns: /n", print_df(input_df)) # show assigned dates and hours
+    # filtered df after time span:
+    return input_df[(input_df[time_column] >= pd.Timestamp(start_time)) & (input_df[time_column] <= pd.Timestamp(end_time))]
+
+# Example execution
+INPUT_PATH = "../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv"
+df = load_csv_results_in_df(input_path=INPUT_PATH)
+START_DATE = "2025-06-01 00:00"
+END_DATE = "2025-06-01 12:00"
+filtered_df = add_timestamp_and_filter(df, START_DATE, END_DATE)
+print_df(filtered_df)
+````
+#### Output example:
+<img src="../data/postprocessing/zzz_pictures_readme/add_timestamp_and_filter_examplecss.png" alt="add_timestamp_and_filter_examplecss" width="1200">
+
+**extract_price_data_to_dict**:  
+For calculating CSS we need to collect data for all relevant assets as well as price data, especially gas_prices, co2_prices and power_prices. In this version co2_prices are a constant variable and not read in from dataframe. See example below. 
+
+#### Code example: 
+````python
+def extract_price_data_to_dict(
+    time_filtered_df: pd.DataFrame, 
+    assets: tuple,
+    key_gas_price: str,
+    key_power_price: str
+    ):
+    """
+    Reads certain price and CO2 columns belonging to relevant assets for the diagram from a DataFrame 
+    and saves them in a dictionary.
+
+    Parameters:
+        time_filtered_df (pd.DataFrame): filtered DataFrame by time.
+        assets (tuple): A tuple with all assets that are to be displayed.
+        key_gas_price (str): String for gas price column in csv file. 
+        key_power_price (str): String for power price column in csv file. 
+
+    Returns:
+        extracted_columns_dict: Dictionary with asset name and variable as keys and belonging hourly data for set timespan as lists (= value).
+    """
+    # Generate the complete column names
+    column_names = [key_gas_price, key_power_price] # convert input data for price names in list
+    for asset in assets:   
+        column_names.append(str(f"{asset}.co2")) # get keys of set assets in input data emitting co2 
+        column_names.append(str(f"{asset}.power"))
+        column_names.append(str(f"{asset}.gas"))
+    print("column names: ", column_names)
+    # Filter the desired columns:
+    extracted_columns_dict = {col: list(time_filtered_df[col]) for col in column_names if col in time_filtered_df.columns}
+    return extracted_columns_dict
+
+# example execution: 
+INPUT_PATH = "../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv"
+df = load_csv_results_in_df(input_path=INPUT_PATH)
+START_DATE = "2025-06-01 00:00"
+END_DATE = "2025-06-01 12:00"
+filtered_df = add_timestamp_and_filter(df, START_DATE, END_DATE)
+price_dict = extract_price_data_to_dict(
+    time_filtered_df=filtered_df,
+    assets=('chp_1','chp_2'),
+    key_gas_price='gas_price',
+    key_power_price='power_price'
+    )
+print('price_dict: ', price_dict)
+````
+
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/extract_price_data_to_dict_example.png" alt="extract_price_data_to_dict_example" width="1100">
+
+**get_time_data_for_plot**:  
+Another prework is to collect time data, we want to plot in our graphic on x-axis. This is what we are doing here. Note that values are shown hourly, so we need all hours for allocating values and time, but we are showing labels on x axis based on the wished granularity like months, weeks etc.
+
+#### Code example: 
+````python
+def get_time_data_for_plot(
+    time_filtered_df: pd.DataFrame, 
+    granularity: str, 
+    time_column='date'
+): 
+    """
+    Generates time values for the x-axis depending on the selected granularity:
+    - Hourly values as timestamps (always included)
+    - If desired: monthly figures, calendar weeks or daily values (day & month)
+
+    Args:
+        time_filtered_df (pd.DataFrame): Time-filtered DataFrame with timestamps as index.
+        granularity (str): 'hour', 'day', 'week' oder 'month'.
+        time_column (str, optional): name of column with timestamps. Default: 'date'.
+
+    Returns:
+        tuple: (Hourly timestamps, dict with values for the x-axis based on granularity)
+    """
+    # Ensure that the index is set as datetime
+    time_filtered_df = time_filtered_df.copy()
+    time_filtered_df[time_column] = pd.to_datetime(time_filtered_df[time_column])
+    time_filtered_df.set_index(time_column, inplace=True)
+    # hourly timestamps (always contained))
+    hourly_timestamps = time_filtered_df.index.to_list()
+    # X-axis ticks dependant on set granularity
+    first_occurrences_dict = {}
+    if granularity == 'hour':
+        for i, ts in enumerate(hourly_timestamps):
+            hour = ts.strftime('%Y-%m-%d %H:%M')  # Extract the hour and minute (e.g. “14:30”)
+            first_occurrences_dict[hour] = i
+    elif granularity == 'day':
+        # Identify the first timestamp of each day
+        for i, ts in enumerate(hourly_timestamps):
+            day = ts.strftime('%d-%m')  # Extract the date without time
+            if day not in first_occurrences_dict:
+                first_occurrences_dict[day] = i  # Save the index of the first occurrence
+    
+    elif granularity == 'week':
+        # get week of calendar as number (1-53)
+        for i, ts in enumerate(hourly_timestamps):
+            week = f"KW {ts.strftime('%U')}"  # Extract the date without time
+            if week not in first_occurrences_dict:
+                first_occurrences_dict[week] = i  # Save the index of the first occurrence
+    
+    elif granularity == 'month': 
+        # extract month as number (1-12)
+        for i, ts in enumerate(hourly_timestamps):
+            month = ts.strftime('%m')  # Extract the date without time
+            if month not in first_occurrences_dict:
+                first_occurrences_dict[month] = i  # Save the index of the first occurrence
+    else: 
+        raise ValueError(f"Granularity '{granularity}' not known. Please use 'hour', 'day', 'week', or 'month'.")
+    return hourly_timestamps, first_occurrences_dict
+
+# example execution: 
+INPUT_PATH = "../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv"
+df = load_csv_results_in_df(input_path=INPUT_PATH)
+START_DATE = "2025-06-01 00:00"
+END_DATE = "2025-06-30 12:00"
+filtered_df = add_timestamp_and_filter(df, START_DATE, END_DATE)
+times, occurences = get_time_data_for_plot(
+    time_filtered_df=filtered_df,
+    granularity='day'
+    )
+print('times: ', times)
+print('occurences: ', occurences)
+````
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/get_time_data_for_plot_example.png" alt="get_time_data_for_plot_example" width="1200">
 
 ### 4.7 Calculate CSS
 
+**calculate_css**:  
+
+
 ### 4.8 Plot economic data
+Functions: 
+- plot_css
+- save_plot
+
+**plot_css**:  
+
+**save_plot**:  
 
 ### 4.9 Main Script
 
