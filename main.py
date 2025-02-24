@@ -5,6 +5,7 @@ import pandas as pd
 import json
 import os
 import argparse
+from datetime import datetime
 
 # Import external libraries
 from pyomo.opt import SolverFactory
@@ -26,11 +27,8 @@ from pyomo.network import Arc
 # import internal modules 
 from blocks import chp, grid, storage, res
 import blocks.electrolyzer as elec
-import blocks.heatpump as hp2
-import blocks.heatpump_1 as hp1
+import blocks.heatpump as hp
 import blocks.collector as st
-
-
 
 # Path
 PATH_IN = "data/input/"
@@ -41,7 +39,6 @@ PATH_CONFIG = "data/config/"
 CO2_PRICE = 95.98  # price in €/t
 HEAT_PRICE = 0  # price in €/MWh
 H2_PRICE = 81.01  # price in €/MWh
-
 
 # config files
 AVAILABLE_CONFIGS = [
@@ -176,11 +173,11 @@ class Model:
             PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv' # Not necessary anymore
         )
         
-        hp_s1 = hp1.Heatpump(
+        hp_s1 = hp.HeatpumpStageOne(
             "heatpump_s1", 
             PATH_IN + "assets/heatpump.csv"
         )
-        hp_s2 = hp2.Heatpump(
+        hp_s2 = hp.HeatpumpStageTwo(
             "heatpump_s2", 
             PATH_IN + "assets/heatpump.csv"
         )
@@ -319,28 +316,24 @@ class Model:
             source=self.instance.chp_2.waste_heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
+
+        # WASTE: Waste Grid -> Geo Storage 
+        self.instance.arc16 = Arc(
+            source=self.instance.waste_heat_grid.waste_heat_out,
+            destination=self.instance.geo_heat_storage.heat_in
+        )
         
-        ############### NEW: Geo Storage ###############
+        # GEO: Geo Storage -> 1. Stage Heat Pump
+        self.instance.arc17 = Arc(
+            source=self.instance.geo_heat_storage.heat_out,
+            destination=self.instance.heatpump_s1.heat_in
+        )
 
-        # # WASTE: Waste Grid -> Geo Storage 
-        # self.instance.arc16 = Arc(
-        #     source=self.instance.waste_heat_grid.waste_heat_out,
-        #     destination=self.instance.geo_heat_storage.heat_in
-        # )
-        
-        # # GEO: Geo Storage -> 1. Stage Heat Pump
-        # self.instance.arc17 = Arc(
-        #     source=self.instance.geo_heat_storage.heat_out,
-        #     destination=self.instance.heatpump_s1.heat_in
-        # )
-
-        # # GEO: 1. Stage Heat Pump -> Waste Heat Grid 
-        # self.instance.arc18 = Arc(
-        #     source=self.instance.heatpump_s1.heat_out,
-        #     destination=self.instance.waste_heat_grid.waste_heat_in
-        # )
-
-        #############################################
+        # GEO: 1. Stage Heat Pump -> Waste Heat Grid 
+        self.instance.arc18 = Arc(
+            source=self.instance.heatpump_s1.heat_out,
+            destination=self.instance.waste_heat_grid.waste_heat_in
+        )
 
         # WASTE: Waste Grid -> 2. Stage Heat Pump 
         self.instance.arc19 = Arc(
@@ -460,11 +453,34 @@ class Model:
         self.result_data = df_output
 
     def save_result_data(self, output_dir):
-        """Saves the result data as csv to the given file path."""
+        """Saves the result data as csv with timestamp."""
+        
+        # Generate timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Create filename with config and timestamp
         config_name = os.path.basename(self.config_file).replace('.json','')
-        output_filename = f"{config_name}_output.csv"
-        output_filepath = os.path.join(output_dir, output_filename)
+        output_filename = f"{config_name}_{timestamp}_output.csv"
+        
+        # Create subdirectory for runs
+        run_dir = os.path.join(output_dir, config_name)
+        os.makedirs(run_dir, exist_ok=True)
+        
+        # Save file
+        output_filepath = os.path.join(run_dir, output_filename)
         self.result_data.to_csv(output_filepath)
+        
+        # Optional: Save run metadata
+        metadata = {
+            "timestamp": timestamp,
+            "config": self.config_file,
+            "solver_options": self.solver.options,
+            # Add more relevant metadata e.g, Geothermal unit
+        }
+        
+        with open(os.path.join(run_dir, f"{timestamp}_metadata.json"), 'w') as f:
+            json.dump(metadata, f, indent=4)
+        
 
     # Sophia Zielfunktion
     def obj_expression(self, m):
@@ -495,9 +511,9 @@ if __name__ == "__main__":
     print("SETTING SOLVER OPTIONS")
     lp.set_solver(
         solver_name="gurobi",
-        # TimeLimit=1000,  # solver will stop after x seconds
-        MIPGap=0.08,
-    )  # solver will stop if gap <= 1%
+        TimeLimit=1000,  # solver will stop after x seconds
+        MIPGap=0.08, # solver will stop if gap <= 8%
+    )  
 
     print("PREPARING DATA")
     lp.load_timeseries_data()
