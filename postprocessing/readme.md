@@ -3152,18 +3152,399 @@ print('occurences: ', occurences)
 ### 4.7 Calculate CSS
 
 **calculate_css**:  
+All relevant data is given as input and the css is calculated on a hourly basis. Results of formula are saved in a list. See the example below:
 
+#### Code example: 
+````python
+def calculate_css(
+    price_dict: dict,
+    key_gas_price: str,
+    key_electr_price: str,
+    P_co2: float,
+    eta_el: float,
+    alpha: float,
+    beta: float
+): 
+    """Calculates the CSS hourly based on the input and Df data of the dictionary and saves it in a list. 
+
+    Args:
+        price_dict (dict): Dictionary with price data from csv. 
+        key_gas_price (str): key of gas price for column in csv or key of price_dict. 
+        key_electr_price (str): key of electricity revenue for column in csv or key of price_dict.
+        P_co2 (float): key for price of Co2. Currently a constant. 
+        eta_el (float): electric efficiency of power plant. 
+        alpha (float): factor of calorific value.
+        beta (float): factor of natural gas. 
+
+    Raises:
+        KeyError: Error if necessary price data is not in csv. Co2 needs to be added in condition!
+
+    Returns:
+        list: list of calculated css values for plot (y-axis)
+    """
+    if key_gas_price not in price_dict or key_electr_price not in price_dict:
+        raise KeyError(f"[calculate_css] Keys {key_gas_price} or {key_electr_price} are missing in price_dict")
+    # print("P_co2: ", P_co2)
+    # print("eta_el: ", eta_el)
+    # print("alpha: ", alpha)
+    # print("beta: ", beta)
+    css_values = []
+    for P_power, P_gas in zip(price_dict[key_electr_price], price_dict[key_gas_price]): 
+        css = P_power - (1/eta_el) * (alpha * P_gas + beta * P_co2) # formular calculation of CSS
+        css_values.append(round(css, 2))
+    return css_values 
+
+# example execution: 
+INPUT_PATH = "../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv"
+df = load_csv_results_in_df(input_path=INPUT_PATH)
+START_DATE = "2025-06-01 00:00"
+END_DATE = "2025-06-01 12:00"
+filtered_df = add_timestamp_and_filter(df, START_DATE, END_DATE)
+price_dict = extract_price_data_to_dict(
+    time_filtered_df=filtered_df,
+    assets=('chp_1','chp_2'),
+    key_gas_price='gas_price',
+    key_power_price='power_price'
+    )
+css_values = calculate_css(
+    price_dict = price_dict,
+    key_gas_price = 'gas_price',
+    key_electr_price = 'power_price',
+    P_co2= 76, 
+    eta_el= 0.41,
+    alpha= 1.107,
+    beta= 0.2016)
+print("css_values: ", css_values)
+````
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/calculate_css_example.png" alt="calculate_css_example" width="1000">
 
 ### 4.8 Plot economic data
-Functions: 
 - plot_css
 - save_plot
 
 **plot_css**:  
+In this graphic we plot the css as a line chart with hourly values but different time spans on the x axis. Also price data like Co2 price, gas price and power price are shown in the graphic. See the code example below. Occurencies are necessary for showing the right labels on x axis.
+
+
+#### Code example: 
+````python
+def plot_css(
+    y_values: list,
+    x_values: list,
+    granularity: str,
+    x_axis_occurencies: dict, 
+    title_size: str,
+    fontsize: str, 
+    colors_dict: dict, 
+    other_cost_data: dict, 
+    key_gas_price: str,
+    key_power_price: str, 
+    P_CO2: float
+): 
+    """Line chart plotting css in hourly granulation (ticks). Granularity of x axis is adjustable. 
+
+    Args:
+        y_values (list): css values to be plotted. 
+        x_values (list): time data to be plotted. 
+        granularity (str): wished granularity of x axis. 
+        x_axis_occurencies (dict): occurencies to make sure that all time data is correct output on x axis.
+        title_size (str): size of title font.
+        fontsize (str): size of font in diagram.
+        colors_dict (dict): dictionary with colors for set assets.
+        other_cost_data (dict): Dictionary with other cost data than css.
+        key_gas_price (str): key of gas price.
+        key_power_price (str): key of power price.
+        P_Co2 (float): constant of Co2 price.
+
+    Returns:
+        fig: Figure from matplotlib showing 4 types of cost data in one diagram as lines with different colors. 
+    """
+    
+    labels = list(colors_dict.keys())
+    # plot CSS, gas_price, power price: 
+    plt.style.use('dark_background') # dark Layout for slides
+    fig, ax = plt.subplots(
+        figsize=(16, 9), 
+        facecolor="black"
+        )
+    ax.plot(
+        x_values, 
+        y_values, 
+        marker=None, 
+        linestyle='-', 
+        label=labels[3], 
+        color=colors_dict[labels[3]]
+        )
+    ax.plot(
+        x_values, 
+        other_cost_data[key_gas_price], 
+        linestyle='-', 
+        label=key_gas_price, 
+        color=colors_dict[key_gas_price]
+        )
+    ax.plot(
+        x_values, 
+        other_cost_data[key_power_price], 
+        linestyle='-', 
+        label=key_power_price, 
+        color=colors_dict[key_power_price]
+        )
+    # given constant, needs to be integrated as list 
+    repeated_list = [P_CO2 for _ in range(len(x_values))]
+    ax.plot(
+        x_values, 
+        repeated_list, 
+        linestyle='-', 
+        label=labels[2], 
+        color=colors_dict[labels[2]]
+        )
+    # condition that more than 24 hours are plotted in one graph: 
+    if granularity == 'hour': 
+        ax.set_xticks([x_values[i] for i in x_axis_occurencies.values()])
+        # Convert the complete date information to just “HH:MM” for the axis labeling
+        ax.set_xticklabels(
+            [key[-5:] for key in x_axis_occurencies.keys()],  # cut "HH:MM" out of string
+            rotation=45 
+            )
+    else: 
+        ax.set_xticks(
+        [x_values[i] for i in x_axis_occurencies.values()],  # reduce X values
+        [tick for tick in x_axis_occurencies.keys()],  # set labels as granularity
+        rotation=45 
+        )
+    # Set title of axis. 
+    ax.axhline(
+        y=0, 
+        color='white', 
+        linewidth=0.7, 
+        linestyle='-'
+        )
+    ax.set_xlabel(
+        f"Time in {granularity}s", 
+        fontsize=fontsize, 
+        fontweight='bold'
+        )
+    ax.set_ylabel(
+        "Clean Spark Spread in €/MWh", 
+        fontsize=fontsize, 
+        fontweight='bold'
+        )
+    ax.set_title(
+        "Clean Spark Spread of scenario GEE23", 
+        fontsize=title_size, 
+        fontweight='bold', 
+        y=1.1
+        )
+    ax.grid(
+        True, 
+        color='gray', 
+        linestyle='--', 
+        linewidth=0.5, 
+        zorder=1
+        )
+    ax.tick_params(
+        axis='x', 
+        labelsize=fontsize
+        ) 
+    ax.tick_params(
+        axis='y', 
+        labelsize=fontsize
+        )
+    ax.legend(
+        loc="lower center",           # position of legend
+        bbox_to_anchor=(0.5, 1.0, 0, 0),   # anchor point (x=0.5 for central, y=1.0 for above)
+        ncol=4,                      # amount of columns in legend
+        frameon=True,                # Frame around legend
+        fontsize=fontsize,
+        title_fontsize=fontsize
+        )
+
+    plt.show() # aktivieren, wenn nicht gespeichert wird. 
+    return fig
+
+# example execution: 
+INPUT_PATH = "../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv"
+df = load_csv_results_in_df(input_path=INPUT_PATH)
+START_DATE = "2025-06-01 00:00"
+END_DATE = "2025-06-10 12:00"
+granularity = 'day'
+P_CO2 = 76
+colors_dict = {
+    "gas_price": [
+        0.5843137255,
+        0.3254901961,
+        0.2784313725,
+        1.0
+    ],
+    "power_price": [
+        1.0, 
+        0.85, 
+        0.0, 
+        1.0
+    ],
+    "Co2_price": [
+        0.3882352941, 
+        0.8470588235,
+        0.2509803922,
+        1.0
+    ],
+    "CSS": [
+        0.2, 
+        0.6, 
+        1.0, 
+        1.0
+    ]
+}
+filtered_df = add_timestamp_and_filter(df, START_DATE, END_DATE)
+price_dict = extract_price_data_to_dict(
+    time_filtered_df=filtered_df,
+    assets=('chp_1','chp_2'),
+    key_gas_price='gas_price',
+    key_power_price='power_price'
+    )
+
+timestamps, occurences_dict = get_time_data_for_plot(
+    time_filtered_df=filtered_df,
+    granularity=granularity
+)
+
+css_values = calculate_css(
+    price_dict = price_dict,
+    key_gas_price = 'gas_price',
+    key_electr_price = 'power_price',
+    P_CO2 = P_CO2, # € / t
+    eta_el= 0.41,
+    alpha= 1.107,
+    beta= 0.2016)
+
+fig = plot_css(
+    x_values= timestamps,
+    y_values= css_values, 
+    granularity= granularity, 
+    x_axis_occurencies= occurences_dict, 
+    title_size= 16, 
+    fontsize= 14, 
+    colors_dict= colors_dict, 
+    other_cost_data= price_dict, 
+    key_gas_price= 'gas_price', 
+    key_power_price='power_price', 
+    P_CO2=P_CO2
+)
+````
+
+#### Output example: 
+
+<img src="../data/postprocessing/zzz_pictures_readme/plot_css_example.png" alt="plot_css_example" width="900">
 
 **save_plot**:  
+Like in section 3.12 we need to save our dark figure in a folder for later use as png. For example executoin look at section 3.12 above.
+
+#### Code example: 
+````python
+def save_plot(
+    fig, 
+    output_path: str, 
+    filename: str, 
+    dpi: int = 300, 
+    format: str = "png"
+    ):
+    """Saves the given plot in a file.
+
+    Args:
+        fig (matplotlib.figure.Figure): The diagram to be saved.
+        output_path (str): Path to folder for saving file.
+        filename (str): The file name (incl. path) for the saved file.
+        dpi (int): The resolution of the picture.
+        format (str): Data formate (f. e. "png", "pdf", "svg").
+    """
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)  # Erstelle den Ordner (und alle übergeordneten Ordner falls nötig)
+    output_file = os.path.join(
+        output_path, 
+        filename
+        )
+    plt.savefig(
+        output_file, 
+        format=format, 
+        dpi=dpi, 
+        facecolor="black", 
+        transparent=False
+        )
+    plt.show()
+    plt.close(fig)
+    print(f"Diagram saved as: {output_file}")
+````
 
 ### 4.9 Main Script
+- Input values
+- main script
 
+**Input values**:  
+In this section we adjust our graphics because we set our input parameters here. Normally this is the only section where we make changes. See the code below.
+
+#### Code example: 
+````python
+# 1 ! Definition Pathes, file and folder names for diagram:!
+filename = 'css_0515.png' # name of our file we want to generate
+output_folder_name = 'clean_spark_spread' # folder where we want to save it
+colors_filename = "assigned_colors.json" # filename of our colors, not working yet!
+INPUT_PATH = '../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv' #Input path of our data from simulation
+OUTPUT_PATH = '../data/postprocessing/' + output_folder_name # our built output path where we save our graphics.
+
+# 2 ! time data: !
+start_time = "2025-05-15 00:00" # Day and time beginning of time period
+end_time = "2025-05-15 23:00" # Day and time end of time period
+granularity = 'hour' # granularity we want for our x-axis as labels.
+
+# 3 ! asset data: !
+my_assets = ('chp_1', 'chp_2') # only assets with co2 variable
+key_gas_price = 'gas_price' # name from csv
+key_power_price = 'power_price' # name from csv
+
+# 4 ! Constant price parameters: !
+P_CO2 = 76 # € / t
+ETA_EL = 0.41
+ALPHA = 1.107
+BETA = 0.2016
+
+# 5 Plot constants: 
+title_size = 18
+fontsize = 16
+
+# 6 set colors and keys of css and co2 price (TODO: later load colors from same json as share of assets)
+colors_dict = {
+    "gas_price": [
+        0.5843137255,
+        0.3254901961,
+        0.2784313725,
+        1.0
+    ],
+    "power_price": [
+        1.0, 
+        0.85, 
+        0.0, 
+        1.0
+    ],
+    "Co2_price": [
+        0.3882352941, 
+        0.8470588235,
+        0.2509803922,
+        1.0
+    ],
+    "CSS": [
+        0.2, 
+        0.6, 
+        1.0, 
+        1.0
+    ]
+}
+````
+
+**main script**:  
+
+#### Code example: 
+
+#### Output example: 
 
 *written by: Sophia Reker*
