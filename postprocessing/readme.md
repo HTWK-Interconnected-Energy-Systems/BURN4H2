@@ -16,7 +16,7 @@
     - [3.11 Compare two data sets from csv in one plot](#3.11-Compare-two-data-sets-from-csv-in-one-plot)
     - [3.12 Function for saving plots of any kind.](#3.12-Function-for-saving-plots-of-any-kind.)
     - [3.13 Wrapper for Main function - Decide for plot with input value](#3.13-Wrapper-for-Main-function-–-Decide-for-plot-with-input-value)
-    - [3.14 MAIN scripts for generating results – need to be executed!](#3.14-MAIN-scripts-for-generating-results-–-need-to-be-executed!)
+    - [3.14 Main script for generating results – need to be executed!](#3.14-Main-script-for-generating-results-–-need-to-be-executed!)
 - [4 clean_spark_spread.ipynb](#4-clean_spark_spread.ipynb)  
     - [4.1 What is it for?](#4.1-What-is-it-for?)
     - [4.2 Structure](#4.2-Structure)
@@ -2733,7 +2733,7 @@ def decide_for_diagram_and_plot(
 #### Output example: 
 It's just a wrapper function used to shorten main script. To execute it anyways look at 3.14 main execution. 
 
-### 3.14 MAIN scripts for generating results – need to be executed!
+### 3.14 Main script for generating results – need to be executed!
 **Structure**: 
 - Input values
 - Main script
@@ -3542,9 +3542,64 @@ colors_dict = {
 ````
 
 **main script**:  
+This is the main script executing all functions. Here we don't need to change anything because we make main changes in input parameters. Nevertheless it is important because we always need to execute it. 
 
 #### Code example: 
+````python
+if __name__ == "__main__":
+    #TODO: kürzen in Wrapper!
+    input_csv = load_csv_results_in_df(input_path=INPUT_PATH)
+    df_with_time = add_timestamp_and_filter(
+    input_df = input_csv, 
+    start_time = start_time, 
+    end_time = end_time, 
+    time_column = 'date'
+    )
+    # print_df(df=df_with_time)
+    price_dict = extract_price_data_to_dict(
+    time_filtered_df = df_with_time, 
+    assets = my_assets,
+    key_gas_price = key_gas_price,
+    key_power_price = key_power_price
+    )
+    trimmed_price_dict = {key: value[:5] for key, value in price_dict.items()}
+    print("price dict: ", trimmed_price_dict)
+    hourly_timestamps, occurencies_dict = get_time_data_for_plot(
+        time_filtered_df=df_with_time,
+        granularity=granularity
+    )
+    print("hourly_timestamps: ", hourly_timestamps[:5])
+    print("occurencies_dict: ", occurencies_dict)
+    css_values = calculate_css(
+    price_dict = price_dict,
+    key_gas_price = key_gas_price,
+    key_electr_price = key_power_price,
+    P_CO2=P_CO2,
+    eta_el = ETA_EL,
+    alpha = ALPHA,
+    beta = BETA)
+    print("css_values: ", css_values[:5])
+    fig = plot_css(
+    y_values = css_values,
+    x_values = hourly_timestamps,
+    granularity = granularity,
+    x_axis_occurencies =occurencies_dict,
+    title_size=title_size,
+    fontsize = fontsize, 
+    colors_dict = colors_dict,
+    other_cost_data = price_dict, 
+    key_gas_price = key_gas_price, 
+    key_power_price = key_power_price, 
+    P_CO2 = P_CO2
+    )
+save_plot(
+        fig=fig,
+        output_path=OUTPUT_PATH,
+        filename=filename 
+    )
+````
+#### Output example:
 
-#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/main_css_example.png" alt="main_css_example" width="1200">
 
 *written by: Sophia Reker*
