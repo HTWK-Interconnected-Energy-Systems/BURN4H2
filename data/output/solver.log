@@ -2,8 +2,8 @@ Solver command line: ['C:\\Program Files\\gurobi1102\\win64\\bin\\gurobi.bat']
 
 Set parameter Username
 Academic license - for non-commercial use only - expires 2025-07-11
-Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmpy78vhx23.pyomo.lp
-Reading time = 0.18 seconds
+Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmpd7cyn5hy.pyomo.lp
+Reading time = 0.14 seconds
 objective: 17978 rows, 16799 columns, 40808 nonzeros
 Set parameter TimeLimit to value 1000
 Set parameter MIPGap to value 0.08
@@ -23,7 +23,7 @@ Coefficient statistics:
   Bounds range     [1e+00, 3e+00]
   RHS range        [4e-04, 1e+04]
 Presolve removed 16137 rows and 14285 columns
-Presolve time: 0.17s
+Presolve time: 0.15s
 Presolved: 1841 rows, 2514 columns, 6863 nonzeros
 Variable types: 2013 continuous, 501 integer (501 binary)
 Found heuristic solution: objective -469317.7866
@@ -36,7 +36,7 @@ Root relaxation: objective -1.496248e+06, 1126 iterations, 0.02 seconds (0.02 wo
      0     0 -1496248.4    0    7 -469317.79 -1496248.4   219%     -    0s
 H    0     0                    -1491598.759 -1496248.4  0.31%     -    0s
 
-Explored 1 nodes (1126 simplex iterations) in 0.24 seconds (0.09 work units)
+Explored 1 nodes (1126 simplex iterations) in 0.23 seconds (0.09 work units)
 Thread count was 4 (of 4 available processors)
 
 Solution count 2: -1.4916e+06 -469318 

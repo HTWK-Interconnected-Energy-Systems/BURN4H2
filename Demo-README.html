@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Demomodell</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <!-- omit in toc -->
+<h1 id="demomodell">Demomodell</h1>
+<!-- omit in toc -->
+<h1 id="table-of-contents">Table of Contents</h1>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#system-boundaries">System Boundaries</a></li>
+<li><a href="#components">Components</a>
+<ul>
+<li><a href="#chp-units">CHP Units</a></li>
+<li><a href="#heat-pump">Heat Pump</a></li>
+<li><a href="#battery-storage">Battery Storage</a></li>
+<li><a href="#heat-storage">Heat Storage</a></li>
+<li><a href="#local-heat-storage">Local Heat Storage</a></li>
+<li><a href="#photovoltaics">Photovoltaics</a></li>
+<li><a href="#collector-solar-thermal">Collector (Solar Thermal)</a></li>
+<li><a href="#grid">Grid</a></li>
+</ul>
+</li>
+<li><a href="#topology">Topology</a></li>
+<li><a href="#ports">Ports</a>
+<ul>
+<li><a href="#ports-of-each-asset">Ports of each Asset</a>
+<ul>
+<li><a href="#chp-input-ports">CHP: Input Ports</a></li>
+<li><a href="#chp-output-ports">CHP: Output Ports</a></li>
+</ul>
+</li>
+<li><a href="#heat-pump-1">Heat Pump</a>
+<ul>
+<li><a href="#heat-pump-stage-1">Heat Pump Stage 1</a>
+<ul>
+<li><a href="#input-ports">Input Ports</a></li>
+<li><a href="#output-ports">Output Ports</a></li>
+</ul>
+</li>
+<li><a href="#heat-pump-stage-2">Heat Pump Stage 2</a>
+<ul>
+<li><a href="#input-ports-1">Input Ports</a></li>
+<li><a href="#output-ports-1">Output Ports</a></li>
+</ul>
+</li>
+<li><a href="#battery-storage-input-ports">Battery Storage: Input Ports</a></li>
+<li><a href="#battery-storage-output-ports">Battery Storage: Output Ports</a></li>
+<li><a href="#heat-storage-input-ports">Heat Storage: Input Ports</a></li>
+<li><a href="#heat-storage-output-ports">Heat Storage: Output Ports</a></li>
+<li><a href="#local-heat-storage-input-ports">Local Heat Storage: Input Ports</a></li>
+<li><a href="#local-heat-storage-output-ports">Local Heat Storage: Output Ports</a></li>
+<li><a href="#photovoltaics-output-ports">Photovoltaics: Output Ports</a></li>
+<li><a href="#collector-output-ports">Collector: Output Ports</a></li>
+<li><a href="#electrical-grid-input-ports">Electrical Grid: Input Ports</a></li>
+<li><a href="#electrical-grid-output-ports">Electrical Grid: Output Ports</a></li>
+<li><a href="#hydrogen-grid-input-ports">Hydrogen Grid: Input Ports</a></li>
+<li><a href="#hydrogen-grid-output-ports">Hydrogen Grid: Output Ports</a></li>
+<li><a href="#heat-grid-input-ports">Heat Grid: Input Ports</a></li>
+<li><a href="#heat-grid-output-ports">Heat Grid: Output Ports</a></li>
+<li><a href="#waste-heat-grid-input-ports">Waste Heat Grid: Input Ports</a></li>
+<li><a href="#waste-heat-grid-output-ports">Waste Heat Grid: Output Ports</a></li>
+<li><a href="#local-heat-grid-input-ports">Local Heat Grid: Input Ports</a></li>
+<li><a href="#local-heat-grid-output-ports">Local Heat Grid: Output Ports</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="overview">Overview</h2>
+<p>This model demonstrates the optimization of an industrial energy system with focus on sector coupling between power and heat.</p>
+<p>It includes:</p>
+<ul>
+<li>Combined heat and power units (CHP)</li>
+<li>Heat Pumps</li>
+<li>Solar Thermal Collector</li>
+<li>Battery &amp; Heat Storage</li>
+<li>Grid Connections (Power, Heat, Waste Heat)</li>
+</ul>
+<hr>
+<h2 id="system-boundaries">System Boundaries</h2>
+<ul>
+<li>Mixed-lineare programming approach (MILP)</li>
+<li>Perfect forecast</li>
+<li>Hourly resolution</li>
+<li>No transmission losses</li>
+<li>No ramp rates</li>
+</ul>
+<hr>
+<h2 id="components">Components</h2>
+<h3 id="chp-units">CHP Units</h3>
+<ul>
+<li>Two identical units (chp 1, chp 2)</li>
+<li>Fixed hydrogen admixture (0-100%)</li>
+<li>Assumptions:
+<ul>
+<li>Constant efficiency in converting fuel to both power and heat.</li>
+<li>Linear dependency between:
+<ul>
+<li>gas consumption and power output</li>
+<li>heat and power output</li>
+<li>co2 and power output</li>
+<li>waste heat and power output</li>
+</ul>
+</li>
+<li>Binary on/off modeling of operation.</li>
+</ul>
+</li>
+</ul>
+<h3 id="heat-pump">Heat Pump</h3>
+<p><strong>Technical specifications:</strong></p>
+<ul>
+<li>Working fluid: R-717 (Ammonia)</li>
+<li>Single-stage compression cycle</li>
+<li>Minimum temperature difference: 10 K</li>
+<li>No subcooling or desuperheating</li>
+</ul>
+<p><em><img src="file:///c:\Users\Paul Wilhelm\VSCodeProjects\burn4h2\docs\images\kreisprozess.PNG" alt="topology" width="500">
+<em>Figure 1: Schematic representation of the heat pump cycle with main components: compressor (a:1→2), condenser (c:2→3), expansion valve (d:3→4) and evaporator (b:4→1)</em></em></p>
+<p><strong>Thermodynamic assumptions:</strong></p>
+<ol>
+<li>Isentropic compression</li>
+<li>Isobaric heat rejection</li>
+<li>Isothermal/isobaric heat rejection through condensation</li>
+<li>Isenthalpic expansion through throttle valve</li>
+<li>Isothermal/isobaric heat absorption in evaporator</li>
+</ol>
+<p><strong>Additional Assumptions:</strong></p>
+<ul>
+<li>Single-stage compression</li>
+<li>No losses in compression, condensation, or expansion processes.</li>
+</ul>
+<h3 id="battery-storage">Battery Storage</h3>
+<p><strong>Assumptions:</strong></p>
+<ul>
+<li>Perfect charging/discharging</li>
+<li>No losses</li>
+<li>No cyclic degradation</li>
+<li>Fixed capacity</li>
+</ul>
+<h3 id="heat-storage">Heat Storage</h3>
+<p><strong>Assumptions:</strong></p>
+<ul>
+<li>Fixed storage capacity with ideal charge and discharge efficiency</li>
+<li>Negligible thermal losses during storage</li>
+<li>Only one-directional operation per time period (charge or discharge)</li>
+</ul>
+<h3 id="local-heat-storage">Local Heat Storage</h3>
+<p><strong>Assumptions:</strong></p>
+<ul>
+<li>Fixed storage capacity with ideal charge and discharge efficiency.</li>
+<li>Instantaneous response during discharging</li>
+<li>bidirectional operation within the same timestep (charge and discharge)</li>
+<li>Negligible thermal losses during storage</li>
+<li>Ability to dispatch excess heat directly into district heating grid</li>
+</ul>
+<h3 id="photovoltaics">Photovoltaics</h3>
+<p><strong>Assumptions:</strong></p>
+<ul>
+<li>Constant panel efficiency (?) -&gt; Martin fragen</li>
+<li>Ideal irradiance conditions without shading or degradation (?) -&gt; Martin fragen</li>
+<li>Negligible conversion losses beyond rated efficiency (?) -&gt; Martin fragen</li>
+</ul>
+<h3 id="collector-solar-thermal">Collector (Solar Thermal)</h3>
+<p><strong>Assumptions:</strong></p>
+<ul>
+<li>Fixed Solar thermal capacity</li>
+<li>No ambient or thermal losses considered</li>
+<li>Constant collection efficiency over the operational period</li>
+</ul>
+<h3 id="grid">Grid</h3>
+<p><strong>Assumptions:</strong></p>
+<ul>
+<li>No transmission losses between assets</li>
+<li>Unlimited flow capacity in network arcs</li>
+<li>Perfect balancing of supply and demand</li>
+</ul>
+<hr>
+<h2 id="topology">Topology</h2>
+<p><em><img src="file:///c:\Users\Paul Wilhelm\VSCodeProjects\burn4h2\docs\images\Demomodell.png" alt="print_df_example" width="900">
+<em>Figure 2: Schematic Topology of the Demomodel</em></em></p>
+<hr>
+<p><strong>Arcs:</strong>
+<em><img src="file:///c:\Users\Paul Wilhelm\VSCodeProjects\burn4h2\docs\images\arcs.png" alt="print_df_example" width="500">
+<em>Figure 4: Schematic figure of an arc</em></em></p>
+<hr>
+<h2 id="ports">Ports</h2>
+<p><strong>Ports:</strong>
+<em><img src="file:///c:\Users\Paul Wilhelm\VSCodeProjects\burn4h2\docs\images\ports.png" alt="print_df_example" width="500">
+<em>Figure 3: Schematic figure of the of an asset</em></em></p>
+<h3 id="ports-of-each-asset">Ports of each Asset</h3>
+<h4 id="chp-input-ports">CHP: Input Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>natural_gas_in</td>
+<td>chp.natural_gas</td>
+<td>Natural gas input</td>
+<td>MW</td>
+</tr>
+<tr>
+<td>hydrogen_in</td>
+<td>chp.hydrogen</td>
+<td>Hydrogen input</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h4 id="chp-output-ports">CHP: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>power_out</td>
+<td>chp.power</td>
+<td>Electrical power</td>
+<td>MW</td>
+</tr>
+<tr>
+<td>heat_out</td>
+<td>chp.heat</td>
+<td>Heat output</td>
+<td>MW</td>
+</tr>
+<tr>
+<td>waste_heat_out</td>
+<td>chp.waste_heat</td>
+<td>Waste heat output</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="heat-pump-1">Heat Pump</h3>
+<h4 id="heat-pump-stage-1">Heat Pump Stage 1</h4>
+<h5 id="input-ports">Input Ports</h5>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>power_in</td>
+<td>heatpump_s1.power_in</td>
+<td>Electrical power input</td>
+<td>MW</td>
+</tr>
+<tr>
+<td>waste_heat_in</td>
+<td>heatpump_s1.heat_in</td>
+<td>Waste heat input (from geo storage)</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h5 id="output-ports">Output Ports</h5>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_out</td>
+<td>heatpump_s1.heat_out</td>
+<td>Heat output</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h4 id="heat-pump-stage-2">Heat Pump Stage 2</h4>
+<h5 id="input-ports-1">Input Ports</h5>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>power_in</td>
+<td>heatpump_s2.power_in</td>
+<td>Electrical power input</td>
+<td>MW</td>
+</tr>
+<tr>
+<td>waste_heat_in</td>
+<td>heatpump_s2.waste_heat_in</td>
+<td>Waste heat input</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h5 id="output-ports-1">Output Ports</h5>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_out</td>
+<td>heatpump_s2.heat_out</td>
+<td>Heat output</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="battery-storage-input-ports">Battery Storage: Input Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>power_in</td>
+<td>battery_storage.power_charging</td>
+<td>Charging power</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h4 id="battery-storage-output-ports">Battery Storage: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>power_out</td>
+<td>battery_storage.power_discharging</td>
+<td>Discharging power</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="heat-storage-input-ports">Heat Storage: Input Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_in</td>
+<td>heat_storage.heat_charging</td>
+<td>Charging heat</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h4 id="heat-storage-output-ports">Heat Storage: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_out</td>
+<td>heat_storage.heat_discharging</td>
+<td>Discharging heat</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="local-heat-storage-input-ports">Local Heat Storage: Input Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_in</td>
+<td>local_heat_storage.heat_charging</td>
+<td>Charging heat</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h4 id="local-heat-storage-output-ports">Local Heat Storage: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_out</td>
+<td>local_heat_storage.heat_discharging</td>
+<td>Discharging heat</td>
+<td>MW</td>
+</tr>
+<tr>
+<td>excess_heat_out</td>
+<td>local_heat_storage.excess_heat_discharging</td>
+<td>Excess heat discharging</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="photovoltaics-output-ports">Photovoltaics: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>power_out</td>
+<td>pv.power</td>
+<td>Electrical power</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="collector-output-ports">Collector: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_out</td>
+<td>solar_thermal.heat</td>
+<td>Heat output</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="electrical-grid-input-ports">Electrical Grid: Input Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>power_in</td>
+<td>electrical_grid.power_in</td>
+<td>Power feed-in</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h4 id="electrical-grid-output-ports">Electrical Grid: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>power_out</td>
+<td>electrical_grid.power_out</td>
+<td>Power supply</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="hydrogen-grid-input-ports">Hydrogen Grid: Input Ports</h4>
+<!-- Note: No input port is defined for the hydrogen grid in the current code -->
+<h4 id="hydrogen-grid-output-ports">Hydrogen Grid: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>hydrogen_out</td>
+<td>hydrogen_grid.hydrogen_out</td>
+<td>Hydrogen supply</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="heat-grid-input-ports">Heat Grid: Input Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_in</td>
+<td>heat_grid.heat_in</td>
+<td>Heat feed-in</td>
+<td>MW</td>
+</tr>
+<tr>
+<td>excess_heat_in</td>
+<td>heat_grid.excess_heat_in</td>
+<td>Excess heat feed-in</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h4 id="heat-grid-output-ports">Heat Grid: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_out</td>
+<td>heat_grid.heat_out</td>
+<td>Heat supply</td>
+<td>MW</td>
+</tr>
+<tr>
+<td>heat_grid_to_local_out</td>
+<td>heat_grid.heat_grid_to_local</td>
+<td>Heat grid to local heat grid</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="waste-heat-grid-input-ports">Waste Heat Grid: Input Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>waste_heat_in</td>
+<td>waste_heat_grid.waste_heat_in</td>
+<td>Waste heat feed-in</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h4 id="waste-heat-grid-output-ports">Waste Heat Grid: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_out</td>
+<td>waste_heat_grid.waste_heat_out</td>
+<td>Waste heat supply</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h4 id="local-heat-grid-input-ports">Local Heat Grid: Input Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_in</td>
+<td>local_heat_grid.heat_in</td>
+<td>Local heat feed-in</td>
+<td>MW</td>
+</tr>
+<tr>
+<td>district_heat_in</td>
+<td>local_heat_grid.district_heat_in</td>
+<td>District heat feed-in</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+<h4 id="local-heat-grid-output-ports">Local Heat Grid: Output Ports</h4>
+<table>
+<thead>
+<tr>
+<th>Port Name</th>
+<th>Variable</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>heat_out</td>
+<td>local_heat_grid.heat_out</td>
+<td>Local heat supply</td>
+<td>MW</td>
+</tr>
+</tbody>
+</table>
+
+            
+            
+        </body>
+        </html>

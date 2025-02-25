@@ -483,7 +483,7 @@ class Model:
             # Add more relevant metadata e.g, Geothermal unit
         }
         
-        with open(os.path.join(run_dir, f"{timestamp}_metadata.json"), 'w') as f:
+        with open(os.path.join(run_dir, f"{config_name}_{timestamp}_metadata.json"), 'w') as f:
             json.dump(metadata, f, indent=4)
         
 

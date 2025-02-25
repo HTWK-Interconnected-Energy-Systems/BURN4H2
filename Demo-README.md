@@ -15,29 +15,55 @@
   - [Grid](#grid)
 - [Topology](#topology)
 - [Ports](#ports)
-  - [Ports of each Asset](#ports-of-each-asset)
-    - [CHP: Input Ports](#chp-input-ports)
-    - [CHP: Output Ports](#chp-output-ports)
-    - [Heat Pump: Input Ports](#heat-pump-input-ports)
-    - [Heat Pump: Output Ports](#heat-pump-output-ports)
-    - [Battery Storage: Input Ports](#battery-storage-input-ports)
-    - [Battery Storage: Output Ports](#battery-storage-output-ports)
-    - [Heat Storage: Input Ports](#heat-storage-input-ports)
-    - [Heat Storage: Output Ports](#heat-storage-output-ports)
-    - [Local Heat Storage: Input Ports](#local-heat-storage-input-ports)
-    - [Local Heat Storage: Output Ports](#local-heat-storage-output-ports)
-    - [Photovoltaics: Output Ports](#photovoltaics-output-ports)
-    - [Collector: Output Ports](#collector-output-ports)
-    - [Electrical Grid: Input Ports](#electrical-grid-input-ports)
-    - [Electrical Grid: Output Ports](#electrical-grid-output-ports)
-    - [Hydrogen Grid: Input Ports](#hydrogen-grid-input-ports)
-    - [Hydrogen Grid: Output Ports](#hydrogen-grid-output-ports)
-    - [Heat Grid: Input Ports](#heat-grid-input-ports)
-    - [Heat Grid: Output Ports](#heat-grid-output-ports)
-    - [Waste Heat Grid: Input Ports](#waste-heat-grid-input-ports)
-    - [Waste Heat Grid: Output Ports](#waste-heat-grid-output-ports)
-    - [Local Heat Grid: Input Ports](#local-heat-grid-input-ports)
-    - [Local Heat Grid: Output Ports](#local-heat-grid-output-ports)
+  - [CHP](#chp)
+    - [Input Ports](#input-ports)
+    - [Output Ports](#output-ports)
+  - [Heat Pump](#heat-pump-1)
+    - [Stage 1](#stage-1)
+      - [Input Ports](#input-ports-1)
+      - [Output Ports](#output-ports-1)
+    - [Stage 2](#stage-2)
+      - [Input Ports](#input-ports-2)
+      - [Output Ports](#output-ports-2)
+  - [Storage](#storage)
+    - [Battery Storage](#battery-storage-1)
+      - [Input Ports](#input-ports-3)
+      - [Output Ports](#output-ports-3)
+    - [Heat Storage](#heat-storage-1)
+      - [Input Ports](#input-ports-4)
+      - [Output Ports](#output-ports-4)
+    - [Local Heat Storage](#local-heat-storage-1)
+      - [Input Ports](#input-ports-5)
+      - [Output Ports](#output-ports-5)
+  - [Photovoltaics](#photovoltaics-1)
+    - [Output Ports](#output-ports-6)
+  - [Collector](#collector)
+    - [Output Ports](#output-ports-7)
+  - [Grid](#grid-1)
+    - [Electrical Grid](#electrical-grid)
+      - [Input Ports](#input-ports-6)
+      - [Output Ports](#output-ports-8)
+    - [Hydrogen Grid](#hydrogen-grid)
+      - [Output Ports](#output-ports-9)
+    - [Heat Grid](#heat-grid)
+      - [Input Ports](#input-ports-7)
+      - [Output Ports](#output-ports-10)
+    - [Waste Heat Grid](#waste-heat-grid)
+      - [Input Ports](#input-ports-8)
+      - [Output Ports](#output-ports-11)
+    - [Local Heat Grid](#local-heat-grid)
+      - [Input Ports](#input-ports-9)
+      - [Output Ports](#output-ports-12)
+- [Run the Script](#run-the-script)
+  - [1. Install Dependencies](#1-install-dependencies)
+  - [2. Select a Configuration File](#2-select-a-configuration-file)
+  - [3. Run the Script](#3-run-the-script)
+    - [Run with Default Configuration](#run-with-default-configuration)
+    - [Run with a Specific Scenario](#run-with-a-specific-scenario)
+  - [4. Execution Process](#4-execution-process)
+  - [5. Naming Convention of the Results](#5-naming-convention-of-the-results)
+    - [Output CSV Files](#output-csv-files)
+    - [Metadata JSON Files](#metadata-json-files)
 
 ---
 
@@ -165,145 +191,282 @@ It includes:
 *<img src="docs/images/ports.png" alt="print_df_example" width="500">
 *Figure 3: Schematic figure of the of an asset**
 
-### Ports of each Asset
 
-#### CHP: Input Ports
+### CHP
+
+#### Input Ports
 | Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
+|---------------|-----------------|--------------------|-------|
 | natural_gas_in | chp.natural_gas | Natural gas input  | MW    |
 | hydrogen_in    | chp.hydrogen    | Hydrogen input     | MW    |
 
-#### CHP: Output Ports
+#### Output Ports
 | Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| power_out      | chp.power      | Electrical power   | MW    |
-| heat_out       | chp.heat       | Heat output       | MW    |
-| waste_heat_out | chp.waste_heat | Waste heat output | MW    |
+|---------------|-----------------|--------------------|-------|
+| power_out      | chp.power       | Electrical power   | MW    |
+| heat_out       | chp.heat        | Heat output        | MW    |
+| waste_heat_out | chp.waste_heat  | Waste heat output  | MW    |
 
 ---
 
-#### Heat Pump: Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| power_in       | heatpump.power  | Electrical power   | MW    |
-| waste_heat_in  | heatpump.heat_input | Waste heat input | MW    |
+### Heat Pump
 
-#### Heat Pump: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_out       | heatpump.heat   | Heat output        | MW    |
+#### Stage 1
 
----
+##### Input Ports
+| Port Name      | Variable                 | Description                              | Unit  |
+|----------------|--------------------------|------------------------------------------|-------|
+| power_in       | heatpump_s1.power_in     | Electrical power input                   | MW    |
+| waste_heat_in  | heatpump_s1.heat_in      | Waste heat input (from geo storage)      | MW    |
 
-#### Battery Storage: Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| power_in       | battery_storage.power_charging | Charging power | MW    |
+##### Output Ports
+| Port Name      | Variable                | Description         | Unit  |
+|----------------|-------------------------|---------------------|-------|
+| heat_out       | heatpump_s1.heat_out    | Heat output         | MW    |
 
-#### Battery Storage: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| power_out      | battery_storage.power_discharging | Discharging power | MW    |
+#### Stage 2
 
----
+##### Input Ports
+| Port Name      | Variable                   | Description                    | Unit  |
+|----------------|----------------------------|--------------------------------|-------|
+| power_in       | heatpump_s2.power_in       | Electrical power input         | MW    |
+| waste_heat_in  | heatpump_s2.waste_heat_in   | Waste heat input               | MW    |
 
-#### Heat Storage: Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_in        | heat_storage.heat_charging | Charging heat | MW    |
-
-#### Heat Storage: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_out       | heat_storage.heat_discharging | Discharging heat | MW    |
+##### Output Ports
+| Port Name      | Variable                | Description         | Unit  |
+|----------------|-------------------------|---------------------|-------|
+| heat_out       | heatpump_s2.heat_out    | Heat output         | MW    |
 
 ---
 
-#### Local Heat Storage: Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_in        | local_heat_storage.heat_charging | Charging heat | MW    |
+### Storage
 
-#### Local Heat Storage: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_out       | local_heat_storage.heat_discharging | Discharging heat | MW    |
-| excess_heat_out| local_heat_storage.excess_heat_discharging | Excess heat discharging | MW    |
+#### Battery Storage
 
----
-
-#### Photovoltaics: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| power_out      | pv.power        | Electrical power   | MW    |
-
----
-
-#### Collector: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_out       | solar_thermal.heat | Heat output    | MW    |
-
----
-
-#### Electrical Grid: Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| power_in       | electrical_grid.power_feedin | Power feed-in | MW    |
+##### Input Ports
+| Port Name      | Variable                         | Description       | Unit  |
+|----------------|----------------------------------|-------------------|-------|
+| power_in       | battery_storage.power_charging   | Charging power    | MW    |
 
 
-#### Electrical Grid: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| power_out      | electrical_grid.power_supply | Power supply | MW    |
+##### Output Ports
 
----
+| Port Name      | Variable                          | Description         | Unit  |
+|----------------|-----------------------------------|---------------------|-------|
+| power_out      | battery_storage.power_discharging | Discharging power   | MW    |
 
-#### Hydrogen Grid: Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| hydrogen_in    | hydrogen_grid.hydrogen_feedin | Hydrogen feed-in | MW    |
 
-#### Hydrogen Grid: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| hydrogen_out   | hydrogen_grid.hydrogen_supply | Hydrogen supply | MW    |
+
+#### Heat Storage 
+
+##### Input Ports
+| Port Name      | Variable                      | Description       | Unit  |
+|----------------|-------------------------------|-------------------|-------|
+| heat_in        | heat_storage.heat_charging    | Charging heat     | MW    |
+
+##### Output Ports
+| Port Name      | Variable                      | Description         | Unit  |
+|----------------|-------------------------------|---------------------|-------|
+| heat_out       | heat_storage.heat_discharging | Discharging heat    | MW    |
+
+
+#### Local Heat Storage 
+
+##### Input Ports
+
+| Port Name      | Variable                          | Description        | Unit  |
+|----------------|-----------------------------------|--------------------|-------|
+| heat_in        | local_heat_storage.heat_charging  | Charging heat      | MW    |
+
+
+##### Output Ports
+
+| Port Name       | Variable                               | Description                 | Unit  |
+|-----------------|----------------------------------------|-----------------------------|-------|
+| heat_out        | local_heat_storage.heat_discharging    | Discharging heat            | MW    |
+| excess_heat_out | local_heat_storage.excess_heat_discharging | Excess heat discharging | MW    |
 
 ---
 
-#### Heat Grid: Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_in        | heat_grid.heat_feedin | Heat feed-in | MW    |
-| excess_heat_in | heat_grid.excess_heat_feedin | Excess heat feed-in | MW    |
+### Photovoltaics
 
-#### Heat Grid: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_out       | heat_grid.heat_supply | Heat supply | MW    |
-| heat_grid_to_local_out | heat_grid.heat_grid_to_local | Heat grid to local heat grid | MW    |
+#### Output Ports
+
+| Port Name      | Variable  | Description       | Unit  |
+|----------------|-----------|-------------------|-------|
+| power_out      | pv.power  | Electrical power  | MW    |
 
 ---
 
-#### Waste Heat Grid: Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| waste_heat_in  | waste_heat_grid.heat_feedin | Waste heat feed-in | MW    |
+### Collector 
 
-#### Waste Heat Grid: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_out       | waste_heat_grid.heat_supply | Waste heat supply | MW    |
+#### Output Ports
+| Port Name      | Variable          | Description  | Unit  |
+|----------------|-------------------|--------------|-------|
+| heat_out       | solar_thermal.heat | Heat output | MW    |
+
+---
+### Grid
+
+#### Electrical Grid 
+
+##### Input Ports
+
+| Port Name      | Variable                     | Description            | Unit  |
+|----------------|------------------------------|------------------------|-------|
+| power_in       | electrical_grid.power_in     | Power feed-in          | MW    |
+
+##### Output Ports
+
+| Port Name      | Variable                      | Description           | Unit  |
+|----------------|-------------------------------|-----------------------|-------|
+| power_out      | electrical_grid.power_out      | Power supply         | MW    |
 
 ---
 
-#### Local Heat Grid: Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_in        | local_heat_grid.heat_feedin | Local heat feed-in | MW    |
-| district_heat_in | local_heat_grid.district_heat_feedin | District heat feed-in | MW    |
+#### Hydrogen Grid
 
-#### Local Heat Grid: Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|-------------------|-------|
-| heat_out       | local_heat_grid.heat_supply | Local heat supply | MW    |
+
+##### Output Ports
+
+| Port Name     | Variable                      | Description         | Unit  |
+|---------------|-------------------------------|---------------------|-------|
+| hydrogen_out  | hydrogen_grid.hydrogen_out     | Hydrogen supply     | MW    |
+
+---
+
+#### Heat Grid 
+
+##### Input Ports
+
+| Port Name       | Variable                   | Description         | Unit  |
+|-----------------|----------------------------|---------------------|-------|
+| heat_in         | heat_grid.heat_in          | Heat feed-in        | MW    |
+| excess_heat_in  | heat_grid.excess_heat_in   | Excess heat feed-in | MW    |
+
+##### Output Ports
+
+| Port Name               | Variable                       | Description                      | Unit  |
+|-------------------------|--------------------------------|----------------------------------|-------|
+| heat_out                | heat_grid.heat_out              | Heat supply                      | MW    |
+| heat_grid_to_local_out  | heat_grid.heat_grid_to_local    | Heat grid to local heat grid     | MW    |
+
+---
+
+#### Waste Heat Grid 
+
+##### Input Ports
+| Port Name      | Variable                           | Description          | Unit  |
+|----------------|------------------------------------|----------------------|-------|
+| waste_heat_in  | waste_heat_grid.waste_heat_in       | Waste heat feed-in   | MW    |
+
+##### Output Ports
+| Port Name      | Variable                         | Description          | Unit  |
+|----------------|----------------------------------|----------------------|-------|
+| heat_out       | waste_heat_grid.waste_heat_out      | Waste heat supply   | MW    |
+
+---
+
+#### Local Heat Grid
+
+##### Input Ports
+| Port Name         | Variable                      | Description                  | Unit  |
+|-------------------|-------------------------------|------------------------------|-------|
+| heat_in           | local_heat_grid.heat_in        | Local heat feed-in           | MW    |
+| district_heat_in  | local_heat_grid.district_heat_in | District heat feed-in      | MW    |
+
+##### Output Ports
+| Port Name      | Variable                         | Description          | Unit  |
+|----------------|----------------------------------|----------------------|-------|
+| heat_out       | local_heat_grid.heat_out          | Local heat supply    | MW    |
+
+
+---
+
+## Run the Script
+
+### 1. Install Dependencies
+Ensure all required dependencies are installed:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+```
+
+---
+
+### 2. Select a Configuration File
+Available configuration files are located in **`data/config/`**:
+
+**Default Configuration:**
+- `dummy.json`
+
+**Scenario Configurations:**
+- `gee23_ST-min_NW-ref_2028.json`
+- `gee23_ST-max_NW-ref_2028.json`
+- `gee23_ST-min_NW-ext_2028.json`
+- `gee23_ST-max_NW-ext_2028.json`
+
+Detailed descriptions of each scenario are available in `data/config/config-README.md`.
+
+---
+
+### 3. Run the Script
+
+#### Run with Default Configuration
+```bash
+python main.py
+```
+
+#### Run with a Specific Scenario
+```bash
+python main.py --config gee23_ST-min_NW-ref_2028.json
+```
+
+---
+
+### 4. Execution Process
+During execution, the following steps occur:
+- Solver options are set
+- Input data is loaded
+- The optimization model is instantiated and solved
+- Results are stored in `data/output/`
+- A solver log and metadata (`.json`) are also created
+
+---
+
+### 5. Naming Convention of the Results
+
+The output files follow a consistent naming pattern that includes the configuration name and timestamp:
+
+#### Output CSV Files
+
+```bash
+{config_name}_{timestamp}_output.csv
+```
+
+**Example:** `gee23_ST-min_NW-ref_2028_20240225_143022_output.csv`
+
+- `config_name`: Name of the configuration file used (without `.json` extension)
+- `timestamp`: Date and time of execution (`YYYYMMDD_HHMMSS` format)
+- `output.csv`: Contains all timestep results including:
+  - Parameters (power_price, gas_price, etc.)
+  - Variables (power flows, storage levels, etc.)
+  - Expressions (calculated values)
+
+#### Metadata JSON Files  
+
+```bash
+{config_name}_{timestamp}_metadata.json
+```
+
+**Example:** `gee23_ST-min_NW-ref_2028_20240225_143022_metadata.json`
+
+The metadata file contains:
+- Timestamp of execution
+- Configuration file used
+- Solver options
+- Component parameters (e.g., hydrogen admixture ratios)
+- Other relevant run information
+
+Both files are stored in the corresponding scenario subdirectory under `data/output/`.
