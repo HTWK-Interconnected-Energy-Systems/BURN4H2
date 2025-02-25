@@ -1,0 +1,12 @@
+{
+    "timestamp": "20250225_145117",
+    "config": "dummy.json",
+    "solver_options": {
+        "TimeLimit": 1000,
+        "MIPGap": 0.08
+    },
+    "hydrogen_admixture": {
+        "chp_1": 0.95,
+        "chp_2": 0
+    }
+}
