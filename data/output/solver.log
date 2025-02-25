@@ -2,9 +2,9 @@ Solver command line: ['C:\\Program Files\\gurobi1102\\win64\\bin\\gurobi.bat']
 
 Set parameter Username
 Academic license - for non-commercial use only - expires 2025-07-11
-Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmpjdffc3vf.pyomo.lp
-Reading time = 0.17 seconds
-objective: 17978 rows, 16799 columns, 40640 nonzeros
+Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmp9ala_bn3.pyomo.lp
+Reading time = 0.16 seconds
+objective: 17978 rows, 16799 columns, 40808 nonzeros
 Set parameter TimeLimit to value 1000
 Set parameter MIPGap to value 0.08
 Gurobi Optimizer version 11.0.2 build v11.0.2rc0 (win64 - Windows 10.0 (19045.2))
@@ -12,8 +12,8 @@ Gurobi Optimizer version 11.0.2 build v11.0.2rc0 (win64 - Windows 10.0 (19045.2)
 CPU model: Intel(R) Xeon(R) CPU E5-1607 v2 @ 3.00GHz, instruction set [SSE2|AVX]
 Thread count: 4 physical cores, 4 logical processors, using up to 4 threads
 
-Optimize a model with 17978 rows, 16799 columns and 40640 nonzeros
-Model fingerprint: 0x44a240ec
+Optimize a model with 17978 rows, 16799 columns and 40808 nonzeros
+Model fingerprint: 0xb6bbb61e
 Model has 167 quadratic constraints
 Variable types: 14448 continuous, 2351 integer (2016 binary)
 Coefficient statistics:
@@ -22,36 +22,25 @@ Coefficient statistics:
   Objective range  [4e+01, 3e+02]
   Bounds range     [1e+00, 3e+00]
   RHS range        [4e-04, 1e+04]
-Presolve removed 16137 rows and 14286 columns
-Presolve time: 0.16s
-Presolved: 1841 rows, 2513 columns, 6861 nonzeros
-Variable types: 2012 continuous, 501 integer (501 binary)
-Found heuristic solution: objective 1195256.2816
+Presolve removed 16137 rows and 14285 columns
+Presolve time: 0.15s
+Presolved: 1841 rows, 2514 columns, 6863 nonzeros
+Variable types: 2013 continuous, 501 integer (501 binary)
+Found heuristic solution: objective -469317.7866
 
-Root relaxation: objective 5.365383e+05, 1192 iterations, 0.02 seconds (0.01 work units)
+Root relaxation: objective -1.496248e+06, 1126 iterations, 0.02 seconds (0.02 work units)
 
     Nodes    |    Current Node    |     Objective Bounds      |     Work
  Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
 
-     0     0 536538.294    0   12 1195256.28 536538.294  55.1%     -    0s
-     0     0 537191.331    0   11 1195256.28 537191.331  55.1%     -    0s
-H    0     0                    541221.80973 537191.331  0.74%     -    0s
-     0     0 537191.331    0   13 541221.810 537191.331  0.74%     -    0s
+     0     0 -1496248.4    0    7 -469317.79 -1496248.4   219%     -    0s
+H    0     0                    -1491598.759 -1496248.4  0.31%     -    0s
 
-Cutting planes:
-  Gomory: 9
-  Cover: 2
-  Implied bound: 4
-  MIR: 5
-  Flow cover: 5
-  RLT: 2
-  Relax-and-lift: 1
-
-Explored 1 nodes (1276 simplex iterations) in 0.35 seconds (0.10 work units)
+Explored 1 nodes (1126 simplex iterations) in 0.22 seconds (0.09 work units)
 Thread count was 4 (of 4 available processors)
 
-Solution count 2: 541222 1.19526e+06 
+Solution count 2: -1.4916e+06 -469318 
 
 Optimal solution found (tolerance 8.00e-02)
-Best objective 5.412218097280e+05, best bound 5.371913306686e+05, gap 0.7447%
+Best objective -1.491598759107e+06, best bound -1.496248391262e+06, gap 0.3117%
 

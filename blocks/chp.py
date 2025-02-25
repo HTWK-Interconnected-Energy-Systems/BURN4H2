@@ -25,6 +25,7 @@ class Chp:
         self.get_data(filepath, index_col)
         self.kwargs = kwargs
         self.validate_kwargs()
+
     
 
     def validate_kwargs(self):
@@ -68,7 +69,7 @@ class Chp:
         block.heat = Var(t, domain=NonNegativeReals)
         block.co2 = Var(t, domain=NonNegativeReals)
         block.waste_heat = Var(t, domain=NonNegativeReals)
-
+        block.hydrogen_admixture_factor = Param(initialize=self.kwargs['hydrogen_admixture'])
 
 
         block.power_out = Port()
@@ -224,7 +225,7 @@ class Chp:
                 return _block.co2[i] == ((
                     a * _block.power[i] 
                     + b * _block.bin[i])
-                    * (1 - hydrogen_admixture_factor))
+                    * (1 - _block.hydrogen_admixture_factor))
             
             block.co2_when_admixtured_depends_on_power_constraint = Constraint(
                 t,
@@ -254,11 +255,11 @@ class Chp:
 
             def hydrogen_depends_on_gas_rule(_block, i):
                 """Rule for determine the hydrogen demand for combustion."""
-                return _block.hydrogen[i] == _block.gas[i] * hydrogen_admixture_factor
+                return _block.hydrogen[i] == _block.gas[i] * _block.hydrogen_admixture_factor
             
             def ngas_depends_on_gas_rule(_block, i):
                 """Rule for determine the ngas demand for combustion."""
-                return _block.natural_gas[i] == _block.gas[i] * (1 - hydrogen_admixture_factor)
+                return _block.natural_gas[i] == _block.gas[i] * (1 - _block.hydrogen_admixture_factor)
 
             
             block.hydrogen_depends_on_gas_constraint = Constraint(

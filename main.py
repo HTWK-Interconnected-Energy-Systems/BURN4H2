@@ -137,7 +137,7 @@ class Model:
         # Define block components
         chp1 = chp.Chp("chp_1", 
                        PATH_IN + "assets/chp.csv", 
-                       hydrogen_admixture=0)
+                       hydrogen_admixture=0.95)
         chp2 = chp.Chp("chp_2", 
                        PATH_IN + "assets/chp.csv", 
                        hydrogen_admixture=0)
@@ -475,6 +475,11 @@ class Model:
             "timestamp": timestamp,
             "config": self.config_file,
             "solver_options": self.solver.options,
+            "hydrogen_admixture": {
+                "chp_1": self.instance.chp_1.hydrogen_admixture_factor.value,
+                "chp_2": self.instance.chp_2.hydrogen_admixture_factor.value,
+
+            }
             # Add more relevant metadata e.g, Geothermal unit
         }
         
@@ -482,7 +487,7 @@ class Model:
             json.dump(metadata, f, indent=4)
         
 
-    # Sophia Zielfunktion
+    # Zielfunktion
     def obj_expression(self, m):
         """Rule for the model objective."""
         return (
@@ -512,7 +517,7 @@ if __name__ == "__main__":
     lp.set_solver(
         solver_name="gurobi",
         TimeLimit=1000,  # solver will stop after x seconds
-        MIPGap=0.08, # solver will stop if gap <= 8%
+        MIPGap=0.08, # solver will stop if gap <= x %
     )  
 
     print("PREPARING DATA")
