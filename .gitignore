@@ -19,6 +19,7 @@ data/input/prices/ue23
 data/input/prices/ue24
 data/input/profiles/ST Süd_max
 data/input/profiles/ST Süd_min
+data/input/profiles/normalized
 data/misc/scenarios
 data/misc/profiles
 data/input/demands/district_heating/default
