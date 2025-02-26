@@ -89,7 +89,7 @@ class Model:
                 param=param_config["param"], 
             )
         
-        ######## OLD Structure ########
+        ######## OLD Structure ###########
 
         # self.timeseries_data.load(
         #     filename=PATH_IN + 'prices/dummy/gas_price.csv',
