@@ -137,10 +137,10 @@ class Model:
         # Define block components
         chp1 = chp.Chp("chp_1", 
                        PATH_IN + "assets/chp.csv", 
-                       hydrogen_admixture=0.95)
+                       hydrogen_admixture=1)
         chp2 = chp.Chp("chp_2", 
                        PATH_IN + "assets/chp.csv", 
-                       hydrogen_admixture=0)
+                       hydrogen_admixture=0.8)
         h2_grid = grid.HydrogenGrid(
             "hydrogen_grid", 
             PATH_IN + "assets/hydrogen_grid.csv"
@@ -478,8 +478,10 @@ class Model:
             "hydrogen_admixture": {
                 "chp_1": self.instance.chp_1.hydrogen_admixture_factor.value,
                 "chp_2": self.instance.chp_2.hydrogen_admixture_factor.value,
+            },
+            "h2preis": H2_PRICE,
+            "co2preis": CO2_PRICE,
 
-            }
             # Add more relevant metadata e.g, Geothermal unit
         }
         
