@@ -51,7 +51,6 @@ AVAILABLE_CONFIGS = [
     "ue24_ST-max_NW-ref_2028.json",
     "ue24_ST-min_NW-ext_2028.json",
     "ue24_ST-max_NW-ext_2028.json",
-
 ]
 
 class Model:
