@@ -1,17 +1,24 @@
-Solver command line: ['C:\\Program Files\\gurobi1102\\win64\\bin\\gurobi.bat']
+Solver command line: ['/usr/local/bin/gurobi.sh']
 
-Set parameter Username
-Academic license - for non-commercial use only - expires 2025-07-11
-Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmpd7cyn5hy.pyomo.lp
-Reading time = 0.14 seconds
+Set parameter WLSAccessID
+Set parameter WLSSecret
+Set parameter LicenseID to value 2606900
+Academic license 2606900 - for non-commercial use only - registered to so___@htwk-leipzig.de
+Read LP format model from file /var/folders/jf/5sh4zzv94dxbcz8g7tg2jq5h0000gn/T/tmprqr0w7ow.pyomo.lp
+Reading time = 0.05 seconds
 objective: 17978 rows, 16799 columns, 40808 nonzeros
 Set parameter TimeLimit to value 1000
 Set parameter MIPGap to value 0.08
-Gurobi Optimizer version 11.0.2 build v11.0.2rc0 (win64 - Windows 10.0 (19045.2))
+Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (mac64[rosetta2] - Darwin 24.3.0 24D70)
 
-CPU model: Intel(R) Xeon(R) CPU E5-1607 v2 @ 3.00GHz, instruction set [SSE2|AVX]
-Thread count: 4 physical cores, 4 logical processors, using up to 4 threads
+CPU model: Apple M3
+Thread count: 8 physical cores, 8 logical processors, using up to 8 threads
 
+Non-default parameters:
+TimeLimit  1000
+MIPGap  0.08
+
+Academic license 2606900 - for non-commercial use only - registered to so___@htwk-leipzig.de
 Optimize a model with 17978 rows, 16799 columns and 40808 nonzeros
 Model fingerprint: 0xb6bbb61e
 Model has 167 quadratic constraints
@@ -23,21 +30,21 @@ Coefficient statistics:
   Bounds range     [1e+00, 3e+00]
   RHS range        [4e-04, 1e+04]
 Presolve removed 16137 rows and 14285 columns
-Presolve time: 0.15s
+Presolve time: 0.06s
 Presolved: 1841 rows, 2514 columns, 6863 nonzeros
 Variable types: 2013 continuous, 501 integer (501 binary)
 Found heuristic solution: objective -469317.7866
 
-Root relaxation: objective -1.496248e+06, 1126 iterations, 0.02 seconds (0.02 work units)
+Root relaxation: objective -1.496248e+06, 1107 iterations, 0.01 seconds (0.02 work units)
 
     Nodes    |    Current Node    |     Objective Bounds      |     Work
  Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
 
-     0     0 -1496248.4    0    7 -469317.79 -1496248.4   219%     -    0s
+     0     0 -1496248.4    0    8 -469317.79 -1496248.4   219%     -    0s
 H    0     0                    -1491598.759 -1496248.4  0.31%     -    0s
 
-Explored 1 nodes (1126 simplex iterations) in 0.23 seconds (0.09 work units)
-Thread count was 4 (of 4 available processors)
+Explored 1 nodes (1107 simplex iterations) in 0.09 seconds (0.09 work units)
+Thread count was 8 (of 8 available processors)
 
 Solution count 2: -1.4916e+06 -469318 
 
