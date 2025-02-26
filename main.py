@@ -60,6 +60,7 @@ class Model:
         self.results = None
         self.result_data = None
         self.config_file = config_file
+        self.timestamp = None 
 
     def set_solver(self, solver_name, **kwargs):
         """Declare solver and solver options."""
@@ -384,13 +385,24 @@ class Model:
         )
 
 
-    def solve(self):
+    def solve(self, output_dir):
         """Solves the optimization problem."""
+        
+        # Generate timestamp once
+        self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        config_name = os.path.basename(self.config_file).replace('.json','')
+        log_filename = f"{config_name}_{self.timestamp}_solver.log"
+
+        # Create subdirectory
+        run_dir = os.path.join(output_dir, config_name)
+        os.makedirs(run_dir, exist_ok=True)
+
+
         self.results = self.solver.solve(
             self.instance,
             symbolic_solver_labels=True,
             tee=True,
-            logfile=PATH_OUT + "solver.log",
+            logfile= os.path.join(run_dir, log_filename),
             load_solutions=True,
             report_timing=True,
         )
@@ -454,13 +466,11 @@ class Model:
 
     def save_result_data(self, output_dir):
         """Saves the result data as csv with timestamp."""
-        
-        # Generate timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
         
         # Create filename with config and timestamp
         config_name = os.path.basename(self.config_file).replace('.json','')
-        output_filename = f"{config_name}_{timestamp}_output.csv"
+        output_filename = f"{config_name}_{self.timestamp}_output.csv"
         
         # Create subdirectory for runs
         run_dir = os.path.join(output_dir, config_name)
@@ -472,20 +482,21 @@ class Model:
         
         # Optional: Save run metadata
         metadata = {
-            "timestamp": timestamp,
+            "timestamp": self.timestamp,
             "config": self.config_file,
             "solver_options": self.solver.options,
             "hydrogen_admixture": {
                 "chp_1": self.instance.chp_1.hydrogen_admixture_factor.value,
                 "chp_2": self.instance.chp_2.hydrogen_admixture_factor.value,
             },
-            "h2preis": H2_PRICE,
-            "co2preis": CO2_PRICE,
-
+            "H2_PRICE": H2_PRICE,
+            "CO2_PRICE": CO2_PRICE,
+            "HEAT_PRICE": HEAT_PRICE,
+        
             # Add more relevant metadata e.g, Geothermal unit
         }
         
-        with open(os.path.join(run_dir, f"{config_name}_{timestamp}_metadata.json"), 'w') as f:
+        with open(os.path.join(run_dir, f"{config_name}_{self.timestamp}_metadata.json"), 'w') as f:
             json.dump(metadata, f, indent=4)
         
 
@@ -543,7 +554,7 @@ if __name__ == "__main__":
 
     # Solve the optimization problem
     print("START SOLVING...")
-    lp.solve()
+    lp.solve(output_dir=PATH_OUT)
 
     lp.write_results()
     lp.save_result_data(output_dir=PATH_OUT)
