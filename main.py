@@ -142,10 +142,10 @@ class Model:
         # Define block components
         chp1 = chp.Chp("chp_1", 
                        PATH_IN + "assets/chp.csv", 
-                       hydrogen_admixture=1)
+                       hydrogen_admixture=0)
         chp2 = chp.Chp("chp_2", 
                        PATH_IN + "assets/chp.csv", 
-                       hydrogen_admixture=0.8)
+                       hydrogen_admixture=0)
         h2_grid = grid.HydrogenGrid(
             "hydrogen_grid", 
             PATH_IN + "assets/hydrogen_grid.csv"
@@ -533,7 +533,7 @@ if __name__ == "__main__":
     print("SETTING SOLVER OPTIONS")
     lp.set_solver(
         solver_name="gurobi",
-        TimeLimit=1000,  # solver will stop after x seconds
+        TimeLimit=2000,  # solver will stop after x seconds
         MIPGap=0.08, # solver will stop if gap <= x %
     )  
 
