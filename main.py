@@ -142,10 +142,10 @@ class Model:
         # Define block components
         chp1 = chp.Chp("chp_1", 
                        PATH_IN + "assets/chp.csv", 
-                       hydrogen_admixture=0)
+                       hydrogen_admixture=1)
         chp2 = chp.Chp("chp_2", 
                        PATH_IN + "assets/chp.csv", 
-                       hydrogen_admixture=0)
+                       hydrogen_admixture=1)
         h2_grid = grid.HydrogenGrid(
             "hydrogen_grid", 
             PATH_IN + "assets/hydrogen_grid.csv"
