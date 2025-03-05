@@ -509,6 +509,7 @@ class Model:
         """Rule for the model objective."""
         return (
             quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t)
+            + quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t)
             + quicksum(m.chp_1.co2[t] * CO2_PRICE for t in m.t)
             + quicksum(m.chp_2.co2[t] * CO2_PRICE for t in m.t)
             + quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t)
