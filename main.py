@@ -38,7 +38,7 @@ PATH_CONFIG = "data/config/"
 # Declare constant prices
 CO2_PRICE = 95.98  # price in €/t
 HEAT_PRICE = 0  # price in €/MWh
-H2_PRICE = 81.01  # price in €/MWh
+H2_PRICE = 160  # price in €/MWh
 
 # config files
 AVAILABLE_CONFIGS = [
