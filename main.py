@@ -505,14 +505,15 @@ class Model:
         
 
     # Zielfunktion
+    # + quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t) # neu
     def obj_expression(self, m):
         """Rule for the model objective."""
         return (
             quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t)
-            + quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t)
             + quicksum(m.chp_1.co2[t] * CO2_PRICE for t in m.t)
             + quicksum(m.chp_2.co2[t] * CO2_PRICE for t in m.t)
             + quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t)
+            + quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t)
             - quicksum(m.heat_grid.heat_feedin[t] * HEAT_PRICE for t in m.t)
         )
 
@@ -534,7 +535,7 @@ if __name__ == "__main__":
     print("SETTING SOLVER OPTIONS")
     lp.set_solver(
         solver_name="gurobi",
-        TimeLimit=2000,  # solver will stop after x seconds
+        TimeLimit=5000,  # solver will stop after x seconds
         MIPGap=0.08, # solver will stop if gap <= x %
     )  
 
