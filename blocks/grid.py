@@ -131,6 +131,7 @@ class HydrogenGrid:
             Port.Extensive,
             include_splitfrac=False
             )
+       
 
         # Declare construction rules for constraints
         def max_hydrogen_supply_rule(_block, i):
@@ -144,6 +145,11 @@ class HydrogenGrid:
         def hydrogen_balance_rule(_block, i):
             """Rule for calculating the overall hydrogen balance of the grid."""
             return _block.hydrogen_balance[i] == _block.hydrogen_supply[i] - _block.hydrogen_feedin[i]
+        
+        # 🔹 **Neue Bedingung: hydrogen_feedin immer 0 setzen**
+        def zero_hydrogen_feedin_rule(_block, i):
+            """Forces hydrogen_feedin = 0 for all time steps."""
+            return _block.hydrogen_feedin[i] == 0
           
         # Declare constraints
         block.max_hydrogen_supply_constraint = Constraint(
@@ -157,6 +163,10 @@ class HydrogenGrid:
         block.hydrogen_balance_constraint = Constraint(
             t,
             rule=hydrogen_balance_rule
+        )
+        
+        block.zero_hydrogen_feedin_constraint = Constraint(
+        t, rule=zero_hydrogen_feedin_rule  # 🔹 **Hier wird die neue Bedingung hinzugefügt**
         )
 
 
