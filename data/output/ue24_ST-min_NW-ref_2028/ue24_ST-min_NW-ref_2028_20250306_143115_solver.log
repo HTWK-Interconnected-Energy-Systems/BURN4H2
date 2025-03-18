@@ -1,0 +1,118 @@
+Solver command line: ['C:\\gurobi1101\\win64\\bin\\gurobi.bat']
+
+Set parameter Username
+Academic license - for non-commercial use only - expires 2025-04-16
+Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmpzr7q5iaj.pyomo.lp
+Reading time = 4.23 seconds
+objective: 939890 rows, 878399 columns, 2125712 nonzeros
+Set parameter TimeLimit to value 2000
+Set parameter MIPGap to value 0.08
+Gurobi Optimizer version 11.0.1 build v11.0.1rc0 (win64 - Windows 10.0 (19045.2))
+
+CPU model: AMD Ryzen 7 3800X 8-Core Processor, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 16 logical processors, using up to 16 threads
+
+Optimize a model with 939890 rows, 878399 columns and 2125712 nonzeros
+Model fingerprint: 0xfee2b756
+Model has 8783 quadratic constraints
+Variable types: 755424 continuous, 122975 integer (105408 binary)
+Coefficient statistics:
+  Matrix range     [6e-03, 1e+03]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [1e-02, 4e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [8e-05, 1e+04]
+Presolve removed 764218 rows and 667591 columns
+Presolve time: 0.78s
+Presolved: 175672 rows, 210808 columns, 570932 nonzeros
+Variable types: 140539 continuous, 70269 integer (61485 binary)
+Deterministic concurrent LP optimizer: primal and dual simplex
+Showing primal log only...
+
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.4034953e+10   1.164760e+08   8.355153e+13      8s
+Concurrent spin time: 0.00s
+
+Solved with dual simplex
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   64463   -1.4041590e+10   0.000000e+00   0.000000e+00     10s
+
+Root relaxation: objective -1.404159e+10, 64463 iterations, 1.97 seconds (1.52 work units)
+Total elapsed time = 9.91s (DegenMoves)
+Total elapsed time = 10.25s (DegenMoves)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 -1.404e+10    0  463          - -1.404e+10      -     -   11s
+     0     0 -1.404e+10    0  631          - -1.404e+10      -     -   41s
+     0     0 -1.404e+10    0  624          - -1.404e+10      -     -   42s
+     0     0 -1.404e+10    0  508          - -1.404e+10      -     -   43s
+     0     0 -1.404e+10    0  530          - -1.404e+10      -     -   43s
+     0     0 -1.404e+10    0  532          - -1.404e+10      -     -   44s
+     0     0 -1.404e+10    0  532          - -1.404e+10      -     -   45s
+     0     0 -1.404e+10    0  523          - -1.404e+10      -     -   46s
+     0     0 -1.404e+10    0  421          - -1.404e+10      -     -   47s
+     0     2 -1.404e+10    0  404          - -1.404e+10      -     -   61s
+    39    48 -1.404e+10    6  474          - -1.404e+10      -  84.0   65s
+    95   128 -1.404e+10    9  462          - -1.404e+10      -  40.4   71s
+   127   213 -1.404e+10   11  457          - -1.404e+10      -  31.6   76s
+   212   377 -1.404e+10   17  444          - -1.404e+10      -  23.2   86s
+   376   742 -1.404e+10   28  420          - -1.404e+10      -  15.7  109s
+   741  1465 -1.404e+10   62  408          - -1.404e+10      -  11.5  136s
+  1465  2246 -1.404e+10  135  397          - -1.404e+10      -   9.5  159s
+  2246  2997 -1.404e+10  224  393          - -1.404e+10      -   8.6  179s
+  2997  3666 -1.404e+10  301  366          - -1.404e+10      -   8.6  199s
+  3666  4223 -1.404e+10  358  338          - -1.404e+10      -   8.3  219s
+  4223  4924 -1.404e+10  396  324          - -1.404e+10      -   7.8  240s
+  4924  5729 -1.404e+10  455  329          - -1.404e+10      -   7.1  260s
+  5729  6521 -1.404e+10  528  325          - -1.404e+10      -   7.0  282s
+  6521  7509 -1.404e+10  610  325          - -1.404e+10      -   6.9  303s
+  7515  7511 -1.404e+10   29 13175          - -1.404e+10      -   6.8  305s
+  7516  7511 -1.404e+10  202  450          - -1.404e+10      -   6.8  341s
+  7518  7513 -1.404e+10  158  552          - -1.404e+10      -   6.8  350s
+  7520  7514 -1.404e+10   71  493          - -1.404e+10      -   6.8  357s
+  7522  7515 -1.404e+10  232  499          - -1.404e+10      -   6.8  363s
+  7523  7516 -1.404e+10    4  468          - -1.404e+10      -   6.8  365s
+  7525  7517 -1.404e+10  127  480          - -1.404e+10      -   6.8  370s
+  7530  7522 -1.404e+10  629  450          - -1.404e+10      -  17.2  406s
+  7532  7524 -1.404e+10  149  527          - -1.404e+10      -  17.2  412s
+  7534  7525 -1.404e+10    7  483          - -1.404e+10      -  17.2  417s
+  7536  7526 -1.404e+10   82  487          - -1.404e+10      -  17.2  423s
+  7538  7528 -1.404e+10  359  508          - -1.404e+10      -  17.2  428s
+  7544  7533 -1.404e+10   85  450          - -1.404e+10      -  27.4  464s
+  7545  7534 -1.404e+10   22  538          - -1.404e+10      -  27.4  467s
+  7546  7535 -1.404e+10  322  525          - -1.404e+10      -  27.4  471s
+  7548  7536 -1.404e+10  451  447          - -1.404e+10      -  27.4  476s
+  7550  7537 -1.404e+10   74  445          - -1.404e+10      -  27.4  481s
+  7552  7539 -1.404e+10  135  356          - -1.404e+10      -  27.4  488s
+  7553  7539 -1.404e+10  599  356          - -1.404e+10      -  27.4  495s
+H 7555  7165                    -1.40396e+10 -1.404e+10  0.01%  48.3  499s
+
+Cutting planes:
+  Gomory: 415
+  Cover: 257
+  Implied bound: 119
+  Projected implied bound: 72
+  Clique: 1
+  MIR: 548
+  Mixing: 7
+  StrongCG: 2
+  Flow cover: 342
+  RLT: 29
+  Relax-and-lift: 159
+
+Explored 7556 nodes (364757 simplex iterations) in 502.93 seconds (237.64 work units)
+Thread count was 16 (of 16 available processors)
+
+Solution count 2: -1.40408e+10 -1.40396e+10 
+
+Optimal solution found (tolerance 8.00e-02)
+Best objective -1.404083385302e+10, best bound -1.404158186376e+10, gap 0.0053%
+

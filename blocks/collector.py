@@ -31,11 +31,11 @@ class Collector:
         t = block.model().t
 
         # Get profile from model
-        #heat_profile = block.model().solar_thermal_heat_profile
+        solar_profile = block.model().solar_thermal_heat_profile
 
         # Declare components
-        block.heat = Var(t, domain=NonNegativeReals)
         block.bin = Var(t, initialize=0, within=Binary)
+        block.heat = Var(t, domain=NonNegativeReals)
     
         # Declare blocks
         block.heat_out = Port()
@@ -46,31 +46,30 @@ class Collector:
             include_splitfrac=False
         )
 
-        # def bin_rule(_block, i):
-        #     """Rule for the binary variable."""
-        #     if _block.heat[i] == 0:
-        #         return _block.bin[i] == 0
-        #     else:
-        #         return _block.bin[i] == 1
-            
-
-        def heat_rule(_block, i):
-            """Rule for the heat output."""
-            return _block.heat[i] == self.data.loc[i, 'value'] 
+        # Constraints
+        def profile_rule(_block, i):
+            """Rule for the profile constraint. """
+            return _block.heat[i] == solar_profile[i] 
         
+        def bin_rule(_block, i):
+            """Rule for the binary variable."""
+            if solar_profile[i] <= 0:
+                return _block.bin[i] == 0
+            else:
+                return _block.bin[i] == 1
+
 
         # Declare constraints
-        # block.bin_rule = Constraint(
-        #     t, 
-        #     rule=bin_rule
-        # )
-
-        block.heat_rule = Constraint(
+        block.bin_rule = Constraint(
             t, 
-            rule=heat_rule
+            rule=bin_rule
         )
-        
-            
+
+        block.profile_constraint = Constraint(
+            t, 
+            rule=profile_rule
+        )
+
 
 
 
