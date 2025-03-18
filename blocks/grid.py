@@ -148,7 +148,7 @@ class HydrogenGrid:
         
         # 🔹 **Neue Bedingung: hydrogen_feedin immer 0 setzen**
         def zero_hydrogen_feedin_rule(_block, i):
-            """Erzwingt hydrogen_feedin = 0 für alle Zeitschritte."""
+            """Forces hydrogen_feedin = 0 for all time steps."""
             return _block.hydrogen_feedin[i] == 0
           
         # Declare constraints
