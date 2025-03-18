@@ -1,0 +1,38 @@
+Solver command line: ['C:\\gurobi1101\\win64\\bin\\gurobi.bat']
+
+Set parameter Username
+Academic license - for non-commercial use only - expires 2025-04-16
+Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmpqhlje1y6.pyomo.lp
+Reading time = 0.08 seconds
+objective: 17978 rows, 16799 columns, 39968 nonzeros
+Set parameter TimeLimit to value 2000
+Set parameter MIPGap to value 0.08
+Gurobi Optimizer version 11.0.1 build v11.0.1rc0 (win64 - Windows 10.0 (19045.2))
+
+CPU model: AMD Ryzen 7 3800X 8-Core Processor, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 16 logical processors, using up to 16 threads
+
+Optimize a model with 17978 rows, 16799 columns and 39968 nonzeros
+Model fingerprint: 0xaecf3371
+Model has 167 quadratic constraints
+Variable types: 14448 continuous, 2351 integer (2016 binary)
+Coefficient statistics:
+  Matrix range     [6e-03, 1e+03]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [4e+01, 3e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [4e-04, 1e+04]
+Presolve removed 16137 rows and 14286 columns
+Presolve time: 0.08s
+Presolved: 1841 rows, 2513 columns, 6861 nonzeros
+Variable types: 2012 continuous, 501 integer (501 binary)
+Found heuristic solution: objective -2.65629e+08
+
+Explored 0 nodes (0 simplex iterations) in 0.10 seconds (0.07 work units)
+Thread count was 16 (of 16 available processors)
+
+Solution count 1: -2.65629e+08 
+
+Optimal solution found (tolerance 8.00e-02)
+Best objective -2.656286348773e+08, best bound -2.687857572302e+08, gap 1.1885%
+

@@ -1,0 +1,63 @@
+Solver command line: ['C:\\gurobi1101\\win64\\bin\\gurobi.bat']
+
+Set parameter Username
+Academic license - for non-commercial use only - expires 2025-04-16
+Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmpieh3j78r.pyomo.lp
+Reading time = 4.25 seconds
+objective: 939890 rows, 878399 columns, 2090576 nonzeros
+Set parameter TimeLimit to value 2000
+Set parameter MIPGap to value 0.08
+Gurobi Optimizer version 11.0.1 build v11.0.1rc0 (win64 - Windows 10.0 (19045.2))
+
+CPU model: AMD Ryzen 7 3800X 8-Core Processor, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 16 logical processors, using up to 16 threads
+
+Optimize a model with 939890 rows, 878399 columns and 2090576 nonzeros
+Model fingerprint: 0x9f6fe223
+Model has 8783 quadratic constraints
+Variable types: 755424 continuous, 122975 integer (105408 binary)
+Coefficient statistics:
+  Matrix range     [6e-03, 1e+03]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [1e-02, 4e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [8e-05, 1e+04]
+Presolve removed 764218 rows and 667591 columns
+Presolve time: 0.80s
+Presolved: 175672 rows, 210808 columns, 570932 nonzeros
+Variable types: 140539 continuous, 70269 integer (61485 binary)
+Deterministic concurrent LP optimizer: primal and dual simplex
+Showing primal log only...
+
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.3955868e+10   4.142204e+07   7.304584e+13      8s
+    1551   -1.3955700e+10   3.608082e+07   8.186692e+13     10s
+Concurrent spin time: 0.00s
+
+Solved with dual simplex
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   75534   -1.3944567e+10   0.000000e+00   0.000000e+00     10s
+
+Root relaxation: objective -1.394457e+10, 75534 iterations, 2.61 seconds (2.37 work units)
+Total elapsed time = 10.45s (DegenMoves)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 -1.394e+10    0  190          - -1.394e+10      -     -   11s
+H    0     0                    -1.39444e+10 -1.394e+10  0.00%     -   11s
+
+Explored 1 nodes (77885 simplex iterations) in 39.69 seconds (8.31 work units)
+Thread count was 16 (of 16 available processors)
+
+Solution count 1: -1.39444e+10 
+
+Optimal solution found (tolerance 8.00e-02)
+Best objective -1.394439612938e+10, best bound -1.394456681917e+10, gap 0.0012%
+

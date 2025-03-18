@@ -122,8 +122,7 @@ class Model:
         # )
 
         ######## OLD Structure ########
-      
-      
+
     def add_components(self):
         """Adds pyomo component to the model."""
 
@@ -136,36 +135,50 @@ class Model:
         self.model.heat_demand = Param(self.model.t)
         self.model.local_heat_demand = Param(self.model.t)
 
-        # Define profiles 
+        # Define profiles
         self.model.solar_thermal_heat_profile = Param(self.model.t)
 
         # Define block components
-        chp1 = chp.Chp("chp_1", 
-                       PATH_IN + "assets/chp.csv", 
-                       hydrogen_admixture=1)
-        chp2 = chp.Chp("chp_2", 
-                       PATH_IN + "assets/chp.csv", 
-                       hydrogen_admixture=1)
+        chp1 = chp.Chp(
+            "chp_1", 
+            PATH_IN + "assets/chp.csv",
+            hydrogen_admixture=0
+        )
+        chp2 = chp.Chp(
+            "chp_2", 
+            PATH_IN + "assets/chp.csv",
+            hydrogen_admixture=0
+        )
         h2_grid = grid.HydrogenGrid(
             "hydrogen_grid", 
             PATH_IN + "assets/hydrogen_grid.csv"
         )
-        n_grid = grid.NGasGrid("ngas_grid")
-        wh_grid = grid.WasteHeatGrid("waste_heat_grid", 
-                                     PATH_IN + "assets/waste_heat_grid.csv") 
-        lh_grid = grid.LocalHeatGrid("local_heat_grid", 
-                                     PATH_IN + "assets/local_heat_grid.csv")
-        
+        n_grid = grid.NGasGrid(
+            "ngas_grid"
+        )
+        wh_grid = grid.WasteHeatGrid(
+            "waste_heat_grid", 
+            PATH_IN + "assets/waste_heat_grid.csv"
+        )
+        lh_grid = grid.LocalHeatGrid(
+            "local_heat_grid", 
+            PATH_IN + "assets/local_heat_grid.csv"
+        )
         e_grid = grid.ElectricalGrid(
             "electrical_grid", 
             PATH_IN + "assets/electrical_grid.csv"
         )
-        h_grid = grid.HeatGrid("heat_grid", PATH_IN + "assets/heat_grid.csv")
+        h_grid = grid.HeatGrid(
+            "heat_grid",
+            PATH_IN + "assets/heat_grid.csv"
+        )
         b_storage = storage.BatteryStorage(
-            "battery_storage", PATH_IN + "assets/battery_storage.csv"
+            "battery_storage",
+            PATH_IN + "assets/battery_storage.csv"
         )
         h_storage = storage.HeatStorage(
-            "heat_storage", PATH_IN + "assets/heat_storage.csv"
+            "heat_storage",
+            PATH_IN + "assets/heat_storage.csv"
         )
         pv = res.Photovoltaics(
             "pv",
@@ -177,7 +190,6 @@ class Model:
             # PATH_IN + 'profiles/ST Süd_max/max_solarthermal_profil_2028.csv' # Not necessary anymore
             PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv' # Not necessary anymore
         )
-        
         hp_s1 = hp.HeatpumpStageOne(
             "heatpump_s1", 
             PATH_IN + "assets/heatpump.csv"
@@ -233,156 +245,182 @@ class Model:
         """Adds arcs to the model instance."""
         
         # POWER: CHP 1 -> Electrical Grid
+        # CHECK
         self.instance.arc01 = Arc(
             source=self.instance.chp_1.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
         # POWER: CHP 2 -> Electrical Grid
+        # CHECK
         self.instance.arc02 = Arc(
             source=self.instance.chp_2.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
         # POWER: PV -> Electrical Grid
+        # CHECK
         self.instance.arc03 = Arc(
             source=self.instance.pv.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
         # POWER: Battery Storage -> Electrical Grid
+        # CHECK
         self.instance.arc04 = Arc(
             source=self.instance.battery_storage.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
         # POWER: Electrical Grid -> Battery Storage
+        # CHECK
         self.instance.arc05 = Arc(
             source=self.instance.electrical_grid.power_out,
             destination=self.instance.battery_storage.power_in,
         )
         
         # NGAS: NGAS Grid -> CHP 1
+        # CHECK
         self.instance.arc06 = Arc(
             source=self.instance.ngas_grid.ngas_out,
             destination=self.instance.chp_1.natural_gas_in,
         )
         
         # NGAS: NGAS Grid -> CHP 2
+        # CHECK
         self.instance.arc07 = Arc(
             source=self.instance.ngas_grid.ngas_out,
             destination=self.instance.chp_2.natural_gas_in,
         )
         
         # HYDROGEN: Hydrogen Grid -> CHP 1
+        # CHECK
         self.instance.arc08 = Arc(
             source=self.instance.hydrogen_grid.hydrogen_out,
             destination=self.instance.chp_1.hydrogen_in,
         )
         
         # HYDROGEN: Hydrogen Grid -> CHP 2
+        # CHECK
         self.instance.arc09 = Arc(
             source=self.instance.hydrogen_grid.hydrogen_out,
             destination=self.instance.chp_2.hydrogen_in,
         )
         
         # HEAT: CHP 1 -> Heat Grid
+        # CHECK
         self.instance.arc10 = Arc(
             source=self.instance.chp_1.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
         
         # HEAT: CHP 2 -> Heat Grid
+        # CHECK
         self.instance.arc11 = Arc(
             source=self.instance.chp_2.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
         
         # HEAT: Heat Storage -> Heat Grid
+        # CHECK
         self.instance.arc12 = Arc(
             source=self.instance.heat_storage.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
         
         # HEAT: Heat Grid -> Heat Storage
+        # CHECK
         self.instance.arc13 = Arc(
             source=self.instance.heat_grid.heat_out,
             destination=self.instance.heat_storage.heat_in,
         )
         
         # WASTE: CHP 1 -> Waste Grid
+        # CHECK
         self.instance.arc14 = Arc(
             source=self.instance.chp_1.waste_heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
         
         # WASTE: CHP 2 -> Waste Grid
+        # CHECK
         self.instance.arc15 = Arc(
             source=self.instance.chp_2.waste_heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
 
-        # WASTE: Waste Grid -> Geo Storage 
+        # WASTE: Waste Grid -> Geo Storage
+        # CHECK
         self.instance.arc16 = Arc(
             source=self.instance.waste_heat_grid.waste_heat_out,
             destination=self.instance.geo_heat_storage.heat_in
         )
         
         # GEO: Geo Storage -> 1. Stage Heat Pump
+        # CHECK
         self.instance.arc17 = Arc(
             source=self.instance.geo_heat_storage.heat_out,
             destination=self.instance.heatpump_s1.heat_in
         )
 
-        # GEO: 1. Stage Heat Pump -> Waste Heat Grid 
+        # GEO: 1. Stage Heat Pump -> Waste Heat Grid
+        # CHECK 
         self.instance.arc18 = Arc(
             source=self.instance.heatpump_s1.heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in
         )
 
-        # WASTE: Waste Grid -> 2. Stage Heat Pump 
+        # WASTE: Waste Grid -> 2. Stage Heat Pump
+        # CHECK 
         self.instance.arc19 = Arc(
             source=self.instance.waste_heat_grid.waste_heat_out,
             destination=self.instance.heatpump_s2.waste_heat_in,
         )
 
         # POWER: Electrical Grid -> 1.Stage Heat Pump
+        # CHECK
         self.instance.arc20 = Arc(
                 source=self.instance.electrical_grid.power_out,
                 destination=self.instance.heatpump_s1.power_in,
         )
         
         # POWER: Electrical Grid -> 2. Stage Heat Pump 
+        # CHECK
         self.instance.arc21 = Arc(
             source=self.instance.electrical_grid.power_out,
             destination=self.instance.heatpump_s2.power_in,
         )
         
         # LOCAL HEAT: Solar Thermal -> LOCAL HEAT STORAGE
+        # CHECK
         self.instance.arc22 = Arc(
             source = self.instance.solar_thermal.heat_out,
             destination = self.instance.local_heat_storage.heat_in,
         )
         
         # LOCAL HEAT: 2. Stage Heat Pump  -> Local HEAT STORAGE
+        # CHECK
         self.instance.arc23 = Arc(
             source=self.instance.heatpump_s2.heat_out,
             destination=self.instance.local_heat_storage.heat_in,
         )
 
         # LOCAL HEAT: Local HEAT STORAGE -> Local Heat Grid
+        # CHECK
         self.instance.arc24 = Arc(
             source=self.instance.local_heat_storage.heat_out,
             destination=self.instance.local_heat_grid.heat_in,
         )
 
         # EXCESS LOCAL HEAT: Local Heat Storage -> Heat Grid
+        # CHECK
         self.instance.arc25 = Arc(
             source=self.instance.local_heat_storage.excess_heat_out,
             destination=self.instance.heat_grid.excess_heat_in 
         )
 
         # HEAT: Heat Grid -> Local Heat Grid
+        # CHECK
         self.instance.arc26 = Arc(
             source=self.instance.heat_grid.heat_grid_to_local_out,
             destination=self.instance.local_heat_grid.district_heat_in,
@@ -496,13 +534,13 @@ class Model:
             "H2_PRICE": H2_PRICE,
             "CO2_PRICE": CO2_PRICE,
             "HEAT_PRICE": HEAT_PRICE,
-        
+
             # Add more relevant metadata e.g, Geothermal unit
         }
-        
+
         with open(os.path.join(run_dir, f"{config_name}_{self.timestamp}_metadata.json"), 'w') as f:
             json.dump(metadata, f, indent=4)
-        
+
 
     # Zielfunktion
     def obj_expression(self, m):
@@ -520,14 +558,15 @@ class Model:
 if __name__ == "__main__":
     # Parse arguments
     parser = argparse.ArgumentParser(description='Run energy system optimization')
-    parser.add_argument('--config', 
-                       choices=AVAILABLE_CONFIGS,
-                       default="dummy.json",
-                       help='Configuration file to use')
+    parser.add_argument(
+        '--config',
+        choices=AVAILABLE_CONFIGS,
+        default="ue24_ST-min_NW-ref_2028.json",
+        help='Configuration file to use')
     args = parser.parse_args()
-    
+
     print(f"Running scenario: {args.config}")
-    
+
     # Create model instance
     lp = Model(config_file=args.config)
 
@@ -536,7 +575,7 @@ if __name__ == "__main__":
         solver_name="gurobi",
         TimeLimit=2000,  # solver will stop after x seconds
         MIPGap=0.08, # solver will stop if gap <= x %
-    )  
+    )
 
     print("PREPARING DATA")
     lp.load_timeseries_data()
