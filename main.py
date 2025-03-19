@@ -70,15 +70,18 @@ class Model:
 
     def load_timeseries_data(self):
         """Declare timeseries data for the optimization model."""
-        self.timeseries_data = DataPortal()
+        self.data_portal = DataPortal()
 
+        # Load global data
+        self.data_portal.load(filename = 'data/config/global.json')
+        
         # Load config
         with open(PATH_CONFIG + self.config_file, "r") as f:
             config = json.load(f)
 
         # Load timeseries data from config
         for param_name, param_config in config.get("timeseries", {}).items():
-            self.timeseries_data.load(
+            self.data_portal.load(
                 filename=PATH_IN + param_config["file"],
                 index=param_config["index"],
                 param=param_name,
@@ -86,7 +89,7 @@ class Model:
          # Load scalar parameters
         for param_name, param_value in config.get("parameters", {}).items():
             # For scalar parameters, use a dictionary with None as key
-            self.timeseries_data.data()[param_name] = {None: param_value}
+            self.data_portal.data()[param_name] = {None: param_value}
         
 
     def add_components(self):
@@ -205,7 +208,7 @@ class Model:
 
     def instantiate(self):
         """Creates a concrete model from the abstract model."""
-        self.instance = self.model.create_instance(self.timeseries_data)
+        self.instance = self.model.create_instance(self.data_portal)
 
     def expand_arcs(self):
         """Expands arcs and generate connection constraints."""
@@ -434,8 +437,8 @@ class Model:
 
         for parameter in self.instance.component_objects(Param, active=True):
             name = parameter.name
-            if name == "H2_PRICE":
-                print(f"H2_PRICE: {value(parameter)}")
+            if name == "CO2_PRICE":
+                print(f"CO2_PRICE: {value(parameter)}")
 
             # Write only indexed parameters
             try:
