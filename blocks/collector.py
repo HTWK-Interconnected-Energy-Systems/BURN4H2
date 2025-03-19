@@ -35,10 +35,6 @@ class Collector:
         norm_solar_profile = block.model().normalized_solar_thermal_heat_profile
         INSTALLED_ST_POWER = block.model().INSTALLED_ST_POWER
         
-        # installed_heat = block.model().installed_heat
-        # capacity_factor = block.model().solar_thermal_capacity_factor
-
-
         # Declare components
         block.bin = Var(t, initialize=0, within=Binary)
         block.heat = Var(t, domain=NonNegativeReals)
@@ -56,8 +52,6 @@ class Collector:
         # def profile_rule(_block, i):
         #     """Rule for the profile constraint. """
         #     return _block.heat[i] == solar_profile[i]
-        
-        #     #return _block.heat[i] == capacity_factor[i] * installed_heat
         
         def profile_rule(_block, i):
             """Rule for the profile constraint. """

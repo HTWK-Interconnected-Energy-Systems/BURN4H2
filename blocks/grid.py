@@ -436,18 +436,18 @@ class LocalHeatGrid:
                 - _block.model().local_heat_demand[i]
             )
         
-        def annual_local_heat_share_rule(_block):
+        def annual_local_heat_share_rule(_block, i):
             """Rule for ensuring 80% annual share from local sources."""
             return (
-                sum(_block.heat_feedin[i] for i in _block.model().t) >= 
-                0.8 * sum(_block.model().local_heat_demand[i] for i in _block.model().t)
+                sum(_block.heat_feedin[i] for i in t) >= 
+                0.8 * sum(_block.model().local_heat_demand[i] for i in t)
             )
 
         # Declare constraints
-        # block.annual_local_heat_share_constraint = Constraint(
-        #     t,
-        #     rule=annual_local_heat_share_rule
-        # )
+        block.annual_local_heat_share_constraint = Constraint(
+            t,
+            rule=annual_local_heat_share_rule
+        )
         
         block.supply_heat_demand_constraint = Constraint(
             t,

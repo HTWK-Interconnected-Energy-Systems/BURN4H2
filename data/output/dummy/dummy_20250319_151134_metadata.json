@@ -1,13 +1,13 @@
 {
-    "timestamp": "20250306_133736",
+    "timestamp": "20250319_151134",
     "config": "dummy.json",
     "solver_options": {
-        "TimeLimit": 2000,
+        "TimeLimit": 5000,
         "MIPGap": 0.08
     },
     "hydrogen_admixture": {
-        "chp_1": 1,
-        "chp_2": 1
+        "chp_1": 0,
+        "chp_2": 0
     },
     "H2_PRICE": 160,
     "CO2_PRICE": 95.98,
