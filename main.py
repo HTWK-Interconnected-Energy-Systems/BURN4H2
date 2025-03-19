@@ -82,12 +82,20 @@ class Model:
             config = json.load(f)
 
         # Load timeseries data from config
-        for param_name, param_config in config.items():
+        for param_name, param_config in config.get("timeseries", {}).items():
             self.timeseries_data.load(
                 filename=PATH_IN + param_config["file"],
                 index=param_config["index"],
                 param=param_config["param"], 
             )
+
+        for param_name, param_config  in config.get("parameters", {}).items():
+            self.timeseries_data.load(
+                param = param_config["param"],
+                value = param_config["value"],
+            )
+
+        
         
         ######## OLD Structure ###########
 
@@ -137,6 +145,8 @@ class Model:
 
         # Define profiles
         self.model.solar_thermal_heat_profile = Param(self.model.t)
+
+
 
         # Define block components
         chp1 = chp.Chp(
@@ -562,7 +572,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--config',
         choices=AVAILABLE_CONFIGS,
-        default="ue24_ST-min_NW-ref_2028.json",
+        default="dummy.json",
         help='Configuration file to use')
     args = parser.parse_args()
 

@@ -445,6 +445,7 @@ class LocalHeatGrid:
 
         # Declare constraints
         block.annual_local_heat_share_constraint = Constraint(
+            t,
             rule=annual_local_heat_share_rule
         )
         
