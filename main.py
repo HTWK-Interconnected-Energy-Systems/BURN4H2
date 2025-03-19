@@ -35,12 +35,7 @@ PATH_IN = "data/input/"
 PATH_OUT = "data/output/"
 PATH_CONFIG = "data/config/"
 
-# Declare constant prices
-CO2_PRICE = 95.98  # price in €/t
-HEAT_PRICE = 0  # price in €/MWh
-H2_PRICE = 160  # price in €/MWh
-
-# config files
+# Config files
 AVAILABLE_CONFIGS = [
     "dummy.json",
     "gee23_ST-min_NW-ref_2028.json",
@@ -82,88 +77,51 @@ class Model:
             config = json.load(f)
 
         # Load timeseries data from config
-        for param_name, param_config in config.items():
+        for param_name, param_config in config.get("timeseries", {}).items():
             self.timeseries_data.load(
                 filename=PATH_IN + param_config["file"],
                 index=param_config["index"],
-                param=param_name
+                param=param_name,
         )
+         # Load scalar parameters
+        for param_name, param_value in config.get("parameters", {}).items():
+            # For scalar parameters, use a dictionary with None as key
+            self.timeseries_data.data()[param_name] = {None: param_value}
         
-        self.timeseries_data.load(filename=PATH_CONFIG + "dummy_params.json")
-
-
-
-        # Load timeseries data
-        # for param_name, param_value  in config.get("parameters", {}).items():
-        #     self.timeseries_data.load(
-        #         param = param_name,
-        #         value = param_value 
-        #     )
-        
-
-        
-        
-        ######## OLD Structure ###########
-
-        # self.timeseries_data.load(
-        #     filename=PATH_IN + 'prices/dummy/gas_price.csv',
-        #     # filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
-        #     index="t",
-        #     param="gas_price",
-        # )
-        # self.timeseries_data.load(
-        #     filename=PATH_IN + 'prices/dummy/power_price.csv',
-        #     # filename=PATH_IN + "prices/gee23/power_price_2028.csv",
-        #     index="t",
-        #     param="power_price",
-        # )
-        # self.timeseries_data.load(
-        #     filename=PATH_IN + 'demands/district_heating/dummy/heat_short.csv',
-        #     # filename=PATH_IN + "demands/district_heating/default/heat.csv",
-        #     index="t",
-        #     param="heat_demand",
-        # )
-        # self.timeseries_data.load(
-        #     filename=PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv',
-        #     index='t',
-        #     param='solar_thermal_heat_profile',
-        # )
-        # self.timeseries_data.load(
-        #     filename = PATH_IN + 'demands/local_heating/dummy/local_heat_short.csv',
-        #     # filename = PATH_IN + "demands/local_heating/Bedarf NW-Netz/local_heat_2028.csv",
-        #     index = 't',
-        #     param = 'local_heat_demand',
-        # )
-
-        ######## OLD Structure ########
 
     def add_components(self):
         """Adds pyomo component to the model."""
 
         # Define sets
         self.model.t = Set(ordered=True)
-
-        # Define parameters
+        
+        # Define indexed parameters
         self.model.gas_price = Param(self.model.t)
         self.model.power_price = Param(self.model.t)
         self.model.heat_demand = Param(self.model.t)
         self.model.local_heat_demand = Param(self.model.t)
-
-        # Define profiles
         self.model.solar_thermal_heat_profile = Param(self.model.t)
+        self.model.normalized_solar_thermal_heat_profile = Param(self.model.t)
+        
+        # Define non-indexed parameters
+        self.model.CO2_PRICE = Param()
+        self.model.HEAT_PRICE = Param()
+        self.model.H2_PRICE = Param()
+        self.model.INSTALLED_ST_POWER = Param()
+        self.model.HYDROGEN_ADMIXTURE_CHP_1 = Param()
+        self.model.HYDROGEN_ADMIXTURE_CHP_2 = Param()
 
-        self.model.X = Param()
 
         # Define block components
         chp1 = chp.Chp(
             "chp_1", 
             PATH_IN + "assets/chp.csv",
-            hydrogen_admixture=0
+            hydrogen_admixture=self.model.HYDROGEN_ADMIXTURE_CHP_1
         )
         chp2 = chp.Chp(
             "chp_2", 
             PATH_IN + "assets/chp.csv",
-            hydrogen_admixture=0
+            hydrogen_admixture=self.model.HYDROGEN_ADMIXTURE_CHP_2
         )
         h2_grid = grid.HydrogenGrid(
             "hydrogen_grid", 
@@ -476,7 +434,9 @@ class Model:
 
         for parameter in self.instance.component_objects(Param, active=True):
             name = parameter.name
-            
+            if name == "H2_PRICE":
+                print(f"H2_PRICE: {value(parameter)}")
+
             # Write only indexed parameters
             try:
                 if hasattr(parameter, 'index_set') and parameter.index_set() is not None:
@@ -555,9 +515,9 @@ class Model:
                 "chp_1": self.instance.chp_1.hydrogen_admixture_factor.value,
                 "chp_2": self.instance.chp_2.hydrogen_admixture_factor.value,
             },
-            "H2_PRICE": H2_PRICE,
-            "CO2_PRICE": CO2_PRICE,
-            "HEAT_PRICE": HEAT_PRICE,
+            "H2_PRICE": self.instance.H2_PRICE.value,
+            "CO2_PRICE": self.instance.CO2_PRICE.value,
+            "HEAT_PRICE": self.instance.HEAT_PRICE.value,
 
             # Add more relevant metadata e.g, Geothermal unit
         }
@@ -572,11 +532,11 @@ class Model:
         """Rule for the model objective."""
         return (
             quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t)
-            + quicksum(m.chp_1.co2[t] * CO2_PRICE for t in m.t)
-            + quicksum(m.chp_2.co2[t] * CO2_PRICE for t in m.t)
+            + quicksum(m.chp_1.co2[t] * m.CO2_PRICE for t in m.t)
+            + quicksum(m.chp_2.co2[t] * m.CO2_PRICE for t in m.t)
             + quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t)
-            + quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t)
-            - quicksum(m.heat_grid.heat_feedin[t] * HEAT_PRICE for t in m.t)
+            + quicksum(m.hydrogen_grid.hydrogen_balance[t] * m.H2_PRICE for t in m.t)
+            - quicksum(m.heat_grid.heat_feedin[t] * m.HEAT_PRICE for t in m.t)
         )
 
 
@@ -602,7 +562,7 @@ if __name__ == "__main__":
         MIPGap=0.08, # solver will stop if gap <= x %
     )
 
-    print("PREPARING DATA")
+    print("LOADING TIMESERIES DATA")
     lp.load_timeseries_data()
 
     print("DECLARING MODEL")

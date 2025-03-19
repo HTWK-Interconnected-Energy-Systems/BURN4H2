@@ -1,34 +1,28 @@
 {
-    "timeseries": {
-        "gas_price": {
-          "file": "prices/ue24/gas_price_2028.csv",
-          "index": "t",
-          "param": "gas_price"
-        },
-        "power_price": {
-          "file": "prices/ue24/power_price_2028.csv",
-          "index": "t",
-          "param": "power_price"
-        },
-        "heat_demand": {
-          "file": "demands/district_heating/default/heat.csv",
-          "index": "t",
-          "param": "heat_demand"
-        },
-        "solar_thermal_heat_profile":{ 
-          "file": "profiles/ST Sued_max/max_solarthermal_profil_2028.csv",
-          "index": "t",
-          "param": "solar_thermal_heat_profile"
-        },
-        "local_heat_demand": {
-          "file": "demands/local_heating/Bedarf NW-Netz_zusaetzl Abnehmer/local_heat_ext_2028.csv",
-          "index": "t",
-          "param": "local_heat_demand"
-        }
+    "gas_price": {
+      "file": "prices/ue24/gas_price_2028.csv",
+      "index": "t",
+      "param": "gas_price"
     },
-  "parameters":{
-    "X": 0.5,
-    "Y": 0.5
-  }
+    "power_price": {
+      "file": "prices/ue24/power_price_2028.csv",
+      "index": "t",
+      "param": "power_price"
+    },
+    "heat_demand": {
+      "file": "demands/district_heating/default/heat.csv",
+      "index": "t",
+      "param": "heat_demand"
+    },
+    "solar_thermal_heat_profile":{ 
+      "file": "profiles/ST Sued_max/max_solarthermal_profil_2028.csv",
+      "index": "t",
+      "param": "solar_thermal_heat_profile"
+    },
+    "local_heat_demand": {
+      "file": "demands/local_heating/Bedarf NW-Netz_zusaetzl Abnehmer/local_heat_ext_2028.csv",
+      "index": "t",
+      "param": "local_heat_demand"
+    }
 }
   
