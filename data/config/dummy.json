@@ -13,6 +13,10 @@
       "file": "prices/dummy/power_price.csv",
       "index": "t"
     },
+    "hydrogen_price": {
+      "file": "prices/dummy/h2_price.csv",
+      "index": "t"
+    },
     "heat_demand": {
       "file": "demands/district_heating/dummy/heat_short.csv",
       "index": "t",

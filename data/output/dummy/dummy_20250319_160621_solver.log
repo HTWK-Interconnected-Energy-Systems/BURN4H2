@@ -2,9 +2,9 @@ Solver command line: ['C:\\Program Files\\gurobi1102\\win64\\bin\\gurobi.bat']
 
 Set parameter Username
 Academic license - for non-commercial use only - expires 2025-07-11
-Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmpi7715jky.pyomo.lp
+Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmpt2oq9zli.pyomo.lp
 Reading time = 0.17 seconds
-objective: 18313 rows, 16799 columns, 68864 nonzeros
+objective: 17641 rows, 16463 columns, 67856 nonzeros
 Set parameter TimeLimit to value 5000
 Set parameter MIPGap to value 0.08
 Gurobi Optimizer version 11.0.2 build v11.0.2rc0 (win64 - Windows 10.0 (19045.2))
@@ -12,17 +12,17 @@ Gurobi Optimizer version 11.0.2 build v11.0.2rc0 (win64 - Windows 10.0 (19045.2)
 CPU model: Intel(R) Xeon(R) CPU E5-1607 v2 @ 3.00GHz, instruction set [SSE2|AVX]
 Thread count: 4 physical cores, 4 logical processors, using up to 4 threads
 
-Optimize a model with 18313 rows, 16799 columns and 68864 nonzeros
-Model fingerprint: 0x6e87e729
+Optimize a model with 17641 rows, 16463 columns and 67856 nonzeros
+Model fingerprint: 0x15e01da5
 Model has 167 quadratic constraints
-Variable types: 14448 continuous, 2351 integer (2016 binary)
+Variable types: 14112 continuous, 2351 integer (2016 binary)
 Coefficient statistics:
   Matrix range     [6e-03, 1e+03]
   QMatrix range    [1e+00, 1e+00]
   Objective range  [4e+01, 3e+02]
   Bounds range     [1e+00, 3e+00]
   RHS range        [2e-03, 1e+04]
-Presolve removed 16473 rows and 14287 columns
+Presolve removed 15801 rows and 13951 columns
 Presolve time: 0.15s
 Presolved: 1840 rows, 2512 columns, 6859 nonzeros
 Variable types: 2011 continuous, 501 integer (501 binary)
@@ -46,7 +46,7 @@ Cutting planes:
   RLT: 8
   Relax-and-lift: 7
 
-Explored 1 nodes (1385 simplex iterations) in 0.26 seconds (0.10 work units)
+Explored 1 nodes (1385 simplex iterations) in 0.28 seconds (0.10 work units)
 Thread count was 4 (of 4 available processors)
 
 Solution count 2: 535423 1.19302e+06 

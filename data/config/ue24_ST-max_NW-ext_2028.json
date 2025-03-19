@@ -15,6 +15,10 @@
       "index": "t",
       "param": "power_price"
     },
+    "hydrogen_price": {
+      "file": "prices/ue24/h2_price_2028.csv",
+      "index": "t"
+    },
     "heat_demand": {
       "file": "demands/district_heating/default/heat.csv",
       "index": "t",

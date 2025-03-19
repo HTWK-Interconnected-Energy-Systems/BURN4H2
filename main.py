@@ -97,6 +97,7 @@ class Model:
         # Define indexed parameters
         self.model.gas_price = Param(self.model.t)
         self.model.power_price = Param(self.model.t)
+        self.model.hydrogen_price = Param(self.model.t)
         self.model.heat_demand = Param(self.model.t)
         self.model.local_heat_demand = Param(self.model.t)
         self.model.solar_thermal_heat_profile = Param(self.model.t)
@@ -533,7 +534,8 @@ class Model:
             + quicksum(m.chp_1.co2[t] * m.CO2_PRICE for t in m.t)
             + quicksum(m.chp_2.co2[t] * m.CO2_PRICE for t in m.t)
             + quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t)
-            + quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.H2_PRICE for t in m.t)
+            #+ quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.H2_PRICE for t in m.t)
+            + quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.hydrogen_price[t] for t in m.t)
             - quicksum(m.heat_grid.heat_feedin[t] * m.HEAT_PRICE for t in m.t)
         )
 
