@@ -1,0 +1,15 @@
+{
+    "timestamp": "20250319_102854",
+    "config": "dummy.json",
+    "solver_options": {
+        "TimeLimit": 5000,
+        "MIPGap": 0.08
+    },
+    "hydrogen_admixture": {
+        "chp_1": 0,
+        "chp_2": 0
+    },
+    "H2_PRICE": 160,
+    "CO2_PRICE": 95.98,
+    "HEAT_PRICE": 0
+}

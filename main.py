@@ -82,18 +82,24 @@ class Model:
             config = json.load(f)
 
         # Load timeseries data from config
-        for param_name, param_config in config.get("timeseries", {}).items():
+        for param_name, param_config in config.items():
             self.timeseries_data.load(
                 filename=PATH_IN + param_config["file"],
                 index=param_config["index"],
-                param=param_config["param"], 
-            )
+                param=param_name
+        )
+        
+        self.timeseries_data.load(filename=PATH_CONFIG + "dummy_params.json")
 
-        for param_name, param_config  in config.get("parameters", {}).items():
-            self.timeseries_data.load(
-                param = param_config["param"],
-                value = param_config["value"],
-            )
+
+
+        # Load timeseries data
+        # for param_name, param_value  in config.get("parameters", {}).items():
+        #     self.timeseries_data.load(
+        #         param = param_name,
+        #         value = param_value 
+        #     )
+        
 
         
         
@@ -146,7 +152,7 @@ class Model:
         # Define profiles
         self.model.solar_thermal_heat_profile = Param(self.model.t)
 
-
+        self.model.X = Param()
 
         # Define block components
         chp1 = chp.Chp(
@@ -470,9 +476,17 @@ class Model:
 
         for parameter in self.instance.component_objects(Param, active=True):
             name = parameter.name
-            if "hydrogen_admixture_factor" in name:
+            
+            # Write only indexed parameters
+            try:
+                if hasattr(parameter, 'index_set') and parameter.index_set() is not None:
+                    # Vergleiche die String-Repräsentation der Sets
+                    if str(parameter.index_set()) == str(self.instance.t):
+                        df_parameters[name] = [value(parameter[t]) for t in self.instance.t]
+            
+            # Skip scalar Parameters
+            except:
                 continue
-            df_parameters[name] = [value(parameter[t]) for t in self.instance.t]
 
         for variable in self.instance.component_objects(Var, active=True):
             name = variable.name

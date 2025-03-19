@@ -1,29 +1,23 @@
 {
     "gas_price": {
       "file": "prices/dummy/gas_price.csv",
-      "index": "t",
-      "param": "gas_price"
+      "index": "t"
     },
     "power_price": {
       "file": "prices/dummy/power_price.csv",
-      "index": "t",
-      "param": "power_price"
+      "index": "t"
     },
     "heat_demand": {
       "file": "demands/district_heating/dummy/heat_short.csv",
-      "index": "t",
-      "param": "heat_demand"
+      "index": "t"
     },
     "solar_thermal_heat_profile":{ 
       "file": "profiles/dummy/dummy_solarthermal_profil.csv",
-      "index": "t",
-      "param": "solar_thermal_heat_profile"
+      "index": "t"
     },
     "local_heat_demand": {
       "file": "demands/local_heating/dummy/local_heat_short.csv",
-      "index": "t",
-      "param": "local_heat_demand"
+      "index": "t"
     }
-  }
+}
 
-  

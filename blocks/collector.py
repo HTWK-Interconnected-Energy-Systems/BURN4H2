@@ -31,8 +31,9 @@ class Collector:
         t = block.model().t
 
         # Get profile from model
-        installed_heat = block.model().installed_heat
-        capacity_factor = block.model().solar_thermal_capacity_factor
+        # installed_heat = block.model().installed_heat
+        # capacity_factor = block.model().solar_thermal_capacity_factor
+        solar_profile = block.model().solar_thermal_heat_profile
 
 
         # Declare components
@@ -51,9 +52,9 @@ class Collector:
         # Constraints
         def profile_rule(_block, i):
             """Rule for the profile constraint. """
-            return _block.heat[i] == solar_profile[i] * capacity_factor[i] * installed_heat
+            return _block.heat[i] == solar_profile[i]
         
-            return _block.heat[i] == capacity_factor[i] * installed_heat
+            #return _block.heat[i] == capacity_factor[i] * installed_heat
         
         def bin_rule(_block, i):
             """Rule for the binary variable."""

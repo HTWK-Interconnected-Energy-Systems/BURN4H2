@@ -26,13 +26,9 @@
           "param": "local_heat_demand"
         }
     },
-
-    "parameters":{
-      "X": {
-        "param": "X",
-        "value": 0.5
-      }
-    }
+  "parameters":{
+    "X": 0.5,
+    "Y": 0.5
   }
-
+}
   
