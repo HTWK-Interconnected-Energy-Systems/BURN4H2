@@ -38,10 +38,6 @@ PATH_CONFIG = "data/config/"
 # Config files
 AVAILABLE_CONFIGS = [
     "dummy.json",
-    "gee23_ST-min_NW-ref_2028.json",
-    "gee23_ST-max_NW-ref_2028.json",
-    "gee23_ST-min_NW-ext_2028.json",
-    "gee23_ST-max_NW-ext_2028.json",
     "ue24_ST-min_NW-ref_2028.json",
     "ue24_ST-max_NW-ref_2028.json",
     "ue24_ST-min_NW-ext_2028.json",
