@@ -84,17 +84,8 @@ class ElectricalGrid:
 class HydrogenGrid:
     """Class for constructing hydrogen grid asset objects."""
 
-    def __init__(self, name, filepath, index_col=0) -> None:
+    def __init__(self, name) -> None:
         self.name = name
-        self.get_data(filepath, index_col)
-    
-    
-    def get_data(self, filepath, index_col):
-        """Collects data from a csv."""
-        self.data = pd.read_csv(
-            filepath,
-            index_col=index_col
-        )
     
 
     def add_to_model(self, model):
@@ -104,7 +95,6 @@ class HydrogenGrid:
             Block(rule=self.hydrogen_grid_block_rule)
         )
 
-
     def hydrogen_grid_block_rule(self, block):
         """Rule for creating a hydrogen gas grid block with default components 
         and constraints."""
@@ -113,17 +103,8 @@ class HydrogenGrid:
         t = block.model().t
 
         # Declare components
-        block.hydrogen_balance = Var(t, domain=Reals)
         block.hydrogen_supply = Var(t, domain=NonNegativeReals)
-        block.hydrogen_feedin = Var(t, domain=NonNegativeReals)
 
-        block.hydrogen_in = Port()
-        block.hydrogen_in.add(
-            block.hydrogen_feedin,
-            'hydrogen',
-            Port.Extensive,
-            include_splitfrac=False
-            )
         block.hydrogen_out = Port()
         block.hydrogen_out.add(
             block.hydrogen_supply,
@@ -132,43 +113,6 @@ class HydrogenGrid:
             include_splitfrac=False
             )
        
-
-        # Declare construction rules for constraints
-        def max_hydrogen_supply_rule(_block, i):
-            """Rule for the maximal supply of hydrogen from the grid."""
-            return _block.hydrogen_supply[i] <= self.data.loc['max', 'hydrogen']
-        
-        def max_hydrogen_feedin_rule(_block, i):
-            """Rule for the maximal feed in of hydrogen into the grid."""
-            return _block.hydrogen_feedin[i] <= self.data.loc['max', 'hydrogen']
-        
-        def hydrogen_balance_rule(_block, i):
-            """Rule for calculating the overall hydrogen balance of the grid."""
-            return _block.hydrogen_balance[i] == _block.hydrogen_supply[i] - _block.hydrogen_feedin[i]
-        
-        # 🔹 **Neue Bedingung: hydrogen_feedin immer 0 setzen**
-        def zero_hydrogen_feedin_rule(_block, i):
-            """Forces hydrogen_feedin = 0 for all time steps."""
-            return _block.hydrogen_feedin[i] == 0
-          
-        # Declare constraints
-        block.max_hydrogen_supply_constraint = Constraint(
-            t,
-            rule=max_hydrogen_supply_rule
-        )
-        block.max_hydrogen_feedin_constraint = Constraint(
-            t,
-            rule=max_hydrogen_feedin_rule
-        )
-        block.hydrogen_balance_constraint = Constraint(
-            t,
-            rule=hydrogen_balance_rule
-        )
-        
-        block.zero_hydrogen_feedin_constraint = Constraint(
-        t, rule=zero_hydrogen_feedin_rule  # 🔹 **Hier wird die neue Bedingung hinzugefügt**
-        )
-
 
 class NGasGrid:
     """Class for constructing natural gas grid asset objects."""
@@ -192,11 +136,11 @@ class NGasGrid:
         t = block.model().t
 
         # Declare components
-        block.ngas_balance = Var(t, domain=Reals)
+        block.ngas_supply = Var(t, domain=NonNegativeReals)
 
         block.ngas_out = Port()
         block.ngas_out.add(
-            block.ngas_balance,
+            block.ngas_supply,
             'natural_gas',
             Port.Extensive,
             include_splitfrac=False

@@ -127,8 +127,7 @@ class Model:
             hydrogen_admixture=self.model.HYDROGEN_ADMIXTURE_CHP_2
         )
         h2_grid = grid.HydrogenGrid(
-            "hydrogen_grid", 
-            PATH_IN + "assets/hydrogen_grid.csv"
+            "hydrogen_grid"
         )
         n_grid = grid.NGasGrid(
             "ngas_grid"
@@ -534,11 +533,11 @@ class Model:
     def obj_expression(self, m):
         """Rule for the model objective."""
         return (
-            quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t)
+            quicksum(m.ngas_grid.ngas_supply[t] * m.gas_price[t] for t in m.t)
             + quicksum(m.chp_1.co2[t] * m.CO2_PRICE for t in m.t)
             + quicksum(m.chp_2.co2[t] * m.CO2_PRICE for t in m.t)
             + quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t)
-            + quicksum(m.hydrogen_grid.hydrogen_balance[t] * m.H2_PRICE for t in m.t)
+            + quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.H2_PRICE for t in m.t)
             - quicksum(m.heat_grid.heat_feedin[t] * m.HEAT_PRICE for t in m.t)
         )
 
