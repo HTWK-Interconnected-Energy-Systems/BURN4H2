@@ -433,9 +433,6 @@ class Model:
 
         for parameter in self.instance.component_objects(Param, active=True):
             name = parameter.name
-            if name == "CO2_PRICE":
-                print(f"CO2_PRICE: {value(parameter)}")
-
             # Write only indexed parameters
             try:
                 if hasattr(parameter, 'index_set') and parameter.index_set() is not None:
@@ -485,8 +482,6 @@ class Model:
         df_output.index = self.instance.t
         df_output.index.name = "t"
 
-        
-
         self.result_data = df_output
 
     def save_result_data(self, output_dir):
@@ -524,9 +519,118 @@ class Model:
         with open(os.path.join(run_dir, f"{config_name}_{self.timestamp}_metadata.json"), 'w') as f:
             json.dump(metadata, f, indent=4)
 
+    def calculate_costs(self, component_param, price_param):
+        """
+        Calculate costs for a component using its values and a price parameter.
+        
+        Parameters:
+        ----------
+        component_values : Pyomo component or expression
+            The component whose cost should be calculated (e.g., CO2 emissions, gas consumption)
+        price_param : Pyomo parameter
+            The price parameter, which can be constant or time-dependent
+            
+        Returns:
+        -------
+        float
+            Total costs, rounded to 2 decimal places
+        """
+        if hasattr(price_param, 'index_set') and price_param.index_set() is self.instance.t:
+            is_price_indexed = True
+        else:
+            is_price_indexed = False
+        
+        # is_price_indexed = hasattr(price_param, 'index_set') 
+        # print(price_param.index_set())
+        # print(f"Price indexed: {is_price_indexed}")
+        total_costs = 0
+        
+        try:
+            for i in self.instance.t:
+
+                # Get appropriate price (time dependent or constant)
+                if is_price_indexed:
+                    price = value(price_param[i])
+                else:
+                    price = value(price_param)
+
+                component = value(component_param[i])
+                
+                total_costs += component * price
+
+            return round(total_costs, 2)
+        except Exception as e:
+            print(f"Error calculating costs: {e}")
+            return 0.0
+
+
+
+    def save_costs(self, output_dir):
+        """Saves the costs of the optimization."""
+
+        costs = {
+            "costs":{
+                "CO2_costs_chp_1": self.calculate_costs(
+                self.instance.chp_1.co2, self.instance.CO2_PRICE
+                ),
+                "CO2_costs_chp_2": self.calculate_costs(
+                    self.instance.chp_2.co2, self.instance.CO2_PRICE
+                ),
+                "gas_costs": self.calculate_costs(
+                    self.instance.ngas_grid.ngas_supply, self.instance.gas_price
+                ),
+                "power_costs": self.calculate_costs(
+                    self.instance.electrical_grid.power_balance, self.instance.power_price
+                ),
+                "hydrogen_costs": self.calculate_costs(
+                    self.instance.hydrogen_grid.hydrogen_supply, self.instance.H2_PRICE
+                )
+            },
+            "revenue": {
+                "heat_revenue": self.calculate_costs(
+                    self.instance.heat_grid.heat_feedin, self.instance.HEAT_PRICE
+                )
+            }
+        }
+
+        # Berechne die Summe aller Kosten
+        total_costs = sum(cost for cost in costs["costs"].values())
+        costs["costs"]["total"] = round(total_costs, 2)
+        
+        # Berechne die Summe aller Einnahmen
+        total_revenue = sum(rev for rev in costs["revenue"].values())
+        costs["revenue"]["total"] = round(total_revenue, 2)
+        
+        # Berechne den Nettobetrag (Kosten - Einnahmen)
+        net_total = total_costs - total_revenue
+        costs["net_total"] = round(net_total, 2)
+        
+        # Ausgabe der Werte
+        print("\nCost Summary:")
+        print("=============")
+        for name, cost in costs["costs"].items():
+            print(f"{name.replace('_', ' ').title()}: {cost:,.2f} €")
+        
+        print("\nRevenue Summary:")
+        print("===============")
+        for name, rev in costs["revenue"].items():
+            print(f"{name.replace('_', ' ').title()}: {rev:,.2f} €")
+        
+        print(f"\nNet Total (Costs - Revenue): {net_total:,.2f} €")
+        
+        # Create subdirectory for runs
+        config_name = os.path.basename(self.config_file).replace('.json','')
+        run_dir = os.path.join(output_dir, config_name)
+        os.makedirs(run_dir, exist_ok=True)
+        
+        # Kosten in JSON-Datei speichern
+        cost_filename = f"{config_name}_{self.timestamp}_costs.json"
+        with open(os.path.join(run_dir, cost_filename), 'w') as f:
+            json.dump(costs, f, indent=4)
+            
+        return costs
 
     # Zielfunktion
-    # + quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t) # neu
     def obj_expression(self, m):
         """Rule for the model objective."""
         return (
@@ -585,5 +689,14 @@ if __name__ == "__main__":
     print("START SOLVING...")
     lp.solve(output_dir=PATH_OUT)
 
+    # Write results
+    print("WRITING RESULTS...")
     lp.write_results()
+    
+    # Save results
+    print("SAVING RESULTS...")
     lp.save_result_data(output_dir=PATH_OUT)
+
+    # Calculate costs
+    print("CALCULATING COSTS...")
+    lp.save_costs(output_dir=PATH_OUT)
