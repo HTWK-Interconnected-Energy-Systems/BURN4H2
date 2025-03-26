@@ -111,16 +111,59 @@ class Model:
         self.model.HYDROGEN_ADMIXTURE_CHP_1 = Param()
         self.model.HYDROGEN_ADMIXTURE_CHP_2 = Param()
 
+        # Erlaubte hydrogen_admixture Werte
+        ALLOWED_ADMIXTURE_VALUES = [0, 0.3, 0.5, 1.0]
+        
+        # Konvertiere Pyomo-Parameter in konkrete Werte
+        # Verwende die Werte aus der Konfiguration, da die Pyomo-Parameter noch nicht instanziiert sind
+        with open(PATH_CONFIG + self.config_file, "r") as f:
+            config = json.load(f)
+        
+        h2_admixture_chp_1 = config.get("parameters", {}).get("HYDROGEN_ADMIXTURE_CHP_1", 0)
+        h2_admixture_chp_2 = config.get("parameters", {}).get("HYDROGEN_ADMIXTURE_CHP_2", 0)
+        
+        # Validiere die Werte
+        if h2_admixture_chp_1 not in ALLOWED_ADMIXTURE_VALUES:
+            raise ValueError(f"Invalid hydrogen_admixture value for CHP_1: {h2_admixture_chp_1}. "
+                            f"Allowed values are: {ALLOWED_ADMIXTURE_VALUES}")
+        if h2_admixture_chp_2 not in ALLOWED_ADMIXTURE_VALUES:
+            raise ValueError(f"Invalid hydrogen_admixture value for CHP_2: {h2_admixture_chp_2}. "
+                            f"Allowed values are: {ALLOWED_ADMIXTURE_VALUES}")
+        
+        # Bestimme die entsprechenden CSV-Dateien
+        def get_chp_csv_path(h2_value):
+            """Bestimmt den Pfad zur CHP-CSV-Datei basierend auf dem hydrogen_admixture_factor."""
+            if h2_value == 0:
+                return PATH_IN + "assets/chp.csv"  # Standarddatei für 0% H2
+            else:
+                # Prozentsatz für Dateinamen (30, 50, 100)
+                h2_percent = int(h2_value * 100)
+                specific_file = PATH_IN + f"assets/chp_h2_{h2_percent}.csv"
+                
+                # Prüfe, ob die spezifische Datei existiert
+                if os.path.exists(specific_file):
+                    return specific_file
+                else:
+                    print(f"Warning: Specific data file for {h2_percent}% hydrogen not found. Using default.")
+                    return PATH_IN + "assets/chp.csv"
+        
+        # Hole die Dateipfade für die jeweiligen H2-Beimischungen
+        chp1_filepath = get_chp_csv_path(h2_admixture_chp_1)
+        chp2_filepath = get_chp_csv_path(h2_admixture_chp_2)
+        
+        print(f"Using CHP 1 data file: {chp1_filepath} with {h2_admixture_chp_1*100}% hydrogen admixture")
+        print(f"Using CHP 2 data file: {chp2_filepath} with {h2_admixture_chp_2*100}% hydrogen admixture")
+
 
         # Define block components
         chp1 = chp.Chp(
             "chp_1", 
-            PATH_IN + "assets/chp.csv",
+            chp1_filepath,
             hydrogen_admixture=self.model.HYDROGEN_ADMIXTURE_CHP_1
         )
         chp2 = chp.Chp(
             "chp_2", 
-            PATH_IN + "assets/chp.csv",
+            chp2_filepath,
             hydrogen_admixture=self.model.HYDROGEN_ADMIXTURE_CHP_2
         )
         h2_grid = grid.HydrogenGrid(

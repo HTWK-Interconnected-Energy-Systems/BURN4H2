@@ -2,7 +2,7 @@ from pyomo.environ import *
 from pyomo.network import *
 
 import pandas as pd
-
+import os
 
 class Chp:
     """Class for constructing chp asset objects.
@@ -26,11 +26,6 @@ class Chp:
         self.kwargs = kwargs
         self.validate_kwargs()
 
-        # Define allowed hydrogen-admixture-factors
-        self.ALLOWED_ADMIXTURE_VALUES = [0, 0.3, 0.5, 1]
-
-
-    
 
     def validate_kwargs(self):
         """Checks for unknown kwargs and returns a KeyError if some are 
@@ -49,7 +44,6 @@ class Chp:
             filepath,
             index_col=index_col
         )
-    
 
     def add_to_model(self, model):
         """Adds the asset as a pyomo block component to a given model."""
@@ -106,12 +100,15 @@ class Chp:
             include_splitfrac=False
         )
 
-
+        if 'hydrogen_admixture' in self.kwargs:
+            hydrogen_admixture_factor = float(self.kwargs['hydrogen_admixture'])
+            print(hydrogen_admixture_factor)
+        
+            
         # Declare construction rules for constraints
         def power_max_rule(_block, i):
             """Rule for the maximal power."""
             return _block.power[i] <= self.data.loc['max', 'power'] * _block.bin[i]
-
 
         def power_min_rule(_block, i):
             """Rule for the minimal power."""
@@ -204,14 +201,10 @@ class Chp:
                 expr=quicksum(block.bin[i] for i in t) >= kwarg_value
             )
 
-        # proof if hydrogen_admixture is given
+        # Proof if hydrogen_admixture is given
         if 'hydrogen_admixture' in self.kwargs:
             admixture = float(self.kwargs['hydrogen_admixture'])
-            if admixture not in self.ALLOWED_ADMIXTURE_VALUES:
-                raise ValueError(
-                    f'Invalid hydrogen_admixture value: {admixture}. '
-                    f'Allowed values are: {self.ALLOWED_ADMIXTURE_VALUES}'
-                )
+
             
             # Delete components
             block.del_component("co2_depends_on_power_constraint")
