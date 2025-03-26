@@ -1,0 +1,57 @@
+Solver command line: ['C:\\Program Files\\gurobi1102\\win64\\bin\\gurobi.bat']
+
+Set parameter Username
+Academic license - for non-commercial use only - expires 2025-07-11
+Read LP format model from file C:\Users\PAULWI~1\AppData\Local\Temp\tmpqqavsram.pyomo.lp
+Reading time = 0.17 seconds
+objective: 17641 rows, 16463 columns, 68192 nonzeros
+Set parameter TimeLimit to value 5000
+Set parameter MIPGap to value 0.08
+Gurobi Optimizer version 11.0.2 build v11.0.2rc0 (win64 - Windows 10.0 (19045.2))
+
+CPU model: Intel(R) Xeon(R) CPU E5-1607 v2 @ 3.00GHz, instruction set [SSE2|AVX]
+Thread count: 4 physical cores, 4 logical processors, using up to 4 threads
+
+Optimize a model with 17641 rows, 16463 columns and 68192 nonzeros
+Model fingerprint: 0xf357c553
+Model has 167 quadratic constraints
+Variable types: 14112 continuous, 2351 integer (2016 binary)
+Coefficient statistics:
+  Matrix range     [6e-03, 1e+03]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [4e+01, 3e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [2e-03, 1e+04]
+Presolve removed 15801 rows and 13951 columns
+Presolve time: 0.16s
+Presolved: 1840 rows, 2512 columns, 6859 nonzeros
+Variable types: 2011 continuous, 501 integer (501 binary)
+Found heuristic solution: objective 2616597.0881
+
+Root relaxation: objective 2.119581e+06, 1499 iterations, 0.02 seconds (0.01 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2119581.09    0   14 2616597.09 2119581.09  19.0%     -    0s
+     0     0 2119726.03    0   21 2616597.09 2119726.03  19.0%     -    0s
+H    0     0                    2121519.7124 2119944.24  0.07%     -    0s
+     0     0 2119944.24    0   21 2121519.71 2119944.24  0.07%     -    0s
+
+Cutting planes:
+  Gomory: 14
+  Cover: 2
+  Implied bound: 8
+  MIR: 9
+  Flow cover: 2
+  RLT: 2
+  Relax-and-lift: 1
+
+Explored 1 nodes (1591 simplex iterations) in 0.31 seconds (0.11 work units)
+Thread count was 4 (of 4 available processors)
+
+Solution count 2: 2.12152e+06 2.6166e+06 
+
+Optimal solution found (tolerance 8.00e-02)
+Best objective 2.121519712384e+06, best bound 2.119944235303e+06, gap 0.0743%
+

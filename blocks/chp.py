@@ -26,6 +26,10 @@ class Chp:
         self.kwargs = kwargs
         self.validate_kwargs()
 
+        # Define allowed hydrogen-admixture-factors
+        self.ALLOWED_ADMIXTURE_VALUES = [0, 0.3, 0.5, 1]
+
+
     
 
     def validate_kwargs(self):
@@ -200,12 +204,13 @@ class Chp:
                 expr=quicksum(block.bin[i] for i in t) >= kwarg_value
             )
 
+        # proof if hydrogen_admixture is given
         if 'hydrogen_admixture' in self.kwargs:
-
-            hydrogen_admixture_factor = self.kwargs['hydrogen_admixture']
-            if not 0 <= hydrogen_admixture_factor <= 1:
+            admixture = float(self.kwargs['hydrogen_admixture'])
+            if admixture not in self.ALLOWED_ADMIXTURE_VALUES:
                 raise ValueError(
-                    'Admixture factor out of bounds. Should be >= 0 or <= 1'
+                    f'Invalid hydrogen_admixture value: {admixture}. '
+                    f'Allowed values are: {self.ALLOWED_ADMIXTURE_VALUES}'
                 )
             
             # Delete components
