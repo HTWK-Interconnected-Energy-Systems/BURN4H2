@@ -110,7 +110,7 @@ class Model:
         self.model.HEAT_PRICE = Param()
         self.model.H2_PRICE = Param()
         self.model.INSTALLED_ST_POWER = Param()
-        self.model.HYDROGEN_ADMIXTURE_CHöP_1 = Param()
+        self.model.HYDROGEN_ADMIXTURE_CHP_1 = Param()
         self.model.HYDROGEN_ADMIXTURE_CHP_2 = Param()
 
         # Erlaubte hydrogen_admixture Werte
