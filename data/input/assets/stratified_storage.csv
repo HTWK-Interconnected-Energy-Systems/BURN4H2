@@ -1,0 +1,6 @@
+,min,max,content
+massflow,0,1000,
+capacity,0,10000,1000
+temp_upper,30,90,50
+temp_middle,25,85,45
+temp_lower,20,80,40

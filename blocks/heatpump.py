@@ -352,7 +352,7 @@ class HeatpumpStageTwo:
 
         # Port 3
         block.heat_out = Port()
-        block.heat_out.add(block.heat,'local_heat',Port.Extensive, include_splitfrac=False)
+        block.heat_out.add(block.heat,'wp_heat',Port.Extensive, include_splitfrac=False)
      
        
         # Expressions

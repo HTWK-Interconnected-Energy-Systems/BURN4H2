@@ -43,7 +43,7 @@ class Collector:
         block.heat_out = Port()
         block.heat_out.add(
             block.heat,
-            'local_heat',
+            'st_heat',
             Port.Extensive,
             include_splitfrac=False
         )

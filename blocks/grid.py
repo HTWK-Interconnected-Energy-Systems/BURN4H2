@@ -361,12 +361,12 @@ class LocalHeatGrid:
             include_splitfrac=False
         )
 
-        block.district_heat_in = Port()
-        block.district_heat_in.add(
-            block.district_heat_feedin,
-            'district_heat',
-            Port.Extensive,
-        )
+        # block.district_heat_in = Port()
+        # block.district_heat_in.add(
+        #     block.district_heat_feedin,
+        #     'district_heat',
+        #     Port.Extensive,
+        # )
         
         def supply_heat_demand_balance_rule(_block, i):
             """Rule for fully suppling the heat demand."""
@@ -376,7 +376,7 @@ class LocalHeatGrid:
             """Rule for fully suppling the heat demand."""
             return _block.heat_balance[i] == (
                 + _block.heat_feedin[i]
-                + _block.district_heat_feedin[i]
+                # + _block.district_heat_feedin[i]
                 - _block.model().local_heat_demand[i]
             )
         

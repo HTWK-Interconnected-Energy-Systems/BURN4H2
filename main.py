@@ -80,8 +80,9 @@ class Model:
             self.data_portal.load(
                 filename=PATH_IN + param_config["file"],
                 index=param_config["index"],
-                param=param_name,
+                param=param_config["param"]
         )
+            
          # Load scalar parameters
         for param_name, param_value in config.get("parameters", {}).items():
             # For scalar parameters, use a dictionary with None as key
@@ -90,7 +91,6 @@ class Model:
 
     def add_components(self):
         """Adds pyomo component to the model."""
-
         # Define sets
         self.model.t = Set(ordered=True)
         
@@ -100,6 +100,8 @@ class Model:
         self.model.hydrogen_price = Param(self.model.t)
         self.model.heat_demand = Param(self.model.t)
         self.model.local_heat_demand = Param(self.model.t)
+        self.model.supply_temperature = Param(self.model.t)
+        self.model.return_temperature = Param(self.model.t)
         self.model.solar_thermal_heat_profile = Param(self.model.t)
         self.model.normalized_solar_thermal_heat_profile = Param(self.model.t)
         
@@ -108,7 +110,7 @@ class Model:
         self.model.HEAT_PRICE = Param()
         self.model.H2_PRICE = Param()
         self.model.INSTALLED_ST_POWER = Param()
-        self.model.HYDROGEN_ADMIXTURE_CHP_1 = Param()
+        self.model.HYDROGEN_ADMIXTURE_CHöP_1 = Param()
         self.model.HYDROGEN_ADMIXTURE_CHP_2 = Param()
 
         # Erlaubte hydrogen_admixture Werte
@@ -223,6 +225,12 @@ class Model:
             PATH_IN + "assets/geo_heat_storage.csv"
         )
 
+        # New storage components
+        sh_storage = storage.StratifiedHeatStorage(
+            "stratified_storage",
+            PATH_IN + "assets/stratified_storage.csv"
+        )
+
 
         chp1.add_to_model(self.model)
         chp2.add_to_model(self.model)
@@ -240,6 +248,8 @@ class Model:
         hp_s2.add_to_model(self.model)
         lh_storage.add_to_model(self.model)
         gh_storage.add_to_model(self.model)
+        sh_storage.add_to_model(self.model)
+
 
     def add_objective(self):
         """Adds the objective to the abstract model."""
@@ -407,39 +417,65 @@ class Model:
             destination=self.instance.heatpump_s2.power_in,
         )
         
-        # LOCAL HEAT: Solar Thermal -> LOCAL HEAT STORAGE
-        # CHECK
-        self.instance.arc22 = Arc(
-            source = self.instance.solar_thermal.heat_out,
-            destination = self.instance.local_heat_storage.heat_in,
-        )
+        ############
+
+        # # LOCAL HEAT: Solar Thermal -> LOCAL HEAT STORAGE
+        # # CHECK
+        # self.instance.arc22 = Arc(
+        #     source = self.instance.solar_thermal.heat_out,
+        #     destination = self.instance.local_heat_storage.heat_in,
+        # )
         
-        # LOCAL HEAT: 2. Stage Heat Pump  -> Local HEAT STORAGE
-        # CHECK
-        self.instance.arc23 = Arc(
+        # # LOCAL HEAT: 2. Stage Heat Pump  -> Local HEAT STORAGE
+        # # CHECK
+        # self.instance.arc23 = Arc(
+        #     source=self.instance.heatpump_s2.heat_out,
+        #     destination=self.instance.local_heat_storage.heat_in,
+        # )
+
+        # # LOCAL HEAT: Local HEAT STORAGE -> Local Heat Grid
+        # # CHECK
+        # self.instance.arc24 = Arc(
+        #     source=self.instance.local_heat_storage.heat_out,
+        #     destination=self.instance.local_heat_grid.heat_in,
+        # )
+
+        # # EXCESS LOCAL HEAT: Local Heat Storage -> Heat Grid
+        # # CHECK
+        # self.instance.arc25 = Arc(
+        #     source=self.instance.local_heat_storage.excess_heat_out,
+        #     destination=self.instance.heat_grid.excess_heat_in 
+        # )
+
+        # # HEAT: Heat Grid -> Local Heat Grid
+        # # CHECK
+        # self.instance.arc26 = Arc(
+        #     source=self.instance.heat_grid.heat_grid_to_local_out,
+        #     destination=self.instance.local_heat_grid.district_heat_in,
+        # )
+
+        #####
+
+        
+        # LOCAL HEAT: Solar Thermal -> Stratified Heat Storage
+        # NEW
+        self.instance.arc27 = Arc(
+            source=self.instance.solar_thermal.heat_out,
+            destination=self.instance.stratified_storage.st_heat_in,
+        )
+
+        # LOCAL HEAT: 2. Stage Heat Pump -> Stratified Heat Storage
+        # NEW
+        self.instance.arc28 = Arc(
             source=self.instance.heatpump_s2.heat_out,
-            destination=self.instance.local_heat_storage.heat_in,
+            destination=self.instance.stratified_storage.wp_heat_in,
         )
 
-        # LOCAL HEAT: Local HEAT STORAGE -> Local Heat Grid
-        # CHECK
-        self.instance.arc24 = Arc(
-            source=self.instance.local_heat_storage.heat_out,
+        # LOCAL HEAT: Stratified Heat Storage -> Local Heat Grid
+        # NEW
+        self.instance.arc29 = Arc(
+            source=self.instance.stratified_storage.heat_out,
             destination=self.instance.local_heat_grid.heat_in,
-        )
-
-        # EXCESS LOCAL HEAT: Local Heat Storage -> Heat Grid
-        # CHECK
-        self.instance.arc25 = Arc(
-            source=self.instance.local_heat_storage.excess_heat_out,
-            destination=self.instance.heat_grid.excess_heat_in 
-        )
-
-        # HEAT: Heat Grid -> Local Heat Grid
-        # CHECK
-        self.instance.arc26 = Arc(
-            source=self.instance.heat_grid.heat_grid_to_local_out,
-            destination=self.instance.local_heat_grid.district_heat_in,
         )
 
 
@@ -487,27 +523,75 @@ class Model:
             except:
                 continue
 
+        #########
+
+        # for variable in self.instance.component_objects(Var, active=True):
+        #     name = variable.name
+        #     if "aux" in name:  # Filters auxiliary variables from the output data
+        #         continue
+        #     if "splitfrac" in name:
+        #         continue
+        #     # Skip arc variables if not included
+        #     if not include_arcs and "arc" in name.lower():
+        #         continue
+            
+        #     # Füge nur berechnete Variablen hinzu
+        #     values = []
+        #     for t in self.instance.t:
+        #         v = value(variable[t], exception=False)  # Gibt None zurück, wenn nicht initialisiert
+        #         if v is not None:  # Nur initialisierte Variablen hinzufügen
+        #             values.append(v)
+        #         else:
+        #             values.append(None)  # Optional: None hinzufügen, um Lücken zu markieren
+        #     if any(v is not None for v in values):  # Nur hinzufügen, wenn mindestens ein Wert gesetzt ist
+        #         df_variables[name] = values
+        
+        ######
+
+        # Verbesserte Variable-Verarbeitung für mehrfach indizierte Variablen
         for variable in self.instance.component_objects(Var, active=True):
             name = variable.name
-            if "aux" in name:  # Filters auxiliary variables from the output data
-                continue
-            if "splitfrac" in name:
-                continue
-            # Skip arc variables if not included
-            if not include_arcs and "arc" in name.lower():
+            if "aux" in name or "splitfrac" in name or (not include_arcs and "arc" in name.lower()):
                 continue
             
-            # Füge nur berechnete Variablen hinzu
-            values = []
-            for t in self.instance.t:
-                v = value(variable[t], exception=False)  # Gibt None zurück, wenn nicht initialisiert
-                if v is not None:  # Nur initialisierte Variablen hinzufügen
-                    values.append(v)
-                else:
-                    values.append(None)  # Optional: None hinzufügen, um Lücken zu markieren
-            if any(v is not None for v in values):  # Nur hinzufügen, wenn mindestens ein Wert gesetzt ist
-                df_variables[name] = values
-        
+            # Prüfen, ob die Variable mehrfach indiziert ist
+            try:
+                next(variable.iteritems())
+                index_dims = sum(1 for _ in next(variable.iteritems())[0]) if variable else 0
+            except (StopIteration, TypeError):
+                index_dims = 0
+            
+            if index_dims > 1:
+                # Mehrfach indizierte Variable (z.B. T_sto[t, layer])
+                # Erstelle für jede zweite Dimension einen eigenen Eintrag
+                second_indices = set(idx[1] for idx in variable.keys())
+                for second_idx in second_indices:
+                    values = []
+                    for t in self.instance.t:
+                        try:
+                            v = value(variable[t, second_idx], exception=False)
+                            values.append(v)
+                        except (KeyError, IndexError):
+                            values.append(None)
+                            
+                    if any(v is not None for v in values):
+                        col_name = f"{name}_{second_idx}"
+                        df_variables[col_name] = values
+            else:
+                # Einfach indizierte Variable (nur nach Zeit)
+                values = []
+                for t in self.instance.t:
+                    try:
+                        v = value(variable[t], exception=False)
+                        values.append(v)
+                    except (KeyError, IndexError):
+                        values.append(None)
+                        
+                if any(v is not None for v in values):
+                    df_variables[name] = values
+
+
+
          # Get expressions
         for expr in self.instance.component_objects(Expression, active=True):
             name = expr.name

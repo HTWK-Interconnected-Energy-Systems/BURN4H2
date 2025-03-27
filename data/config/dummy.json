@@ -7,15 +7,18 @@
   "timeseries":{
     "gas_price": {
       "file": "prices/dummy/gas_price.csv",
-      "index": "t"
+      "index": "t",
+      "param": "gas_price"
     },
     "power_price": {
       "file": "prices/dummy/power_price.csv",
-      "index": "t"
+      "index": "t",
+      "param": "power_price"
     },
     "hydrogen_price": {
       "file": "prices/dummy/h2_price.csv",
-      "index": "t"
+      "index": "t",
+      "param": "hydrogen_price"
     },
     "heat_demand": {
       "file": "demands/district_heating/dummy/heat_short.csv",
@@ -24,15 +27,18 @@
     },
     "solar_thermal_heat_profile":{ 
       "file": "profiles/dummy/dummy_solarthermal_profil.csv",
-      "index": "t"
+      "index": "t",
+      "param": "solar_thermal_heat_profile"
     },
     "local_heat_demand": {
       "file": "demands/local_heating/dummy/local_heat_short.csv",
-      "index": "t"
+      "index": "t",
+      "param": ["local_heat_demand", "supply_temperature", "return_temperature"]
     },
     "normalized_solar_thermal_heat_profile":{
       "file": "profiles/dummy/dummy_solarthermal_norm_profil.csv",
-      "index": "t"
+      "index": "t",
+      "param": "normalized_solar_thermal_heat_profile"
     }
   }
 }
