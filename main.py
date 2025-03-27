@@ -562,7 +562,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--config',
         choices=AVAILABLE_CONFIGS,
-        default="ue24_ST-min_NW-ref_2028.json",
+        default="dummy.json",
         help='Configuration file to use')
     args = parser.parse_args()
 
