@@ -718,39 +718,57 @@ class StratifiedHeatStorage:
         and constraints."""
 
         # Get index from model
-        t = block.model().t
-        temp_sup = block.model().supply_temperature
-        temp_ret = block.model().return_temperature
+        t = block.model().t # [hours]
+        temp_sup_C = block.model().supply_temperature # [°C] 
+        temp_ret_C = block.model().return_temperature # [°C]
+
+        # Conversionfactor from seconds to hours
+        block.sec_to_hour = Param(initialize=3600) # [s/h]
 
         # Set Layers
         block.layers = Set(initialize=[1, 2, 3])
-        block.c_w = Param(initialize=4.18/3600)  # Spezifische Wärmekapazität [MWh/(kg·K)] (konvertiert von kJ/kg·K)
+        
+        # Spezifiscer Wärmekapazität von Wasser in MJ/kg·K für MW-Berechnung
+        block.c_w = Param(initialize=4.1218 / 1000)  # [MJ/(kg·K)], konvertiert von kJ/(kg·K)
+
+        # Masse jeder Schicht in kg
         block.m_sto = Param(block.layers, initialize={
             1: 2000000/3, 
             2: 2000000/3, 
-            3: 2000000/3})  # Masse jeder Schicht [kg] laut Gabriel Schumm 2000 m³, dh 2 Mio kg bei Dichte 1000 kg/m³ für Wasser
+            3: 2000000/3})  # [kg] laut Gabriel Schumm 2000 m³, dh 2 Mio kg bei Dichte 1000 kg/m³ für Wasser
 
         # Temperature of each layer
-        block.T_sto = Var(t, block.layers, domain=NonNegativeReals, initialize=0)
+        block.T_sto = Var(t, block.layers, domain=NonNegativeReals) # [K]
 
+        # Initial temperature of each layer in K
         block.T_sto_init = Param(block.layers, initialize={
-            1: 95, 
-            2: 80, 
-            3: 55})  # Initial temperature of each layer [°C]
+            1: 95 + 273.15, # [K] 
+            2: 80 + 273.15, # [K]
+            3: 55 + 273.15})  # [K]
+        
+        # Convert temperatures to K
+        def temp_C_to_K(temp_C):
+            return temp_C + 273.15 if temp_C is not None else None
+    
+        # Temperatur des Rücklaufs und Vorlaufs in Kelvin
+        def get_temp_ret_K(_block, i):
+            return temp_C_to_K(temp_ret_C[i])
+        
+        def get_temp_sup_K(_block, i):
+            return temp_C_to_K(temp_sup_C[i])
+        
+        block.T_return = Expression(t, rule=get_temp_ret_K)  # [K]
+        block.T_supply = Expression(t, rule=get_temp_sup_K)  # [K]
 
-        # Temperatur des Rücklaufs (Schicht 4 ist fiktiv für den Rücklauf)
-        block.T_return = Param(t, domain=NonNegativeReals, initialize=temp_ret)
-        block.T_supply = Param(t, domain=NonNegativeReals, initialize=temp_sup)
+        # Zeitschritt
+        block.delta_t = Param(initialize=1)  # [h]
 
         # Massenströme und Wärmeeinträge
         block.Q_dot_ST = Var(t, domain=NonNegativeReals)   # Wärmeeintrag durch Solarthermie [MW]
         block.Q_dot_WP = Var(t, domain=NonNegativeReals)   # Wärmeeintrag durch Wärmepumpe [MW]
-        
-        
         block.Q_dot_Hou = Var(t, domain=NonNegativeReals)  # Wärmeabgabe ans Haus [MW]
-        block.m_dot_hou = Var(t, domain=NonNegativeReals)  # Massenstrom zum Haus [kg/h]
-        
         block.Q_dot = Var(t, domain=NonNegativeReals)      # Gesamtwärmeeintrag [MW]
+        
         
         # Ports für die Wärmeein- und -ausgänge
         # Solar-Thermie Eingang (obere Schicht)
@@ -765,8 +783,9 @@ class StratifiedHeatStorage:
         block.heat_out = Port()
         block.heat_out.add(block.Q_dot_Hou, 'local_heat', Port.Extensive, include_splitfrac=False)
 
+        # Massenstrom in kg/s
         def m_dot_nw_rule(_block, i):
-            return (_block.Q_dot_Hou[i] / (_block.c_w * (_block.T_supply[i] - _block.T_return[i])))
+            return (_block.Q_dot_Hou[i] / (_block.c_w * (_block.T_supply[i] - _block.T_return[i]))) # in [kg/s]
         
         block.m_dot_nw = Expression(
             t,
@@ -777,65 +796,76 @@ class StratifiedHeatStorage:
         def upper_layer_energy_balance_rule(_block, i):
             if i == 1:
                 # Initial condition
-                return _block.T_sto[i, 1] == _block.T_sto_init[1]  # Starttemperatur [°C]
+                return _block.T_sto[i, 1] == _block.T_sto_init[1]  # Starttemperatur [K]
             else:
+                # Energieänderung [MJ] = [kg] * [MJ/(kg·K)] * [K]
+                energy_change = _block.m_sto[1] * _block.c_w * (_block.T_sto[i, 1] - _block.T_sto[i-1, 1])
+                
+                # Konvektionsterm: [MJ/(kg·K)] * [kg/s] * [K] * [s/h] * [h] = [MJ]
+                convection = _block.c_w * _block.m_dot_nw[i] * (_block.T_sto[i, 2] - _block.T_sto[i, 1]) * _block.sec_to_hour * _block.delta_t
+                
+                # Solarthermie: [MW] * [h] * [MJ/MWh] = [MJ]
+                solar_heat = _block.Q_dot_ST[i] * _block.delta_t * 3600
 
-                return (_block.m_sto[1] * _block.c_w * (_block.T_sto[i, 1] - _block.T_sto[i-1, 1])  ==
-                    _block.c_w * _block.m_dot_nw[i] * (_block.T_sto[i, 2] - _block.T_sto[i, 1]) + 
-                    _block.Q_dot_ST[i])
-        
+                return energy_change == convection + solar_heat
+            
+
         # Constraint für die Energiebilanz der mittleren Schicht (l=2)
         def middle_layer_energy_balance_rule(_block, i):
             if i == 1:
                 # Initial condition
-                return _block.T_sto[i, 2] == _block.T_sto_init[2]  # Starttemperatur [°C]
+                return _block.T_sto[i, 2] == _block.T_sto_init[2]  # Starttemperatur [K]
             else:
-                return (_block.m_sto[2] * _block.c_w * (_block.T_sto[i, 2] - _block.T_sto[i-1, 2]) ==
-                    _block.c_w * _block.m_dot_nw[i] * (_block.T_sto[i, 3] - _block.T_sto[i, 2]) + 
-                    _block.c_w * _block.m_dot_nw[i] * (_block.T_sto[i, 1] - _block.T_sto[i, 2]) +
-                    _block.Q_dot_WP[i])
+                # Energieänderung [MJ]
+                energy_change = _block.m_sto[2] * _block.c_w * (_block.T_sto[i, 2] - _block.T_sto[i-1, 2])
+                
+                # Konvektionsterme [MJ]
+                convection_up = _block.c_w * _block.m_dot_nw[i] * (_block.T_sto[i, 3] - _block.T_sto[i, 2]) * _block.sec_to_hour * _block.delta_t
+                convection_down = _block.c_w * _block.m_dot_nw[i] * (_block.T_sto[i, 1] - _block.T_sto[i, 2]) * _block.sec_to_hour * _block.delta_t
+                
+                # Wärmepumpe [MJ]
+                heat_pump = _block.Q_dot_WP[i] * _block.delta_t * 3600
+                
+                return energy_change == convection_up + convection_down + heat_pump
         
         # Constraint für die Energiebilanz der unteren Schicht (l=3)
         def lower_layer_energy_balance_rule(_block, i):
             if i == 1:
-                # Initial condition
-                return _block.T_sto[i, 3] == _block.T_sto_init[3]  # Starttemperatur [°C]
+                 # Initial condition - wie bei den anderen Schichten
+                return _block.T_sto[i, 3] == _block.T_sto_init[3]  # Starttemperatur [K]
             else:
-                return (_block.m_sto[3] * _block.c_w * (_block.T_sto[i, 3] - _block.T_sto[i-1, 3]) ==
-                    _block.c_w * _block.m_dot_nw[i] * (_block.T_return[i] - _block.T_sto[i, 3]) +
-                    _block.c_w * _block.m_dot_nw[i] * (_block.T_sto[i, 2] - _block.T_sto[i, 3]))
+                # Energieänderung [MJ]
+                energy_change = _block.m_sto[3] * _block.c_w * (_block.T_sto[i, 3] - _block.T_sto[i-1, 3])
+                
+                # Konvektionsterme [MJ]
+                convection_return = _block.c_w * _block.m_dot_nw[i] * (_block.T_return[i] - _block.T_sto[i, 3]) * _block.sec_to_hour * _block.delta_t
+                convection_middle = _block.c_w * _block.m_dot_nw[i] * (_block.T_sto[i, 2] - _block.T_sto[i, 3]) * _block.sec_to_hour * _block.delta_t
+                
+                return energy_change == convection_return + convection_middle
         
         # Constraint für die Wärmeabgabe ans Haus
         def house_heat_output_rule(_block, i):
-            return (_block.Q_dot[i] == 
-                    _block.c_w * _block.m_dot_nw[i] *  (_block.T_supply[i] - _block.T_return[i]))
+            # [MW] = [MJ/(kg·K)] * [kg/s] * [K] * [MW/MJ·s^-1]
+            return _block.Q_dot[i] == _block.c_w * _block.m_dot_nw[i] * (_block.T_supply[i] - _block.T_return[i])
         
-        # Constraint für die Temperaturschichtung (obere Schicht ist wärmer als mittlere)
-        
+        # Temperaturschichtungs-Constraints [K]
         def temp_startification_upper_supply_rule(_block, i):
-            return _block.T_sto[i, 1] >= _block.T_supply[i]
+            return _block.T_sto[i, 1] >= _block.T_supply[i] 
         
         def temp_stratification_upper_middle_rule(_block, i):
             return _block.T_sto[i, 1] >= _block.T_sto[i, 2]
         
-        # Constraint für die Temperaturschichtung (mittlere Schicht ist wärmer als untere)
         def temp_stratification_middle_lower_rule(_block, i):
             return _block.T_sto[i, 2] >= _block.T_sto[i, 3]
         
-        # Constraint für die Temperaturschichtung (untere Schicht ist wärmer als Rücklauf)
         def temp_stratification_lower_return_rule(_block, i):
             return _block.T_sto[i, 3] >= _block.T_return[i]
         
-        # Massenstrom-Grenze basierend auf dem Heizbedarf
+        # Massenstrom-Grenze [kg/s]
         def max_massflow_rule(_block,i):
             max_flow = self.data.loc['max', 'massflow'] if 'massflow' in self.data.columns else 1000
             return _block.m_dot_nw[i] <= max_flow
         
-        # Registriere alle Constraints
-        block.temp_stratification_4 = Constraint(
-            t,
-            rule=temp_startification_upper_supply_rule
-        )
 
         block.upper_layer_balance = Constraint(
             t,
@@ -852,10 +882,10 @@ class StratifiedHeatStorage:
             rule=lower_layer_energy_balance_rule
         )
         
-        block.house_heat_output = Constraint(
-            t,
-            rule=house_heat_output_rule
-        )
+        # block.house_heat_output = Constraint(
+        #     t,
+        #     rule=house_heat_output_rule
+        # )
         
         block.temp_stratification_1 = Constraint(
             t,
@@ -870,6 +900,11 @@ class StratifiedHeatStorage:
         block.temp_stratification_3 = Constraint(
             t,
             rule=temp_stratification_lower_return_rule
+        )
+
+        block.temp_stratification_4 = Constraint(
+            t,
+            rule=temp_startification_upper_supply_rule
         )
         
         block.max_massflow_constraint = Constraint(
