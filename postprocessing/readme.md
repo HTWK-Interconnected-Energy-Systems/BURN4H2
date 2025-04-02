@@ -51,10 +51,15 @@ Focus lies on generating stacked box plots, that show demand and supply of diffe
 - General Helpers
 - Helpers for Colormaps
 - Load data from csv output
-- Functions for filtering and calculating values for set time granularity
-- Functions for setting assets and parameters to be visualized
-- Functions for plotting and saving bar chart for share of assets
-- Main Script
+- Functions for data processing from csv
+- Functions for plot preparation (y values and x values)
+- Functions for simple plotting of supply (stacked) and demand.
+- Functions for plotting storage values (fusion or single output)
+- Compare two data sets from csv in one plot
+- Plot specific value from csv.
+- Function for saving plots of any kind
+- Wrapper for Main function: Decide for plot with input value
+- Main script for generating results – needs to be executed.
 
 ### 3.3 Import of packages
 Code needs to be executed to load necessary libraries:
@@ -674,7 +679,7 @@ print_df(result_df)
 - extract_assets_to_dict
 - calculate_asset_share_of_supply
 - get_periods_for_plot
-- Wrapper: get_asset_data_for_plot
+- get_asset_data_for_plot
 - get_data_for_storage_plot
 - get_demand_for_plot
 
@@ -1068,7 +1073,7 @@ storage_dict = get_data_for_storage_plot(
 ````
 
 **get_demand_for_plot**: 
-
+Variables are set from output csv for either local or district heating. They will be loaded in a dictionary and belonging data is set as lists for values. This dict will be an input for plotting.
 
 #### Code example: 
 ````python
@@ -2134,12 +2139,62 @@ def plot_shares_and_storage(
     return fig
 
 # example execution:
-# ergänzen!
+# all defined variables are set in input values in the space of main!
+# 1 Load Data from csv INPUT PATH: 
+time_sums_df = calculate_sums_for_period(
+    input_df=load_csv_results_in_df(input_path = '../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv'), 
+    start_date = "2025-01-01", 
+    end_date = "2025-12-31", 
+    granularity="month"
+    )
+
+# 2 Process data fitting for box plot visualization: 
+asset_plot_dict, supply_shares_dict, periods = get_asset_data_for_plot(
+    time_series_df=time_sums_df, 
+    all_assets=('heatpump_2', 'solar_thermal'),
+    selected_assets=('chp_1', 'chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+
+# 3 load colors from json file: 
+colors_dict, color_file_json = load_color_data_from_json(
+    colors_file='assigned_colors.json', 
+    output_path='../data/postprocessing/'
+    )
+
+# 4 get storage dict:
+storage_dict = get_data_for_storage_plot(
+    type_of_energy='heat',
+    type_of_heat_storage='local',
+    time_series_df=time_sums_df,
+    asset_dict=asset_plot_dict,
+    actual_unit='MWh',
+    target_unit='GWh'
+    )
+# 5 plot figure:      
+fig = plot_shares_and_storage(
+    asset_dict= asset_plot_dict, 
+    supply_shares_dict = supply_shares_dict,
+    storage_dict=storage_dict,
+    granularity='month',
+    type_of_energy='heat',
+    sharename="Test",
+    fontsize=16,
+    title_size=18,
+    key_to_label=None,
+    periods = periods,
+    target_unit = 'GWh',
+    colormap='nipy spectral',
+    assigned_colors_dict=colors_dict,
+    heat_name = 'Local heat'
+    )
 ````
 
 #### Output Example: 
 <img src="../data/postprocessing/zzz_pictures_readme/plot_shares_and_storage.png" alt="plot_shares_and_storage" width="900">
-
 
 **plot_storage**:  
 Same plot as above showing charging and discharging as well as balance (difference) of storage in set time granularity. Charging is divided into asset shares and has negative prefix. It's necessary to set variable storage_diagram to 'single', so just storage without supply is shown. This diagram is preferred as the diagram with fusion of supply and storage has developed, so that there is no advantage in information by choosing the fusion variant. 
@@ -2400,7 +2455,54 @@ def plot_storage(
     # plt.show() # activate if not saved later on. 
     return fig
 # example execution: 
-# ergänzen!
+# 1 Load Data from csv INPUT PATH: 
+time_sums_df = calculate_sums_for_period(
+    input_df=load_csv_results_in_df(input_path = '../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv'), 
+    start_date = "2025-01-01", 
+    end_date = "2025-12-31", 
+    granularity="month"
+    )
+
+# 2 Process data fitting for box plot visualization: 
+asset_plot_dict, supply_shares_dict, periods = get_asset_data_for_plot(
+    time_series_df=time_sums_df, 
+    all_assets=('heatpump_2', 'solar_thermal'),
+    selected_assets=('chp_1', 'chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+
+# 3 load colors from json file: 
+colors_dict, color_file_json = load_color_data_from_json(
+    colors_file='assigned_colors.json', 
+    output_path='../data/postprocessing/'
+    )
+
+# 4 get storage dict:
+storage_dict = get_data_for_storage_plot(
+    type_of_energy='heat',
+    type_of_heat_storage='local',
+    time_series_df=time_sums_df,
+    asset_dict=asset_plot_dict,
+    actual_unit='MWh',
+    target_unit='GWh'
+    )
+# 5 plot figure:      
+fig = plot_storage(
+    storage_dict=storage_dict,
+    assigned_colors_dict=colors_dict,
+    colormap='nipy spectral',
+    periods=periods,
+    granularity='month',
+    type_of_energy='heat',
+    fontsize=16,
+    title_size=18,
+    target_unit='GWh',
+    heat_name = 'Local heat',
+    scenario_title = '(0 % H2, UE24)'
+    )
 ````
 
 #### Output example: 
@@ -2608,8 +2710,64 @@ def compare_plots(
     # plt.show() # just activate if save_plot function is deactivated
     plt.tight_layout()
     return fig  
+
 # example execution: 
-# ergänzen!
+time_sums_df1 = calculate_sums_for_period(
+    input_df=load_csv_results_in_df(
+        input_path = '../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv'
+        ), 
+    start_date = '2025-01-01', 
+    end_date = '2025-12-31', 
+    granularity='month', 
+    time_column='date'
+    )
+time_sums_df2 = calculate_sums_for_period(
+    input_df=load_csv_results_in_df
+    (input_path = '../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv'
+    ), 
+    start_date = '2025-01-01', 
+    end_date = '2025-12-31', 
+    granularity='month', 
+    time_column='date'
+    )
+asset_plot_dict1, supply_shares_dict1, periods1 = get_asset_data_for_plot(
+    time_series_df=time_sums_df1, 
+    all_assets=('chp_1','chp_2'),
+    selected_assets=('chp_1','chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+asset_plot_dict2, supply_shares_dict2, periods2 = get_asset_data_for_plot(
+    time_series_df=time_sums_df2,
+    all_assets=('chp_1','chp_2'),
+    selected_assets=('chp_1','chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+
+colors_dict, color_file_json = load_color_data_from_json(
+    colors_file='assigned_colors.json', 
+    output_path='../data/postprocessing/'
+    )
+
+fig =compare_plots(
+    asset_dict1 = asset_plot_dict1,
+    asset_dict2= asset_plot_dict2,
+    assigned_colors_dict=colors_dict,
+    colormap='nipy spectral',
+    periods=periods1,
+    granularity='month',
+    type_of_energy='heat',
+    fontsize=16,
+    title_size=18,
+    target_unit='GWh',
+    heat_name = 'District heat', 
+    scenario_title='(0 % H2, UE24)'
+    )
 ````
 
 #### Output example: 
@@ -2772,6 +2930,44 @@ def plot_specific_value(
     # plt.show() # just activate if save_plot function is deactivated
     plt.tight_layout()
     return fig 
+
+# example execution: 
+time_sums_df = calculate_sums_for_period(
+    input_df=load_csv_results_in_df(input_path = '../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv'), 
+    start_date = "2025-02-01", 
+    end_date = "2025-02-01", 
+    granularity="hour"
+    )
+
+# 2 Process data fitting for box plot visualization: 
+asset_plot_dict, supply_shares_dict, periods = get_asset_data_for_plot(
+    time_series_df=time_sums_df, 
+    all_assets=('heatpump_2', 'solar_thermal'),
+    selected_assets=('chp_1', 'chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+
+# 3 load colors from json file: 
+colors_dict, color_file_json = load_color_data_from_json(
+    colors_file='assigned_colors.json', 
+    output_path='../data/postprocessing/'
+    )
+
+fig = plot_specific_value(
+    name_of_value='geo_heat_storage.heat_content',
+    time_series_df=time_sums_df,
+    assigned_colors_dict=colors_dict,
+    colormap='nipy spectral',
+    periods=periods,
+    granularity='hour',
+    fontsize=16,
+    title_size=18,
+    target_unit='MWh',
+    scenario_title = '(0 % H2, UE24)'
+    ):
 
 ````
 #### Output example: 
@@ -3392,10 +3588,16 @@ def change_cost_dimension(
         else: 
             raise KeyError("Unit not found. Check spelling or add unit in function.")
     return target_values
-````
 
+# example execution: 
+changed_costs = change_cost_dimension(
+    values = [1500, 250000, 3200000, 750000000], 
+    target_unit = 'T €'
+)
+
+````
 #### Output example: 
-#TODO ergänzen!
+<img src="../data/postprocessing/zzz_pictures_readme/change_cost_dimension_example.png" alt="change_cost_dimension_example" width="600">
 
 ### 4.5 Load data from csv output
 Look at the explanation in section 3.6 of share_of_assets. This function is the same as in this section.
@@ -3405,6 +3607,7 @@ Look at the explanation in section 3.6 of share_of_assets. This function is the 
 - add_timestamp_and_filter
 - extract_price_data_to_dict
 - get_time_data_for_plot
+- insert_data_to_df
 - get_data_for_cost_simulation
 
 **add_timestamp_and_filter**:  
@@ -3589,6 +3792,61 @@ print('occurences: ', occurences)
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures_readme/get_time_data_for_plot_example.png" alt="get_time_data_for_plot_example" width="1200">
 
+**insert_data_to_df**:  
+As a workaround (especially for H2 price which changes in time), we need to add extra data to our time_series_df when it's not in csv output file. Therefore we paste it in manually with this function so the rest of functions can be normally used.
+
+#### Code example: 
+````python
+def insert_data_to_df(
+    csv_filepath: str,
+    input_df: pd.DataFrame
+):
+    """
+    Reads a csv data and extract name of file as column name. Adds values as new column in DataFrame. 
+
+    Args:
+        input_df (pd.DataFrame): existing DataFrame in which data is to be added.
+        csv_filepath (str): Complete path of csv data file. 
+
+    Returns:
+        pd.DataFrame: updated DataFrame with new column.
+
+    Raises:
+        ValueError: If amount of values does not fit amount of lines occur this error.
+    """
+
+    # Extrahiere den Dateinamen ohne Endung als Spaltenname
+    new_column_name = os.path.splitext(os.path.basename(csv_filepath))[0]
+
+    # Lese die CSV-Datei (angenommen, dass sie eine Spalte enthält)
+    new_values_df = pd.read_csv(csv_filepath)
+    
+    # Hole die Werte der ersten Spalte
+    new_values = new_values_df.iloc[:, 1].tolist()
+
+    print("[insert_data_to_df] H2_values: ", new_values)
+    # Prüfe, ob die Anzahl der Werte mit der Anzahl der Zeilen im DataFrame übereinstimmt
+    if len(new_values) != len(input_df):
+        raise ValueError(f"Fehler: Anzahl der neuen Werte ({len(new_values)}) passt nicht zur Anzahl der Zeilen im DataFrame ({len(input_df)}).")
+
+    # Füge die neue Spalte hinzu
+    input_df[new_column_name] = new_values
+
+    return input_df
+
+# example execution: 
+INPUT_PATH = "../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv"
+df = load_csv_results_in_df(input_path=INPUT_PATH)
+insert_data_to_df (
+    csv_filepath='../data/input/prices/ue24/h2_price_2028.csv',
+    input_df=df
+)
+````
+
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/insert_data_to_df_example.png" alt="insert_data_to_df_example" width="1200">
+
+
 **get_data_for_cost_simulation**:  
 Extracting cost and energy data from output csv that's necessary for economic evaluation of our model. Like checking target value or verifying parts of it. 
 
@@ -3629,22 +3887,36 @@ def get_data_for_cost_simulation(
     
     for asset in assets:   
         column_names.append(str(f"{asset}.co2")) # get keys of set assets in input data emitting co2 √
-    print("[get_data_for_cost_cumulation] column names: ", column_names)
+    print("[get_data_for_cost_simulation] column names: ", column_names)
     
     # Filter the desired columns:
     extracted_columns_dict = {col: list(time_filtered_df[col]) for col in column_names if col in time_filtered_df.columns}
     # print("[get_data_for_cost_simulation] Data from CSV: ", extracted_columns_dict[key_h2_price])
     extracted_columns_dict[key_h2_price] = [H2_PRICE] * len(extracted_columns_dict[key_gas_price])
-    print("[get_data_for_cost_cumulation] Amount of values: ", len(extracted_columns_dict[key_gas_price]))
+    print("[get_data_for_cost_simulation] Values: ", extracted_columns_dict)
     # print("[get_data_for_cost_simulation] constant H2_Price: ", extracted_columns_dict[key_h2_price])
     # for t in range(0, len(column_names)):
     #     print(f"[get_data_for_cost_simulation] Data value no. in columns dict {t}", extracted_columns_dict[column_names[t]])
     
     return extracted_columns_dict
+
+# example execution: 
+INPUT_PATH = "../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv"
+df = load_csv_results_in_df(input_path=INPUT_PATH)
+START_DATE = "2028-02-01 00:00"
+END_DATE = "2028-02-28 12:00"
+filtered_df = add_timestamp_and_filter(df, START_DATE, END_DATE)
+cost_data = get_data_for_cost_simulation(
+    key_gas_price='gas_price',
+    key_power_price='power_price',
+    key_h2_price='h2_price',
+    assets=('chp_1', 'chp_2'),
+    time_filtered_df=filtered_df,
+    H2_PRICE=160)
 ````
 
 #### Output example: 
-#TODO ergänzen!
+<img src="../data/postprocessing/zzz_pictures_readme/get_data_for_cost_simulation_example.png" alt="get_data_for_cost_simulation_example" width="900">
 
 ### 4.7 Calculate CSS
 
@@ -3816,12 +4088,41 @@ def calculate_costs(
     # print("[calculate_costs] Amount of cost values: ", len(costs_per_time))
     
     return costs_per_time
+
+# example execution:
+INPUT_PATHES = ['../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv','../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv','../data/output/ue24_ST-min_NW-ref_2028/2b_ue24_ST-min_NW-ref_2028_20250314_002620_output.csv']
+H2_POWER_CSV_PATH = '../data/input/prices/ue24/h2_price_2028.csv' 
+costs = []
+for i, item in enumerate(INPUT_PATHES): 
+    print(f"Scenario {i+1}:")
+    df_with_time = load_data(
+    input_path=item,
+    add_data_path=H2_POWER_CSV_PATH,
+    start_time='2028-06-01 00:00',
+    end_time='2028-06-01 12:00',
+)
+
+    data_dict = get_data_for_cost_simulation(
+    key_gas_price='gas_price',
+    key_power_price='power_price',
+    key_h2_price='h2_price_2028',
+    assets=('chp_1', 'chp_2'),
+    time_filtered_df=df_with_time, 
+    H2_PRICE=160
+    )
+    print(f"[Main] cost scenario {i+1}:", INPUT_PATHES[i])
+    costs.append(calculate_costs(
+        cost_dict=data_dict,
+        heat_price=0,
+        co2_price=95,
+        key_gas_price='gas_price',
+        key_h2_price='h2_price_2028',
+        key_power_price='power_price'
+        ))
 ````
 
-
 #### Output example: 
-#TODO: Ergänzen!
-
+<img src="../data/postprocessing/zzz_pictures_readme/calculate_costs_example.png" alt="calculate_costs_example" width="1000">
 
 **cumulate_costs**:  
 In this function we take the cost list and cumulate entries for getting target value (last value) of model. This can later be plotted.
@@ -3848,9 +4149,46 @@ def cumulate_costs(
         cumulated_costs.append(total)
     print("[cumulate_costs] cumulated_costs (Mio): ", cumulated_costs[-1]/1000000)
     return cumulated_costs
+
+# example execution: 
+INPUT_PATHES = ['../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv','../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv','../data/output/ue24_ST-min_NW-ref_2028/2b_ue24_ST-min_NW-ref_2028_20250314_002620_output.csv']
+H2_POWER_CSV_PATH = '../data/input/prices/ue24/h2_price_2028.csv' 
+costs = []
+for i, item in enumerate(INPUT_PATHES): 
+    print(f"[Main] Scenario {i+1}:")
+    df_with_time = load_data(
+    input_path=item,
+    add_data_path=H2_POWER_CSV_PATH,
+    start_time='2028-01-01 00:00',
+    end_time='2028-12-31 23:00',
+)
+
+    data_dict = get_data_for_cost_simulation(
+    key_gas_price='gas_price',
+    key_power_price='power_price',
+    key_h2_price='h2_price_2028',
+    assets=('chp_1', 'chp_2'),
+    time_filtered_df=df_with_time, 
+    H2_PRICE=160
+    )
+    print(f"Cost scenario {i+1}:", INPUT_PATHES[i])
+    costs.append(calculate_costs(
+        cost_dict=data_dict,
+        heat_price=0,
+        co2_price=95,
+        key_gas_price='gas_price',
+        key_h2_price='h2_price_2028',
+        key_power_price='power_price'
+        ))
+all_cumulated_costs = []
+for i in range(0,len(INPUT_PATHES)):
+    cumulated_costs = cumulate_costs(
+        costs_per_time=costs[i])
+    all_cumulated_costs.append(cumulated_costs)
 ````
 #### Output example: 
-#TODO: Ergänzen!
+<img src="../data/postprocessing/zzz_pictures_readme/cumulate_costs_example.png" alt="cumulate_costs_example" width="1000">
+
 
 ### 4.9 Plot economic data
 - plot_css
@@ -4201,10 +4539,115 @@ def plot_costs(
 
     # plt.show() # aktivieren, wenn nicht gespeichert wird. 
     return fig
+
+# example execution: 
+INPUT_PATHES = ['../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv','../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv','../data/output/ue24_ST-min_NW-ref_2028/2b_ue24_ST-min_NW-ref_2028_20250314_002620_output.csv']
+H2_POWER_CSV_PATH = '../data/input/prices/ue24/h2_price_2028.csv' 
+scenario_labels = ['0 % H2','50 % H2','100 % H2']
+all_cumulated_costs = []
+costs = []
+colors_dict = {
+    "gas_price": [
+        0.5843137255,
+        0.3254901961,
+        0.2784313725,
+        1.0
+    ],
+    "power_price": [
+        1.0, 
+        0.85, 
+        0.0, 
+        1.0
+    ],
+    "CO2_price": [
+        0.3882352941, 
+        0.8470588235,
+        0.2509803922,
+        1.0
+    ],
+    "CSS": [
+        0.2, 
+        0.6, 
+        1.0, 
+        1.0
+    ],
+    "h2_price_2028": [
+        0.5960784314,
+        0.9607843137,
+        1.0,
+        1.0
+    ],
+    "0 % H2": [
+        0.5843137255,
+        0.3254901961,
+        0.2784313725,
+        1.0
+    ],
+"50 % H2": [
+        1.0, 
+        0.85, 
+        0.0, 
+        1.0
+    ],
+"100 % H2": [
+        0.3882352941, 
+        0.8470588235,
+        0.2509803922,
+        1.0
+    ],
+}
+
+for i, item in enumerate(INPUT_PATHES): 
+    print(f"[Main] Scenario {i+1}:")
+    df_with_time = load_data(
+    input_path=item,
+    add_data_path=H2_POWER_CSV_PATH,
+    start_time='2028-01-01 00:00',
+    end_time='2028-12-31 23:00',
+)
+
+    data_dict = get_data_for_cost_simulation(
+    key_gas_price='gas_price',
+    key_power_price='power_price',
+    key_h2_price='h2_price_2028',
+    assets=('chp_1', 'chp_2'),
+    time_filtered_df=df_with_time, 
+    H2_PRICE=160
+    )
+    print(f"Cost scenario {i+1}:", INPUT_PATHES[i])
+    costs.append(calculate_costs(
+        cost_dict=data_dict,
+        heat_price=0,
+        co2_price=95,
+        key_gas_price='gas_price',
+        key_h2_price='h2_price_2028',
+        key_power_price='power_price'
+        ))
+
+    hourly_timestamps, occurencies_dict = get_time_data_for_plot(
+                time_filtered_df=df_with_time,
+                granularity='month')
+
+    cumulated_costs = cumulate_costs(
+        costs_per_time=costs[i])
+    all_cumulated_costs.append(cumulated_costs)
+
+fig = plot_costs(
+                nested_y_values=all_cumulated_costs,
+                x_values=hourly_timestamps,
+                granularity='month',
+                x_axis_occurencies=occurencies_dict, 
+                title_size=18,
+                fontsize=16, 
+                colors_dict=colors_dict,
+                labels=scenario_labels,
+                target_cost_unit='Mio. €',
+                scenario_title='UE 24'
+            )
+
 ````
 
 #### Output example: 
-
 <img src="../data/postprocessing/zzz_pictures_readme/plot_costs_example.png" alt="plot_costs_example.png" width="900">
 
 **save_plot**:  
