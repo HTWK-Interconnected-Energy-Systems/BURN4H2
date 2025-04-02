@@ -348,7 +348,7 @@ class HeatpumpStageTwo:
 
         # Port 2
         block.waste_heat_in = Port()
-        block.waste_heat_in.add(block.heat_input,'waste_heat',Port.Extensive,include_splitfrac=False)
+        block.waste_heat_in.add(block.heat_input,'waste_heat',Port.Extensive, include_splitfrac=False)
 
         # Port 3
         block.heat_out = Port()

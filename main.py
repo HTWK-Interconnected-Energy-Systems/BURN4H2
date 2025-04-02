@@ -216,10 +216,10 @@ class Model:
             "heatpump_s2", 
             PATH_IN + "assets/heatpump.csv"
         )
-        lh_storage = storage.LocalHeatStorage(
-            "local_heat_storage", 
-            PATH_IN + "assets/local_heat_storage.csv"
-        )
+        # lh_storage = storage.LocalHeatStorage(
+        #     "local_heat_storage", 
+        #     PATH_IN + "assets/local_heat_storage.csv"
+        # )
         gh_storage = storage.GeoHeatStorage(
             "geo_heat_storage", 
             PATH_IN + "assets/geo_heat_storage.csv"
@@ -246,7 +246,7 @@ class Model:
         solar_thermal.add_to_model(self.model)
         hp_s1.add_to_model(self.model)
         hp_s2.add_to_model(self.model)
-        lh_storage.add_to_model(self.model)
+        # lh_storage.add_to_model(self.model)
         gh_storage.add_to_model(self.model)
         sh_storage.add_to_model(self.model)
 
@@ -457,26 +457,40 @@ class Model:
         #####
 
         
-        # LOCAL HEAT: Solar Thermal -> Stratified Heat Storage
-        # NEW
+      
+        ###### NEW ######
+
         self.instance.arc27 = Arc(
             source=self.instance.solar_thermal.heat_out,
             destination=self.instance.stratified_storage.st_heat_in,
         )
 
-        # LOCAL HEAT: 2. Stage Heat Pump -> Stratified Heat Storage
-        # NEW
         self.instance.arc28 = Arc(
             source=self.instance.heatpump_s2.heat_out,
             destination=self.instance.stratified_storage.wp_heat_in,
         )
 
-        # LOCAL HEAT: Stratified Heat Storage -> Local Heat Grid
-        # NEW
         self.instance.arc29 = Arc(
-            source=self.instance.stratified_storage.heat_out,
-            destination=self.instance.local_heat_grid.heat_in,
+            source=self.instance.stratified_storage.S1_FW_heat_out,
+            destination=self.instance.heat_grid.excess_heat_in,
         )
+
+        self.instance.arc30 = Arc(
+            source=self.instance.stratified_storage.S1_NW_heat_out,
+            destination=self.instance.local_heat_grid.S1_NW_heat_in,
+        )
+        
+        self.instance.arc31 = Arc(
+            source=self.instance.stratified_storage.S2_NW_heat_out,
+            destination=self.instance.local_heat_grid.S2_NW_heat_in,
+        )
+
+        self.instance.arc32 = Arc(
+            source=self.instance.heat_grid.heat_grid_to_local_out, 
+            destination=self.instance.local_heat_grid.district_heat_in,
+        )
+
+
 
 
     def solve(self, output_dir):

@@ -182,7 +182,16 @@ class HeatGrid:
         
         # Heat transfer between local grid and heat grid
         block.excess_heat_feedin = Var(t, domain=NonNegativeReals)
-        block.heat_grid_to_local = Var(t, domain=NonNegativeReals)
+        block.FW_to_NW = Var(t, domain=NonNegativeReals)
+
+        # NEUE Binärvariablen für exklusive Wärmeflussrichtung
+        block.bin_excess_active = Var(t, domain=Binary)  # 1 wenn excess_heat_feedin > 0
+        block.bin_FW_to_NW_active = Var(t, domain=Binary)  # 1 wenn FW_to_NW > 0
+
+        # Maximale Wärmeströme für Big-M-Constraints
+        block.max_excess_heat = Param(initialize=100)  # [MW] Max. Überschusswärme
+        block.max_FW_to_NW = Param(initialize=100)  # [MW] Max. Wärme von FW zu NW
+        
 
         # Ports
         block.heat_in = Port()
@@ -203,15 +212,15 @@ class HeatGrid:
         block.excess_heat_in = Port()
         block.excess_heat_in.add(
             block.excess_heat_feedin,
-            'excess_heat',
+            'nw_excess_heat',
             Port.Extensive,
             include_splitfrac=False
         )
 
         block.heat_grid_to_local_out = Port()
         block.heat_grid_to_local_out.add(
-            block.heat_grid_to_local,
-            'district_heat',
+            block.FW_to_NW,
+            'fw_heat',
             Port.Extensive,
             include_splitfrac=False
         )
@@ -223,7 +232,7 @@ class HeatGrid:
             return _block.heat_balance[i] == (
                 _block.model().heat_demand[i] 
                 + _block.heat_supply[i] 
-                + _block.heat_grid_to_local[i]
+                + _block.FW_to_NW[i]
                 - _block.heat_feedin[i] 
                 - _block.excess_heat_feedin[i]
                 )
@@ -233,6 +242,23 @@ class HeatGrid:
             return _block.heat_balance[i] == 0
         
 
+        # NEUE Constraints für exklusive Wärmeflussrichtung
+        def excess_heat_active_rule(_block, i):
+            """Begrenze excess_heat_feedin basierend auf Binärvariable"""
+            return _block.excess_heat_feedin[i] <= _block.max_excess_heat * _block.bin_excess_active[i]
+
+        def FW_to_NW_active_rule(_block, i):
+            """Begrenze FW_to_NW basierend auf Binärvariable"""
+            return _block.FW_to_NW[i] <= _block.max_FW_to_NW * _block.bin_FW_to_NW_active[i]
+
+        def exclusive_heat_flow_rule(_block, i):
+            """Stelle sicher, dass nur eine Richtung des Wärmeflusses aktiv sein kann"""
+            return _block.bin_excess_active[i] + _block.bin_FW_to_NW_active[i] <= 1
+        
+        # NEUE Constraints zum Block hinzufügen
+        block.excess_heat_active = Constraint(t, rule=excess_heat_active_rule)
+        block.FW_to_NW_active = Constraint(t, rule=FW_to_NW_active_rule)
+        block.exclusive_heat_flow = Constraint(t, rule=exclusive_heat_flow_rule)
         # Define constraints
         block.heat_balance_constraint = Constraint(
             t,
@@ -341,13 +367,28 @@ class LocalHeatGrid:
 
         block.heat_balance = Var(t, domain=Reals)
         block.heat_supply = Var(t, domain=NonNegativeReals)
-        block.heat_feedin = Var(t, domain=NonNegativeReals)
+        block.S1_heat_feedin = Var(t, domain=NonNegativeReals)
+        block.S2_heat_feedin = Var(t, domain=NonNegativeReals)
         block.district_heat_feedin = Var(t, domain=NonNegativeReals)
 
+        # Binärvariable für die exklusive Einspeisung
+        block.bin_S1_active = Var(t, domain=Binary)
+        
+        # Maximale Einspeisung für Big-M Constraints
+        block.max_S1_feedin = Param(initialize=100)  # [MW] Maximale Einspeisung S1
+        block.max_district_feedin = Param(initialize=100)  # [MW] Maximale Fernwärmeeinspeisung
 
-        block.heat_in = Port()
-        block.heat_in.add(
-            block.heat_feedin,
+        block.S1_NW_heat_in = Port()
+        block.S1_NW_heat_in.add(
+            block.S1_heat_feedin,
+            'local_heat',
+            Port.Extensive,
+            include_splitfrac=False
+        )
+
+        block.S2_NW_heat_in = Port()
+        block.S2_NW_heat_in.add(
+            block.S2_heat_feedin,
             'local_heat',
             Port.Extensive,
             include_splitfrac=False
@@ -361,13 +402,13 @@ class LocalHeatGrid:
             include_splitfrac=False
         )
 
-        # block.district_heat_in = Port()
-        # block.district_heat_in.add(
-        #     block.district_heat_feedin,
-        #     'district_heat',
-        #     Port.Extensive,
-        # )
-        
+        block.district_heat_in = Port()
+        block.district_heat_in.add(
+            block.district_heat_feedin,
+            'fw_heat',
+            Port.Extensive,
+        )
+    
         def supply_heat_demand_balance_rule(_block, i):
             """Rule for fully suppling the heat demand."""
             return _block.heat_balance[i] == 0
@@ -375,8 +416,9 @@ class LocalHeatGrid:
         def supply_heat_demand_rule(_block, i):
             """Rule for fully suppling the heat demand."""
             return _block.heat_balance[i] == (
-                + _block.heat_feedin[i]
-                # + _block.district_heat_feedin[i]
+                + _block.S1_heat_feedin[i]
+                + _block.S2_heat_feedin[i]
+                + _block.district_heat_feedin[i]
                 - _block.model().local_heat_demand[i]
             )
         
@@ -388,10 +430,10 @@ class LocalHeatGrid:
             )
 
         # Declare constraints
-        block.annual_local_heat_share_constraint = Constraint(
-            t,
-            rule=annual_local_heat_share_rule
-        )
+        # block.annual_local_heat_share_constraint = Constraint(
+        #     t,
+        #     rule=annual_local_heat_share_rule
+        # )
         
         block.supply_heat_demand_constraint = Constraint(
             t,
@@ -403,9 +445,8 @@ class LocalHeatGrid:
             rule=supply_heat_demand_balance_rule
         )
 
-
-
     
+        
 
 
 
