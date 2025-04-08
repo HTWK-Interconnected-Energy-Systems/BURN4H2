@@ -93,7 +93,8 @@ It includes:
 
 ### CHP Units
 - Two identical units (chp 1, chp 2)
-- Fixed hydrogen admixture (0-100%)
+- Fixed hydrogen admixture (0-100%) for 0%, 30%, 50% and 100%
+
 - Assumptions:
   - Constant efficiency in converting fuel to both power and heat.
   - Linear dependency between:
@@ -102,6 +103,52 @@ It includes:
     - co2 and power output
     - waste heat and power output
   - Binary on/off modeling of operation.
+
+
+#### Assumptions for Hydrogen Admixture Data (30%, 50%, 100%)
+
+##### Methodology Overview
+The data for different hydrogen admixture ratios (30%, 50%, and 100%) in the CHP units was derived through a systematic approach combining interpolation and scaling techniques. 
+
+##### Initial Data Availability
+Complete data was available for 100% load with hydrogen admixtures of 0%, 30%, 50%, and 100%
+For 25% load, data was only available for 0% H₂ admixture
+For all other operating points, values needed to be calculated using appropriate methods
+
+##### Key Performance Metrics
+The dataset includes three main performance parameters:
+
+- **P_f**: Fuel thermal input power [MW]
+- **Q_th**: Thermal net output power [MW]
+- **P_el**: Electrical net output power [MW]
+
+##### Two-Step Calculation Process
+
+1. Interpolation for 35% Load at 0% H₂
+Since the minimum load values in the underlying data sheets start at 35%, we first interpolated values for 35% load with 0% H₂:
+
+- Linear interpolation was applied between known values at 25% and 100% load
+- The interpolation followed the formula: y = y₁ + (y₂ - y₁) × (x - x₁)/(x₂ - x₁)
+- This provided baseline values for P_f, Q_th, and P_el at 35% load with 0% H₂
+
+2. Scaling for 30%, 50%, and 100% H₂ at 35% Load
+For each hydrogen admixture percentage, scaling factors were calculated based on how performance changed at 100% load:
+
+- Scaling factors = (Value at 100% load with target H₂%)/(Value at 100% load with 0% H₂)
+- These scaling factors were then applied to the interpolated 35% load with 0% H₂ values
+- This approach assumes proportional performance changes across different load levels
+
+##### Key Assumptions
+1. Linear relationship between load percentage and power outputs when hydrogen percentage remains constant
+2. Proportional effects of hydrogen admixture across different load levels
+3. Waste heat production remains consistent regardless of hydrogen admixture percentages
+4. Carbon dioxide (CO2) emissions decrease in direct proportion to hydrogen content in the fuel mixture (e.g., a 70% hydrogen admixture results in a 70% reduction in CO2 emissions)
+
+##### Additional Data for 25% Load
+For completeness, values for 25% load with 30%, 50%, and 100% H₂ were also calculated through backward interpolation from the now-complete dataset for 35% and 100% loads.
+
+##### Results
+The resulting dataset provides a complete performance profile for CHP units operating at different load points (25%, 35%, 100%) with various hydrogen admixtures (0%, 30%, 50%, 100%), enabling comprehensive modeling of CHP behavior under different operating conditions and hydrogen blending scenarios.
 
   
 ### Heat Pump
