@@ -471,18 +471,18 @@ class Model:
         )
 
         self.instance.arc29 = Arc(
-            source=self.instance.stratified_storage.S1_FW_heat_out,
+            source=self.instance.stratified_storage.Z1_FW_heat_out,
             destination=self.instance.heat_grid.excess_heat_in,
         )
 
         self.instance.arc30 = Arc(
-            source=self.instance.stratified_storage.S1_NW_heat_out,
-            destination=self.instance.local_heat_grid.S1_NW_heat_in,
+            source=self.instance.stratified_storage.Z1_NW_heat_out,
+            destination=self.instance.local_heat_grid.Z1_NW_heat_in,
         )
         
         self.instance.arc31 = Arc(
-            source=self.instance.stratified_storage.S2_NW_heat_out,
-            destination=self.instance.local_heat_grid.S2_NW_heat_in,
+            source=self.instance.stratified_storage.Z2_NW_heat_out,
+            destination=self.instance.local_heat_grid.Z2_NW_heat_in,
         )
 
         self.instance.arc32 = Arc(

@@ -367,28 +367,28 @@ class LocalHeatGrid:
 
         block.heat_balance = Var(t, domain=Reals)
         block.heat_supply = Var(t, domain=NonNegativeReals)
-        block.S1_heat_feedin = Var(t, domain=NonNegativeReals)
-        block.S2_heat_feedin = Var(t, domain=NonNegativeReals)
+        block.Z1_heat_feedin = Var(t, domain=NonNegativeReals)
+        block.Z2_heat_feedin = Var(t, domain=NonNegativeReals)
         block.district_heat_feedin = Var(t, domain=NonNegativeReals)
 
         # Binärvariable für die exklusive Einspeisung
-        block.bin_S1_active = Var(t, domain=Binary)
+        block.bin_Z1_active = Var(t, domain=Binary)
         
         # Maximale Einspeisung für Big-M Constraints
-        block.max_S1_feedin = Param(initialize=100)  # [MW] Maximale Einspeisung S1
+        block.max_Z1_feedin = Param(initialize=100)  # [MW] Maximale Einspeisung Z1
         block.max_district_feedin = Param(initialize=100)  # [MW] Maximale Fernwärmeeinspeisung
 
-        block.S1_NW_heat_in = Port()
-        block.S1_NW_heat_in.add(
-            block.S1_heat_feedin,
+        block.Z1_NW_heat_in = Port()
+        block.Z1_NW_heat_in.add(
+            block.Z1_heat_feedin,
             'local_heat',
             Port.Extensive,
             include_splitfrac=False
         )
 
-        block.S2_NW_heat_in = Port()
-        block.S2_NW_heat_in.add(
-            block.S2_heat_feedin,
+        block.Z2_NW_heat_in = Port()
+        block.Z2_NW_heat_in.add(
+            block.Z2_heat_feedin,
             'local_heat',
             Port.Extensive,
             include_splitfrac=False
@@ -416,8 +416,8 @@ class LocalHeatGrid:
         def supply_heat_demand_rule(_block, i):
             """Rule for fully suppling the heat demand."""
             return _block.heat_balance[i] == (
-                + _block.S1_heat_feedin[i]
-                + _block.S2_heat_feedin[i]
+                + _block.Z1_heat_feedin[i]
+                + _block.Z2_heat_feedin[i]
                 + _block.district_heat_feedin[i]
                 - _block.model().local_heat_demand[i]
             )
