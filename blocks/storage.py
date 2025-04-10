@@ -58,6 +58,7 @@ class BatteryStorage:
         block.aux_remainder = Var(t, domain=Integers, bounds=(0,3))    
         block.aux_quotient = Var(t, domain=Integers, initialize=0)
 
+        # Declare ports
         block.power_in = Port()
         block.power_in.add(block.power_charging, 'power', Port.Extensive, include_splitfrac=False)
         block.power_out = Port()
@@ -265,6 +266,7 @@ class HydrogenStorage:
         block.bin_charge = Var(t, within=Binary)
         block.bin_discharge = Var(t, within=Binary)
 
+        # Declare ports
         block.hydrogen_in = Port()
         block.hydrogen_in.add(block.hydrogen_charging, 'hydrogen', Port.Extensive, include_splitfrac=False)
         block.hydrogen_out = Port()
@@ -380,6 +382,7 @@ class HeatStorage:
         block.bin_charge = Var(t, within=Binary)
         block.bin_discharge = Var(t, within=Binary)
 
+        # Declare ports
         block.heat_in = Port()
         block.heat_in.add(block.heat_charging, 'heat', Port.Extensive, include_splitfrac=False)
         block.heat_out = Port()
@@ -495,6 +498,7 @@ class GeoHeatStorage:
         block.bin_charge = Var(t, within=Binary)
         block.bin_discharge = Var(t, within=Binary)
 
+        # Declare ports
         block.heat_in = Port()
         block.heat_in.add(block.heat_charging, 'waste_heat', Port.Extensive, include_splitfrac=False)
         block.heat_out = Port()
@@ -504,23 +508,28 @@ class GeoHeatStorage:
         # Declare construction rules for constraints
         def max_heat_charging_rule(_block, i):
             """Rule for the maximum charging capacity of heat."""
-            return _block.heat_charging[i] <= self.data.loc['max', 'heat'] * _block.bin_charge[i]
+            return _block.heat_charging[i] <= self.data.loc['max', 'heat_in'] * _block.bin_charge[i]
                 
 
         def max_heat_discharging_rule(_block, i):
             """Rule for the maximum discharging capacity of heat."""
-            return _block.heat_discharging[i] <= self.data.loc['max', 'heat'] * _block.bin_discharge[i]
+            return _block.heat_discharging[i] <= self.data.loc['max', 'heat_out'] * _block.bin_discharge[i]
+        
+
+        def min_heat_charging_rule(_block, i):
+            """Rule for the minimum charging capacity of heat."""
+            return _block.heat_charging[i] >= self.data.loc['min', 'heat_in'] * _block.bin_charge[i]
+        
+
+        def min_heat_discharging_rule(_block, i):
+            """Rule for the minimum discharging capacity of heat."""
+            return _block.heat_discharging[i] >= self.data.loc['min', 'heat_out'] * _block.bin_discharge[i]
 
 
         def heat_balance_rule(_block, i):
             """Rule for calculating the overall heat balance."""
             return _block.heat_balance[i] == _block.heat_discharging[i] - _block.heat_charging[i]
 
-
-        def binary_rule(_block, i):
-            """Rule for restricting simultaneous charging and discharging."""
-            return _block.bin_charge[i] + _block.bin_discharge[i] == 1
-        
 
         def max_heat_content_rule(_block, i):
             """Rule for the maximum amount of heat in the heat storage."""
@@ -549,14 +558,18 @@ class GeoHeatStorage:
             t,
             rule=max_heat_discharging_rule
         )
+        block.min_heat_charging_constraint = Constraint(
+            t,
+            rule=min_heat_charging_rule
+        )
+        block.min_heat_discharging_constraint = Constraint(
+            t,
+            rule=min_heat_discharging_rule
+        )
         block.heat_balance_constraint = Constraint(
             t,
             rule=heat_balance_rule
         )
-        # block.binary_constraint = Constraint(
-        #     t,
-        #     rule=binary_rule
-        # )
         block.max_heat_content_constraint = Constraint(
             t,
             rule=max_heat_content_rule
@@ -571,12 +584,22 @@ class GeoHeatStorage:
         )
 
 
+
 class StratifiedHeatStorage:
     """Class for constructing a double heat storage system with district heating and local heating components."""
 
-    def __init__(self, name, filepath, index_col=0) -> None:
+    def __init__(self, name, filepath, index_col=0, **kwargs) -> None:
         self.name = name
         self.get_data(filepath, index_col)
+        self.kwargs = kwargs
+        self.validate_kwargs()
+
+    def validate_kwargs(self):
+        allowed_kwargs = ['seasonal_discharge_restriction']
+        for key in self.kwargs:
+            if key not in allowed_kwargs:
+                raise(KeyError(f'Unexpected kwarg "{key}" detected.'))
+
 
     def get_data(self, filepath, index_col):
         """Collects data from a csv."""
@@ -589,10 +612,10 @@ class StratifiedHeatStorage:
         """Adds the asset as a pyomo block component to a given model."""
         model.add_component(
             self.name,
-            Block(rule=self.double_storage_block_rule)
+            Block(rule=self.stratified_storage_block_rule)
         )
 
-    def double_storage_block_rule(self, block):
+    def stratified_storage_block_rule(self, block):
         """Rule for creating a double heat storage block with district and local heating components.
 
         This block includes two storage layers: 
@@ -604,108 +627,80 @@ class StratifiedHeatStorage:
         # Get index from model
         t = block.model().t # [hours]
         
-        # Zeitschritt
+        # Declare components
         block.delta_t = Param(initialize=1)  # [h]
-        
-        # Verlustkoeffizient für beide Speicher
         block.k_loss_Z1 = Param(initialize=0.0534)  # [%] Wärmeverlustrate Fernwärmespeicher
         block.k_loss_Z2 = Param(initialize=0.0534)  # [%] Wärmeverlustrate Nahwärmespeicher
+        block.water_density = Param(initialize=1000)  # # Water density [kg/m³]
+        block.spec_heat_capacity = Param(initialize=4.1868/1000)  # Specific heat capacity [MJ/(kg·K)]
+        block.delta_T_Z1 = Param(initialize=38)  # Temperature difference in zone 1 [K] (95°C - 57°C)
+        block.delta_T_Z2 = Param(initialize=23)  # Temperature difference in zone 2 [K] (80°C - 57°C)
+        block.max_total_volume = Param(initialize=2000)  # Maximum total storage volume [m³]
         
-        # Initiale Speicherkapazitäten [MWh]
-        # block.init_capacity_Z1 = Param(initialize=30)  # Fernwärmespeicher, beachte dass die maximale Kapazität über das Volumen und die spezifische Energiedichte definiert ist
-        # block.init_capacity_Z2 = Param(initialize=20)  # Nahwärmespeicher, beachte dass die maximale Kapazität über das Volumen und die spezifische Energiedichte definiert ist 
 
-
-        
-        # Physikalische Eigenschaften des Wassers
-        block.water_density = Param(initialize=1000)  # [kg/m³]
-        block.spec_heat_capacity = Param(initialize=4.1868/1000)  # [MJ/(kg·K)]
-        
-        # Temperaturdifferenzen
-        block.delta_T_Z1 = Param(initialize=38)  # [K] (95°C - 57°C)
-        block.delta_T_Z2 = Param(initialize=23)  # [K] (80°C - 57°C)
-        
-        # Maximales Gesamtvolumen
-        block.max_total_volume = Param(initialize=2000)  # [m³]
-        
-        # Spezifische Energiedichten [MWh/m³]
         block.energy_density_Z1 = Param(
             initialize=block.water_density.value * block.spec_heat_capacity.value * 
             block.delta_T_Z1.value / 3600
-        )
+        )   # Specific energy density for zone 1 [MWh/m³]
         block.energy_density_Z2 = Param(
             initialize=block.water_density.value * block.spec_heat_capacity.value * 
             block.delta_T_Z2.value / 3600
-        )
+        )   # Specific energy density for zone 2 [MWh/m³]
 
-        # Parameter für den initialen Füllstand
-        block.initial_fill_percentage = Param(initialize=0) # Initialer Füllstand, 1 = 100% Energieinhalt entsprechend der Volumenanteile
-        block.initial_volume_share_Z1 = Param(initialize=0.5)  # Anteil des Volumens des Fernwärmespeichers am Gesamtvolumen
-
-        # Funktion zum Berechnen der maximalen Kapazitäten
+        block.initial_fill_percentage = Param(initialize=0) # Initial fill level, 1 = 100% energy content according to volume shares
+        block.initial_volume_share_Z1 = Param(initialize=0.5)  # Share of district heating storage volume in total volume
+        
+        # Functions for calculating the maximum capacities
         def calc_max_capacity_Z1():
             return block.energy_density_Z1 * block.max_total_volume * block.initial_volume_share_Z1
 
         def calc_max_capacity_Z2():
             return block.energy_density_Z2 * block.max_total_volume * (1 - block.initial_volume_share_Z1)
 
-        # Initialisiere die Kapazitäten
-        block.init_capacity_Z1 = Param(initialize=calc_max_capacity_Z1() * block.initial_fill_percentage)
-        block.init_capacity_Z2 = Param(initialize=calc_max_capacity_Z2() * block.initial_fill_percentage)
+        block.init_capacity_Z1 = Param(initialize=calc_max_capacity_Z1() * block.initial_fill_percentage)  # Initial capacity of Z1 storage
+        block.init_capacity_Z2 = Param(initialize=calc_max_capacity_Z2() * block.initial_fill_percentage)  # Initial capacity of Z2 storage
         
-        # Wärmeleistungseinträge und Speicherzustand
-        block.Q_dot_ST = Var(t, domain=NonNegativeReals)       # Solarthermie-Eintrag [MW]
-        block.Q_dot_WP = Var(t, domain=NonNegativeReals)       # Wärmepumpen-Eintrag [MW]
-        
-        # Wärmeabgabe Z1
-        block.Q_dot_Z1_FW = Var(t, domain=NonNegativeReals)  # Wärmeabgabe vom Z1-Speicher an Fernwärmenetz [MW]
-        block.Q_dot_Z1_NW = Var(t, domain=NonNegativeReals)  # Wärmeabgabe vom Z1-Speicher an Nahwärmenetz [MW]
-        
-        # Wärmeabgabe Z2
-        block.Q_dot_Z2_NW = Var(t, domain=NonNegativeReals)  # Wärmeabgabe vom Z2-Speicher an Nahwärmenetz [MW]
+        block.Q_dot_ST = Var(t, domain=NonNegativeReals) # Solar thermal input [MW]
+        block.Q_dot_WP = Var(t, domain=NonNegativeReals) # Heat pump input [MW]
+        block.Q_dot_Z1_FW = Var(t, domain=NonNegativeReals)  # Heat output from Z1 storage to district heating network [MW]
+        block.Q_dot_Z1_NW = Var(t, domain=NonNegativeReals)  # Heat output from Z1 storage to local heating network [MW]
+        block.Q_dot_Z2_NW = Var(t, domain=NonNegativeReals)  # Heat output from Z2 storage to local heating network [MW]
 
-        # Speicherzustände
-        block.U_Z1 = Var(t, domain=NonNegativeReals)  # Speicherinhalt Fernwärmespeicher [MWh]
-        block.U_Z2 = Var(t, domain=NonNegativeReals)  # Speicherinhalt Nahwärmespeicher [MWh]
+
+        block.U_Z1 = Var(t, domain=NonNegativeReals)  # District heating storage Z1 content [MWh]
+        block.U_Z2 = Var(t, domain=NonNegativeReals)  # Local heating storage Z2 content [MWh]
         
-        # Binärvariablen für Steuerungslogik
-        block.bin_Z1_charge = Var(t, within=Binary)     # 1 wenn Z1-Speicher geladen wird
-        block.bin_Z1_discharge = Var(t, within=Binary)  # 1 wenn Z1-Speicher entladen wird
-        block.bin_Z2_charge = Var(t, within=Binary)     # 1 wenn Z2-Speicher geladen wird
-        block.bin_Z2_discharge = Var(t, within=Binary)  # 1 wenn Z2-Speicher entladen wird
+        block.bin_Z1_charge = Var(t, within=Binary)     # 1 if Z1 storage is being charged
+        block.bin_Z1_discharge = Var(t, within=Binary)  # 1 if Z1 storage is being discharged
+        block.bin_Z2_charge = Var(t, within=Binary)     # 1 if Z2 storage is being charged
+        block.bin_Z2_discharge = Var(t, within=Binary)  # 1 if Z2 storage is being discharged
         
 
-        # Ports für die Wärmeeingänge
+        # Declare ports
         block.st_heat_in = Port()
         block.st_heat_in.add(block.Q_dot_ST, 'st_heat', Port.Extensive, include_splitfrac=False)
-        
         block.wp_heat_in = Port()
         block.wp_heat_in.add(block.Q_dot_WP, 'wp_heat', Port.Extensive, include_splitfrac=False)
-        
-        # Ports für die Wärmeausgänge
         block.Z1_FW_heat_out = Port()
         block.Z1_FW_heat_out.add(block.Q_dot_Z1_FW, 'nw_excess_heat', Port.Extensive, include_splitfrac=False)
-        
         block.Z1_NW_heat_out = Port()
         block.Z1_NW_heat_out.add(block.Q_dot_Z1_NW, 'local_heat', Port.Extensive, include_splitfrac=False)
-
         block.Z2_NW_heat_out = Port()
         block.Z2_NW_heat_out.add(block.Q_dot_Z2_NW, 'local_heat', Port.Extensive, include_splitfrac=False)
         
-        # ======== CONSTRAINTS ========
-        
-        # Maximale Lade-/Entladeraten
+        # Declare construction rules for constraints
         def max_fw_discharge_rule(_block, i):
             return _block.Q_dot_Z1_FW[i]  <= self.data.loc['max', 'heat']
         
+
         def max_nw_discharge_rule(_block, i):
             return _block.Q_dot_Z1_NW[i] + _block.Q_dot_Z2_NW[i] <= self.data.loc['max', 'heat']
         
       
-        # Energiebilanzgleichungen nach dem Kapazitätsmodell:
+        # Energy balance equations according to the capacity model:
         # U(t) = [1−k_v] ⋅ U(t−1) + [Q_in(t) - Q_out(t)] ⋅ Δt
         
-        # Fernwärmespeicher-Bilanz
+        # District heating storage Z1 balance
         def Z1_storage_balance_rule(_block, i):
             if i == 1:
                 return _block.U_Z1[i] == _block.init_capacity_Z1 + \
@@ -714,7 +709,8 @@ class StratifiedHeatStorage:
                 return _block.U_Z1[i] == (1 - _block.k_loss_Z1) * _block.U_Z1[i-1] + \
                     (_block.Q_dot_ST[i] - _block.Q_dot_Z1_FW[i] - _block.Q_dot_Z1_NW[i]) * _block.delta_t
         
-        # Nahwärmespeicher-Bilanz
+
+        # Local heating storage Z2 balance
         def Z2_storage_balance_rule(_block, i):
             if i == 1:
                 return _block.U_Z2[i] == _block.init_capacity_Z2 + \
@@ -724,81 +720,76 @@ class StratifiedHeatStorage:
                     (_block.Q_dot_WP[i] - _block.Q_dot_Z2_NW[i]) * _block.delta_t
         
 
-        # Minimale Speicherkapazitäten
         def min_Z1_capacity_rule(_block, i):
             return _block.U_Z1[i] >= 0
         
+
         def min_Z2_capacity_rule(_block, i):
             return _block.U_Z2[i] >= 0
         
 
-        # Constraint für das physische Volumen
         def physical_volume_constraint_rule(_block, i):
-            # Umrechnung von Energie [MWh] zu Volumen [m³]
             volume_Z1 = _block.U_Z1[i] / _block.energy_density_Z1
             volume_Z2 = _block.U_Z2[i] / _block.energy_density_Z2
             return volume_Z1 + volume_Z2 <= _block.max_total_volume
         
               
-        block.fw_discharge_restricted_periods_dummy = Set(initialize=list(range(1, 11)) + list(range(12,14))) # Dummy-Zeiträume für den Test
-        block.fw_discharge_restricted_periods = Set(initialize=list(range(1, 2879)) + list(range(7296, 8761))) # Normales Jahr Einspeisebeschränkung: 01.11 bis 30.04
-        block.fw_discharge_restricted_periods_leap = Set(initialize=list(range(1, 2903)) + list(range(7320, 8785))) # Schaltjahr Einspeisebeschränkung: 01.11 bis 30.04
-
-        def storage_fw_discharge_rule(_block, i):
-            # Dummy-Zeitraum für Kurzsimulationen (1 Woche)
-            if t.last() == 168 and i in _block.fw_discharge_restricted_periods_dummy:
-                return _block.Q_dot_Z1_FW[i] == 0
-            
-            # Schaltjahrsimulation (8784 Stunden)
-            elif t.last() == 8784 and i in _block.fw_discharge_restricted_periods_leap:
-                return _block.Q_dot_Z1_FW[i] == 0
-            
-            # Standardjahrsimulation (8760 Stunden)
-            elif t.last() == 8760 and i in _block.fw_discharge_restricted_periods:
-                return _block.Q_dot_Z1_FW[i] == 0
-            
-            # Für alle anderen Fälle keine Beschränkung
-            else:
-                return Constraint.Skip
 
 
-        # Constraints zu Modell hinzufügen
+        # Declare constraints
         block.max_fw_discharge = Constraint(
             t, 
             rule=max_fw_discharge_rule
         )
-
         block.max_nw_discharge = Constraint(
             t, 
             rule=max_nw_discharge_rule
         )
-
         block.fw_storage_balance = Constraint(
             t, 
             rule=Z1_storage_balance_rule
         )
-
         block.nw_storage_balance = Constraint(
             t, 
             rule=Z2_storage_balance_rule
         )
-    
         block.min_fw_capacity = Constraint(
             t, 
             rule=min_Z1_capacity_rule
         )
-        
         block.min_nw_capacity = Constraint(
             t, 
             rule=min_Z2_capacity_rule
         )
-
         block.physical_volume_constraint = Constraint(
             t, 
             rule=physical_volume_constraint_rule
         )
-        
-        block.storage_fw_discharge_constraint = Constraint(
-            t,
-            rule=storage_fw_discharge_rule
-        )
+
+        if self.kwargs.get('seasonal_discharge_restriction'):
+
+            block.fw_discharge_restricted_periods_dummy = Set(initialize=list(range(1, 11)) + list(range(12,14))) # Dummy periods for testing
+            block.fw_discharge_restricted_periods = Set(initialize=list(range(1, 2879)) + list(range(7296, 8761))) # Regular year restriction: Nov 1 to Apr 30
+            block.fw_discharge_restricted_periods_leap = Set(initialize=list(range(1, 2903)) + list(range(7320, 8785)))  # Leap year restriction: Nov 1 to Apr 30
+
+            def storage_fw_discharge_rule(_block, i):
+                # Dummy period for short simulations (1 week)
+                if t.last() == 168 and i in _block.fw_discharge_restricted_periods_dummy:
+                    return _block.Q_dot_Z1_FW[i] == 0
+                
+                # Leap year simulation (8784 hours)
+                elif t.last() == 8784 and i in _block.fw_discharge_restricted_periods_leap:
+                    return _block.Q_dot_Z1_FW[i] == 0
+                
+                # Standard year simulation (8760 hours)
+                elif t.last() == 8760 and i in _block.fw_discharge_restricted_periods:
+                    return _block.Q_dot_Z1_FW[i] == 0
+
+                else:
+                    return Constraint.Skip
+            
+            
+            block.storage_fw_discharge_constraint = Constraint(
+                t,
+                rule=storage_fw_discharge_rule
+            )

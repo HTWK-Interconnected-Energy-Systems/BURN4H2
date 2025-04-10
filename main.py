@@ -216,19 +216,14 @@ class Model:
             "heatpump_s2", 
             PATH_IN + "assets/heatpump.csv"
         )
-        # lh_storage = storage.LocalHeatStorage(
-        #     "local_heat_storage", 
-        #     PATH_IN + "assets/local_heat_storage.csv"
-        # )
         gh_storage = storage.GeoHeatStorage(
             "geo_heat_storage", 
             PATH_IN + "assets/geo_heat_storage.csv"
         )
-
-        # New storage components
         sh_storage = storage.StratifiedHeatStorage(
             "stratified_storage",
-            PATH_IN + "assets/stratified_storage.csv"
+            PATH_IN + "assets/stratified_storage.csv",
+            seasonal_discharge_restriction=True,
         )
 
 

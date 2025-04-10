@@ -17,7 +17,8 @@
     },
     "hydrogen_price": {
       "file": "prices/ue24/h2_price_2028.csv",
-      "index": "t"
+      "index": "t",
+      "param": "hydrogen_price"
     },
     "heat_demand": {
       "file": "demands/district_heating/default/heat.csv",
@@ -30,13 +31,14 @@
       "param": "solar_thermal_heat_profile"
     },
     "local_heat_demand": {
-      "file": "demands/local_heating/Bedarf NW-Netz/local_heat_2028.csv",
+      "file": "demands/local_heat_2028.csv",
       "index": "t",
-      "param": "local_heat_demand"
+      "param": ["local_heat_demand", "supply_temperature", "return_temperature"]
     },
     "normalized_solar_thermal_heat_profile":{
-      "file": "profiles/dummy/max_solarthermal_norm_profil_2028.csv",
-      "index": "t"
+      "file": "profiles/ST Sued_max/max_solarthermal_norm_profil_2028.csv",
+      "index": "t",
+      "param": "normalized_solar_thermal_heat_profile"
     }
   }
 }
