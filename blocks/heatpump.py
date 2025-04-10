@@ -47,39 +47,39 @@ class HeatpumpStageOne:
         # Zustandsgrößen Kreisprozess 
 
         # Äußere Verhältnisse für Medium Wasser
-        block.T_q  = Param(t, initialize=0+273.15) # Temperatur Quelle in Kelvin -> äußeres Medium
+        block.T_q  = Param(t, initialize=16+273.15) # Temperatur Quelle in Kelvin -> äußeres Medium
         block.T_k = Param(t, initialize=35+273.15) # Temperatur Senke in Kelvin -> äußeres Medium
           
         # Innere Verhältnisse für Kältemittel R-717
         # Parameters Druck p
-        block.p1 = Param(t, initialize=3 * 10**6) # bar in Pa Eintrittsdruck Verdichter  
-        block.p2 = Param(t, initialize=17 * 10**6) # bar in Pa Austrittsdruck Verdichter
-        block.p3 = Param(t, initialize=17 * 10**6) # bar in Pa Austrittsdruck Kondensator
-        block.p4 = Param(t, initialize=3 * 10**6) # bar in Pa Eintrittsdruck Verdampfer
+        block.p1 = Param(t, initialize=5.5 * 10**5) # bar in Pa Eintrittsdruck Verdichter  
+        block.p2 = Param(t, initialize=16 * 10**5) # bar in Pa Austrittsdruck Verdichter
+        block.p3 = Param(t, initialize=16 * 10**5) # bar in Pa Austrittsdruck Kondensator
+        block.p4 = Param(t, initialize=5.5 * 10**5) # bar in Pa Eintrittsdruck Verdampfer
 
         # Parameter Temperatur T
-        block.T1 = Param(t, initialize=-10+273.15) # Grad Celsius in Kelvin 
-        block.T2 = Param(t, initialize=125+273.15) # Grad Celsius in Kelvin 
-        block.T3 = Param(t, initialize=45+273.15) # Grad Celsius in Kelvin 
-        block.T4 = Param(t, initialize=-10+273.15) # Grad Celsius in Kelvin 
+        block.T1 = Param(t, initialize=8+273.15) # Grad Celsius in Kelvin 
+        block.T2 = Param(t, initialize=85+273.15) # Grad Celsius in Kelvin 
+        block.T3 = Param(t, initialize=40+273.15) # Grad Celsius in Kelvin 
+        block.T4 = Param(t, initialize=8+273.15) # Grad Celsius in Kelvin 
 
         # Parameter Enthalpie h
-        block.h1 = Param(t, initialize=1450) # Enthalpie kJ/kg 
-        block.h2 = Param(t, initialize=1720) # Enthalpie kJ/kg
-        block.h3 = Param(t, initialize=420) # Enthalpie kJ/kg
-        block.h4 = Param(t, initialize=420) # Enthalpie kJ/kg
+        block.h1 = Param(t, initialize=1480) # Enthalpie kJ/kg 
+        block.h2 = Param(t, initialize=1625) # Enthalpie kJ/kg
+        block.h3 = Param(t, initialize=395) # Enthalpie kJ/kg
+        block.h4 = Param(t, initialize=395) # Enthalpie kJ/kg
 
         # Verdichter 
 
         # Variables
-        block.capacity_compressor = Var(t, domain=NonNegativeReals) # Verdichterleistung [kW]
+        block.capacity_compressor = Var(t, domain=NonNegativeReals) # Verdichterleistung [MW]
         block.volume_flow = Var(t, domain=NonNegativeReals) # Volumenstrom Verdichter [m^3/s]
         block.massflow_refigerant = Var(t, domain=NonNegativeReals) # Massenstrom Kältemittel [kg/s]
         block.swept_volume = Var(t, domain=NonNegativeReals) # Hubraum Verdichter [m^3/s]
 
         # Parameters
-        block.max_volume_flow_compressor = Param(t, initialize=564/3600) # Maximaler Volumenstrom Verdichter [m^3/h] in [m^3/s]
-        block.electrical_efficiency_compressor = Param(t, initialize=0.85) # Elektrische Effizienz Verdichter
+        block.max_volume_flow_compressor = Param(t, initialize=257/3600) # Maximaler Volumenstrom Verdichter [m^3/h] in [m^3/s]
+        block.electrical_efficiency_compressor = Param(t, initialize=0.9) # Elektrische Effizienz Verdichter
         block.n = Param(t, initialize=1500/60) # Drehzahl Verdichter [1/min] in [1/s] !!! muss zwischen 500 und 1500 liegen !!!
         block.z = Param(t, initialize=6) # Anzahl der Zylinder Verdichter
 
@@ -144,7 +144,7 @@ class HeatpumpStageOne:
         # Constraints
         def heat_pump_operation_rule(_block, i):
             """Rule for the heat pump operation."""
-            return _block.heat[i] * 1000 == _block.ideal_cop[i]  * _block.capacity_compressor[i]  # in kW
+            return _block.heat[i] == _block.ideal_cop[i]  * _block.capacity_compressor[i]  # in MW
         
         def capacity_compressor_rule(_block, i):
             """
@@ -152,7 +152,7 @@ class HeatpumpStageOne:
             Rule for the compressor capacity. P_v depends on the mass flow and the enthalpy difference.
             Assuption: isentropic compression
             """
-            return _block.capacity_compressor[i]  == (_block.massflow_refigerant[i]) * (_block.h2[i]-_block.h1[i])  # in kW
+            return _block.capacity_compressor[i]  == (_block.massflow_refigerant[i]) * (_block.h2[i]-_block.h1[i]) / 1000  # in MW
         
         def massflow_depends_on_heat_input_rule(_block, i):
             """
@@ -177,7 +177,7 @@ class HeatpumpStageOne:
         
         def power_rule(_block, i):
             """Rule for the power input. (Elektrische Leistung  Verdichter in MW)"""
-            return _block.power[i] * 1000  == _block.capacity_compressor[i] / _block.electrical_efficiency_compressor[i]
+            return _block.power[i]  == _block.capacity_compressor[i] / _block.electrical_efficiency_compressor[i]
 
         
         def min_speed_rule(_block, i):
@@ -310,10 +310,10 @@ class HeatpumpStageTwo:
           
         # Innere Verhältnisse für Kältemittel R-717
         # Parameters Druck p
-        block.p1 = Param(t, initialize=8.3 * 10**6) # bar in Pa Eintrittsdruck Verdichter  
-        block.p2 = Param(t, initialize=52 * 10**6) # bar in Pa Austrittsdruck Verdichter
-        block.p3 = Param(t, initialize=52 * 10**6) # bar in Pa Austrittsdruck Kondensator
-        block.p4 = Param(t, initialize=8.3 * 10**6) # bar in Pa Eintrittsdruck Verdampfer
+        block.p1 = Param(t, initialize=8.3 * 10**5) # bar in Pa Eintrittsdruck Verdichter  
+        block.p2 = Param(t, initialize=52 * 10**5) # bar in Pa Austrittsdruck Verdichter
+        block.p3 = Param(t, initialize=52 * 10**5) # bar in Pa Austrittsdruck Kondensator
+        block.p4 = Param(t, initialize=8.3 * 10**5) # bar in Pa Eintrittsdruck Verdampfer
 
         # Parameter Temperatur T
         block.T1 = Param(t, initialize=20+273.15) # Grad Celsius in Kelvin 
