@@ -9,14 +9,15 @@
     - [3.4 General Helpers](#3.4-General-Helpers)
     - [3.5 Helpers for Colormaps](#3.5-Helpers-for-Colormaps)
     - [3.6 Load data from csv output](#3.6-Load-data-from-csv-output)
-    - [3.7 Functions for filtering and calculating values for set time granularity](#3.7-Functions-for-filtering-and-calculating-values-for-set-time-granularity)
-    - [3.8 Functions for setting assets and parameters to be visualized](#3.8-Functions-for-setting-assets-and-parameters-to-be-visualized)
-    - [3.09 Functions for simple plotting of supply (stacked) and demand](#3.9-Functions-for-simple-plotting-of-supply-(stacked)-and-demand)
+    - [3.7 Functions for data processing from csv](#3.7-Functions-for-data-processing-from-csv)
+    - [3.8 Functions for plot preparation (y values and x values)](#3.8-Functions-for-plot-preparation-(y-values-and-x-values))
+    - [3.9 Functions for plotting supply (stacked) and demand](#3.9-Functions-for-plotting-supply-(stacked)-and-demand)
     - [3.10 Functions for plotting storage values (fusion or single output)](#Functions-for-plotting-storage-values-(fusion-or-single-output))
     - [3.11 Compare two data sets from csv in one plot](#3.11-Compare-two-data-sets-from-csv-in-one-plot)
-    - [3.12 Function for saving plots of any kind.](#3.12-Function-for-saving-plots-of-any-kind.)
-    - [3.13 Wrapper for Main function - Decide for plot with input value](#3.13-Wrapper-for-Main-function-–-Decide-for-plot-with-input-value)
-    - [3.14 Main script for generating results – need to be executed!](#3.14-Main-script-for-generating-results-–-need-to-be-executed!)
+    - [3.12 Plot specific value from csv](#3.12-Plot-specific-value-from-csv)
+    - [3.13 Function for saving plots of any kind.](#3.13-Function-for-saving-plots-of-any-kind.)
+    - [3.14 Wrapper for Main function - Decide for plot with input value](#3.14-Wrapper-for-Main-function-–-Decide-for-plot-with-input-value)
+    - [3.15 Main script for generating results – need to be executed!](#3.15-Main-script-for-generating-results-–-need-to-be-executed!)
 - [4 clean_spark_spread.ipynb](#4-clean_spark_spread.ipynb)  
     - [4.1 What is it for?](#4.1-What-is-it-for?)
     - [4.2 Structure](#4.2-Structure)
@@ -25,8 +26,10 @@
     - [4.5 Load data from csv output](#4.5-Load-data-from-csv-output)
     - [4.6 Functions for filtering and extracting values](#4.6-Functions-for-filtering-and-extracting-values)  
     - [4.7 Calculate CSS](#4.7-Calculate-CSS)
-    - [4.8 Plot economic data](#4.8-Plot-economic-data)
-    - [4.9 Main Script](#4.9-Main-Script)
+    - [4.8 Calculate Costs](#4.8-Calculate_Costs)
+    - [4.9 Plot economic data](#4.9-Plot-economic-data)
+    - [4.10 Wrapper functions](#4.10-Wrapper-functions)
+    - [4.11 Main Script](#4.11-Main-Script)
 
 
 ## 1 General information: 
@@ -41,17 +44,22 @@ Apart from standard installations like a python interpreter and jupyter notebook
 ## 3 share_of_assets.ipynb
 ### 3.1 What is it for?
 This script processes data from output csv-data with results from modeling. 
-Focus lies on generating stacked box plots, that show demand and supply of different assets, storages for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply.
+Focus lies on generating stacked box plots, that show demand and supply of different assets, storages for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply. Also data like yearly shares of demands or a boxplot for a specific value are possible in this script.
 
 ### 3.2 Structure
 - Import of packages
 - General Helpers
 - Helpers for Colormaps
 - Load data from csv output
-- Functions for filtering and calculating values for set time granularity
-- Functions for setting assets and parameters to be visualized
-- Functions for plotting and saving bar chart for share of assets
-- Main Script
+- Functions for data processing from csv
+- Functions for plot preparation (y values and x values)
+- Functions for simple plotting of supply (stacked) and demand.
+- Functions for plotting storage values (fusion or single output)
+- Compare two data sets from csv in one plot
+- Plot specific value from csv.
+- Function for saving plots of any kind
+- Wrapper for Main function: Decide for plot with input value
+- Main script for generating results – needs to be executed.
 
 ### 3.3 Import of packages
 Code needs to be executed to load necessary libraries:
@@ -484,7 +492,7 @@ df = load_csv_results_in_df(input_path=INPUT_PATH)
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures_readme/print_df_example.png" alt="print_df_example" width="900">
 
-### 3.7 Functions for filtering and calculating values for set time granularity
+### 3.7 Functions for data processing from csv
 
 **functions**:  
 - add_timestamp_and_filter
@@ -666,12 +674,12 @@ print_df(result_df)
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures_readme/sums_by_granularity_example.png" alt="sums_by_granularity_example" width="900">
 
-### 3.8 Functions for setting assets and parameters to be visualized
+### 3.8 Functions for plot preparation (y values and x values)
 **functions**: 
 - extract_assets_to_dict
 - calculate_asset_share_of_supply
 - get_periods_for_plot
-- Wrapper: get_asset_data_for_plot
+- get_asset_data_for_plot
 - get_data_for_storage_plot
 - get_demand_for_plot
 
@@ -1016,14 +1024,18 @@ def get_data_for_storage_plot(
         raise ValueError("[get_data_for_storage_plot] Charging and discharging lists have different lengths!")
     
     net_storage_values = [round(sum(values),2) for values in zip(*storage_dict.values())]
-    print(f"difference charging, discharging & excess in {actual_unit}: ", net_storage_values)
+    print(f"balance charging, discharging & excess in {actual_unit}: ", net_storage_values)
     
     # Output dictionary in actual unit
-    storage_dict['difference'] = net_storage_values
+    storage_dict['balance'] = net_storage_values
     
     # change energy units from dict to target unit: 
     for key in storage_dict.keys():
-        storage_dict[key] = change_energy_units(values=storage_dict[key], actual_unit=actual_unit, target_unit=target_unit)
+        storage_dict[key] = change_energy_units(
+            values=storage_dict[key], 
+            actual_unit=actual_unit, 
+            target_unit=target_unit
+            )
     print(f"Dict storage in {target_unit}: ", storage_dict)
  
     return storage_dict
@@ -1061,7 +1073,7 @@ storage_dict = get_data_for_storage_plot(
 ````
 
 **get_demand_for_plot**: 
-
+Variables are set from output csv for either local or district heating. They will be loaded in a dictionary and belonging data is set as lists for values. This dict will be an input for plotting.
 
 #### Code example: 
 ````python
@@ -1071,7 +1083,8 @@ def get_demand_for_plot(
     time_series_df: pd.DataFrame,
     actual_unit: str, 
     target_unit: str,
-    assets_with_power_demand = None
+    assets_with_power_demand = None,
+    assets_for_district_heat = None
     ):
     """builds keys of variables for demand, extracts columns with keys and loads them from df time series into dictionary.
 
@@ -1082,6 +1095,7 @@ def get_demand_for_plot(
         actual_unit (str): actual unit of input values
         target_unit (str): target unit for values
         assets_with_power_demand (tuple, optional): If power is looked at, power consumption of named assets is loaded. Defaults to None.
+        assets_for_district_heat (tuple, optional): If district heat looked at, then add asset.heat value.
 
     Raises:
         KeyError: type of energy must be integrated.
@@ -1093,10 +1107,21 @@ def get_demand_for_plot(
     if type_of_energy == 'heat':
         # local heat demand for 'local': 
         if type_of_heat_grid == 'local': 
-            column_names = [f'{type_of_heat_grid}_{type_of_energy}_demand'] # local_heat_demand
+            column_names = [f'{type_of_heat_grid}_{type_of_energy}_demand',
+                            f'{type_of_heat_grid}_{type_of_energy}_storage.heat_discharging',
+                            f'{type_of_heat_grid}_{type_of_energy}_grid.district_heat_feedin'] # local_heat_demand
         else: 
             # any string else for type_of_heat_grid = district heat:
-            column_names = [f'{type_of_energy}_demand'] # district heat / general
+            column_names = [f'{type_of_energy}_demand',
+                             'local_heat_grid.district_heat_feedin',
+                              'heat_storage.heat_charging',
+                              'heat_grid.excess_heat_feedin',
+                              'heat_storage.heat_discharging'
+                             ] # district heat / general
+            if assets_for_district_heat:
+                for asset in assets_for_district_heat:
+                    column_names.append(f'{asset}.heat')
+            print("[get_demand_for_plot] assets for district heat added: ", column_names)
     # power demand mostly from heat supplying assets.
     elif type_of_energy == 'power':
         column_names = [f'{asset}.{type_of_energy}' for asset in assets_with_power_demand] # heat supplyers with power demand like heatpumps. Don't use power supplyers for this plot!
@@ -1110,9 +1135,19 @@ def get_demand_for_plot(
         }
     
     print(
-        f"{type_of_energy} demand from df in {actual_unit}: ", 
+        f"[get_demand_for_plot] All {type_of_energy} demands from df in {actual_unit}: ", 
         data_from_columns_dict
         )
+    
+    if type_of_heat_grid == 'local':
+        # Summiere alle Werte der jeweiligen Keys
+        total_demand = sum(data_from_columns_dict[f'{type_of_heat_grid}_{type_of_energy}_demand'])
+        total_storage = sum(data_from_columns_dict[f'{type_of_heat_grid}_{type_of_energy}_storage.heat_discharging'])
+        total_grid_feed_in = sum(data_from_columns_dict[f'{type_of_heat_grid}_{type_of_energy}_grid.district_heat_feedin'])
+        # Berechne den Prozentsatz
+        grid_feed_in_percentage = (total_grid_feed_in / total_demand) * 100
+        # Ergebnis ausgeben
+        print(f"[get_demand_for_plot] FW-Anteil der Zeitpanne: {grid_feed_in_percentage:.2f}%")
     
     # change energy units to target unit: 
     for key in data_from_columns_dict.keys():
@@ -1123,7 +1158,7 @@ def get_demand_for_plot(
             )
     
     print(
-        f"{type_of_energy} demand from df in {target_unit}: ", 
+        f"All {type_of_energy} demands from df in {target_unit}: ", 
         data_from_columns_dict
         )
  
@@ -1142,14 +1177,16 @@ heat_demand_dict = get_demand_for_plot(
             type_of_energy='heat',
             target_unit='GWh',
             actual_unit='MWh',
-            type_of_heat_grid='local'
+            type_of_heat_grid='local',
+            assets_with_power_demand = None,
+            assets_for_district_heat = None
         )
 ````
 
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures_readme/get_demand_for_plot_example.png" alt="get_demand_for_plot_example" width="800">
 
-### 3.09 Functions for simple plotting of supply (stacked) and demand.
+### 3.9 Functions for plotting supply (stacked) and demand.
 **functions**:  
 - plot_shares_of_supply
 - plot demands
@@ -1176,7 +1213,8 @@ def plot_shares_of_supply(
     title_size: int,
     target_unit: str,
     key_to_label = None,
-    heat_name = None
+    heat_name = None,
+    scenario_title = None
     ):
     """Function for plotting supply of assets as stacked bars. Unit and time granularity is determined, 
     colors are loaded for assets, label is set for share of interested assets like district heating or RES. 
@@ -1198,13 +1236,14 @@ def plot_shares_of_supply(
         title_size (int): size of font from diagram title.
         key_to_label (str, optional): asset names for which share needs to be calculated. If value is None, no label is set on bar. Default to: None. 
         heat_name (str, optional): Changes title from heat to either district heating or local heating if special grid is looked at.Default to: None (just heat in title).
+        scenario_title (str, optional): Part of title to show extra information like which scenario is looked at (f. e. 0 % H2).
 
     Returns:
         fig: Diagram figure from plt.
     """
     
     # width of plotted bar
-    bar_width = 0.5
+    bar_width = 0.7
     # Positions of the time data of the x-axis
     x_pos = np.arange(len(periods))
     # darkmode:
@@ -1215,13 +1254,22 @@ def plot_shares_of_supply(
         dpi=100, 
         facecolor="black"
         )
+    # for adjusting strings for plot and color selection:
+    cleaned_dict = {}
+    for asset, values in asset_dict.items():
+            new_key = asset  # Standardmäßig bleibt der Key gleich
+            if ".heat" in asset:
+                new_key = asset.replace(".heat", "")
+            elif ".power" in asset:
+                new_key = asset.replace(".power", "")
+            cleaned_dict[new_key] = values
     # Initialization for the offset of the stacked bars
     offsets = np.zeros(len(periods))
     if granularity == 'hour':
         stacked_data = []
         labels = []
         colors = []
-
+        # load colors for asset entry: 
         for asset, values in asset_dict.items():
             color_asset = get_color_for_key(
                 asset_name=asset, 
@@ -1233,7 +1281,7 @@ def plot_shares_of_supply(
             labels.append(asset)
             colors.append(color_asset)
 
-        # Plot gestapeltes Liniendiagramm
+        # Plot stacked line diagram:
         ax.stackplot(
             x_pos, 
             stacked_data, 
@@ -1280,7 +1328,7 @@ def plot_shares_of_supply(
         color='gray', 
         linestyle='--', 
         linewidth=0.5, 
-        zorder=1
+        zorder=3
         ) 
     ax.set_xlabel(
         f"Time in {granularity}s", 
@@ -1320,14 +1368,14 @@ def plot_shares_of_supply(
     if type_of_energy == 'heat': 
         if heat_name is not None: 
             ax.set_title(
-                f"Shares of {sharename} on {heat_name} supply per {granularity}", 
+                f"{sharename} {heat_name} supply per {granularity} {scenario_title}", 
                 fontsize=title_size, 
                 fontweight='bold', 
                 y=y_title
                 ) # local / district heating
         else: 
             ax.set_title(
-                f"Shares of {sharename} on {type_of_energy} supply per {granularity}", 
+                f"Shares of {sharename} on {type_of_energy} supply per {granularity} {scenario_title}", 
                 fontsize=title_size,
                 fontweight='bold', 
                 y=y_title
@@ -1400,7 +1448,9 @@ box_plot_share_chp1 = plot_shares_of_supply(
     periods = periods,
     target_unit = target_unit,
     colormap=colormap,
-    assigned_asset_colors=colors_dict
+    assigned_asset_colors=colors_dict,
+    heat_name = "local"
+    scenario_title = "(0 % H2, UE24)"
     )
 ````
 
@@ -1409,7 +1459,7 @@ box_plot_share_chp1 = plot_shares_of_supply(
 
 
 **plot_demands**:  
-In this box plot we show power or heat demands in a very easy way per set time granulariy. power demand for heat generators can be shown. Differences can be made between 'local' heat grind and normal district heat grid. Also a special detail can be made in title of plot. 
+In this box plot we show power or heat demands in stacked box plots splitted into their shares per set time granulariy. Power demand for heat generators can be shown. Differences can be made between 'local' heat grid and  district heat grid. If district heat grid is chosen (type of heat grid = None), demand is shown on the top, as well as supply to cover this demand on the bottom as there would be no real other advantage. Local demand is just splitted into demand from local heat storage and from district heat grid. Last value is not allowed to exceed 20 % so this value is given in output, too. 
 
 #### Code example: 
 ````python
@@ -1425,7 +1475,8 @@ def plot_demands(
     target_unit: str,
     assets_with_power_demand = None,
     type_of_heat_grid = None, 
-    heat_name = None
+    heat_name = None, 
+    scenario_title = None
     ):
     """function for visualizing demands divided into heat, local heat and power grid. Visualizes demand in hourly values as stacked plot or with 
     higher granularity like days, months etc. in stacked bars. Uses colors of set color dictionary. 
@@ -1442,201 +1493,329 @@ def plot_demands(
         target_unit (str): target unit of values and labels shown in plot.
         assets_with_power_demand (tuple, optional): Heat supplyers with power demand in tuple. Defaults to None.
         type_of_heat_grid (str, optional): if 'local' local variables are looked at. Defaults to None.
-        heat_name (str, optional): Specification of heat title in diagram like 'local'. Defaults to None.
+        heat_name (_type_, optional): Specification of heat title in diagram like 'local'. Defaults to None.
+        scenario_title (str, optional): Part of title to show extra information like which scenario is looked at (f. e. 0 % H2).
 
     Returns:
         fig: bar or stacked plot figure for demand from plt.
     """
     # width of plotted bar
-    bar_width = 0.5
+    bar_width = 0.7
     # Positions of the time data on the x-axis
     x_pos = np.arange(len(periods))
     # darkmode:
     plt.style.use('dark_background')
-    # Create plot for Box plot
-    fig, ax = plt.subplots(
-        figsize=(16, 9), 
-        dpi=100, 
-        facecolor="black"
-        )
-    # Initialization for the offset of the stacked bars
-    offsets = np.zeros(len(periods))
-    # different plot for hour in capacity and if power demand plotted different dict for getting colors!
-    if granularity == 'hour':
-        stacked_data = []
-        labels = []
-        colors = []
-        # plot power demand from heat supplyers:
-        if type_of_energy == 'power': 
-            for index, (asset, values) in enumerate(demand_dict.items()):
-                # consider number of contained assets to avoid key error:
-                if index < len(assets_with_power_demand):
-                    color_asset = get_color_for_key(
-                        asset_name=assets_with_power_demand[index], 
-                        assigned_colors=assigned_colors_dict, 
-                        cmap_name=colormap, 
-                        amount_colors=10
-                        )
-                    stacked_data.append(values)
-                    labels.append(asset)
-                    colors.append(color_asset)
-            # Plot stacked chart for hourly values: 
-            ax.stackplot(
-                x_pos, 
-                stacked_data, 
-                labels=labels, 
-                colors=colors, 
-                alpha=0.8
-                )
-        else: 
-            # plot heat demand in hourly values: 
+    
+    # Single diagram for local heat or power: 
+    if type_of_heat_grid == 'local' or type_of_energy == 'power':
+        # Create plot for Box plot
+        fig, ax = plt.subplots(
+            figsize=(16, 9), 
+            dpi=100, 
+            facecolor="black"
+            )
+        # Initialization for the offset of the stacked bars
+        offsets = np.zeros(len(periods))
+        # different plot for hour in capacity and if power demand plotted different dict for getting colors!
+        if granularity == 'hour':
+            stacked_data = []
+            labels = []
+            colors = []
+            # plot power demand from heat supplyers:
+            if type_of_energy == 'power': 
+                for index, (asset, values) in enumerate(demand_dict.items()):
+                    # consider number of contained assets to avoid key error:
+                    if index < len(assets_with_power_demand):
+                        color_asset = get_color_for_key(
+                            asset_name=assets_with_power_demand[index], 
+                            assigned_colors=assigned_colors_dict, 
+                            cmap_name=colormap, 
+                            amount_colors=10
+                            )
+                        stacked_data.append(values)
+                        labels.append(asset)
+                        colors.append(color_asset)
+                # Plot stacked chart for hourly values: 
+                ax.stackplot(
+                    x_pos, 
+                    stacked_data, 
+                    labels=labels, 
+                    colors=colors, 
+                    alpha=0.8
+                    )
+            else: 
+                # plot heat demand in hourly values: 
+                for asset, values in demand_dict.items():
+                    if asset == 'local_heat_demand':
+                        continue
+                    else: 
+                        color_asset = get_color_for_key(
+                            asset_name=asset, 
+                            assigned_colors=assigned_colors_dict, 
+                            cmap_name=colormap, 
+                            amount_colors=10
+                            )
+                        stacked_data.append(values)
+                        labels.append(asset)
+                        colors.append(color_asset)
+                # Plot stacked chart for hourly values: 
+                ax.stackplot(
+                    x_pos, 
+                    stacked_data, 
+                    labels=labels, 
+                    colors=colors,
+                    alpha=0.8 # transparency, 1 non transparent, 0 invisible.
+                    )
+        else:
+            # plot all other granularites in bar charts:
             for asset, values in demand_dict.items():
-                color_asset = get_color_for_key(
+            # Get the color for the current asset
+                if asset == 'local_heat_demand':
+                    continue
+                else: 
+                    color_asset = get_color_for_key(
                     asset_name=asset, 
                     assigned_colors=assigned_colors_dict, 
-                    cmap_name=colormap, 
+                    cmap_name=colormap,
                     amount_colors=10
                     )
-                stacked_data.append(values)
-                labels.append(asset)
-                colors.append(color_asset)
-            # Plot stacked chart for hourly values: 
-            ax.stackplot(
-                x_pos, 
-                stacked_data, 
-                labels=labels, 
-                colors=colors,
-                alpha=0.8 # transparency, 1 non transparent, 0 invisible.
+                # Draw the bars for the current asset
+                    ax.bar(
+                        x_pos,             # positions on x axis
+                        values,             # values for heigh of bar
+                        width=bar_width,   # width of bar
+                        label=asset,       # label of bar
+                        color=color_asset,     # color of asset
+                        bottom=offsets,    # Offset for stacked bars
+                        zorder=2
+                    )
+                
+                    # update offset for next level
+                    offsets += values
+        # axis and labels
+        ax.grid(
+            True, 
+            color='gray', 
+            linestyle='--', 
+            linewidth=0.5, 
+            zorder=1
+            ) 
+        ax.set_xlabel(
+            f"Time in {granularity}s", 
+            fontsize=fontsize, 
+            fontweight='bold'
+            )
+        # Show hourly values in MW:
+        if type_of_energy == 'heat': 
+            if granularity == 'hour':
+                capacity = target_unit[:2] # delete h in targetunit string
+                ax.set_ylabel(
+                    f"demand of {type_of_heat_grid} {type_of_energy} in {capacity}", 
+                    fontsize=fontsize, 
+                    fontweight='bold'
+                    )
+            else:
+                ax.set_ylabel(
+                    f"demand of {type_of_heat_grid} {type_of_energy} in {target_unit}", 
+                    fontsize=fontsize, 
+                    fontweight='bold'
+                    )
+        else: 
+            if granularity == 'hour':
+                capacity = target_unit[:2] # delete h in targetunit string
+                ax.set_ylabel(
+                    f"demand of {type_of_energy} in {capacity}", 
+                    fontsize=fontsize, 
+                    fontweight='bold'
+                    )
+            else:
+                ax.set_ylabel(
+                    f"demand of {type_of_energy} in {target_unit}", 
+                    fontsize=fontsize, 
+                    fontweight='bold'
+                    )
+        # set title for different amounts of assets (shifting legend height):
+        if len(demand_dict) <= 4: 
+            y_title = 1.08
+            height_legend = 1.0
+        elif 5 <= len(demand_dict) < 9: 
+            y_title = 1.18
+            height_legend = 1.1
+        else: 
+            raise("too many demands, y title not set. ")
+        # set title of plot: 
+        if type_of_energy == 'heat':  
+            if heat_name is not None: # local / district heating - adjustment for title possible. 
+                ax.set_title(
+                    f"Coverage of {heat_name} demand per {granularity} {scenario_title}", 
+                    fontsize=title_size, 
+                    fontweight='bold', 
+                    y=y_title
+                    ) 
+            else: 
+                ax.set_title(
+                    f"{type_of_energy} demand per {granularity}", 
+                    fontsize=title_size, 
+                    fontweight='bold', 
+                    y=y_title
+                    )
+        elif type_of_energy == 'power':
+            ax.set_title(
+                f"{type_of_energy} demand of {assets_with_power_demand[0]} per {granularity} {scenario_title}", 
+                fontsize=title_size, 
+                fontweight='bold', 
+                y=y_title
+                ) 
+        # set labels on correct position, for hours shift labels to left.
+        ax.set_xticks(x_pos)
+        if granularity == 'hour' or 'day': 
+            ax.set_xticklabels(
+                periods, 
+                rotation=45, 
+                ha='right'
                 )
-    else:
-        # plot all other granularites in bar charts:
+        else: 
+            ax.set_xticklabels(
+                periods,
+                rotation=45
+                ) 
+        ax.tick_params(
+            axis='x', 
+            labelsize=fontsize
+            ) 
+        ax.tick_params(
+            axis='y', 
+            labelsize=fontsize
+            )
+        ax.legend(
+            loc="lower center",           # position of legend
+            bbox_to_anchor=(0.5, height_legend, 0, 0),   # anchor point (x=0.5 for central, y=1.0 for above)
+            ncol=4,                      # amount of columns in legend
+            frameon=True,                # Frame around legend
+            fontsize=fontsize,
+            title_fontsize=fontsize
+            )
+        # show diagram
+        # plt.show() # just activate if save_plot function is deactivated
+        plt.tight_layout()
+       
+    # 2 diagrams for plotting district heat demand (above) and covering supply (below):      
+    else: 
+        # building 2 subplots: 
+        fig, (ax_top, ax_bottom) = plt.subplots(
+        2, 1, 
+        sharex=True, 
+        figsize=(16, 9), 
+        gridspec_kw={'height_ratios': [1, 1]}
+    )   
+        offsets_top = np.zeros(len(periods))
+        offsets_bottom = np.zeros(len(periods))
+        
         for asset, values in demand_dict.items():
-        # Get the color for the current asset
+            # Get the color for the current asset
             color_asset = get_color_for_key(
                 asset_name=asset, 
                 assigned_colors=assigned_colors_dict, 
                 cmap_name=colormap,
                 amount_colors=10
                 )
-            # Draw the bars for the current asset
-            ax.bar(
-                x_pos,             # positions on x axis
-                values,             # values for heigh of bar
-                width=bar_width,   # width of bar
-                label=asset,       # label of bar
-                color=color_asset,     # color of asset
-                bottom=offsets,    # Offset for stacked bars
-                zorder=2
-            )
             
-            # update offset for next level
-            offsets += values
-    # axis and labels
-    ax.grid(
-        True, 
-        color='gray', 
-        linestyle='--', 
-        linewidth=0.5, 
-        zorder=1
-        ) 
-    ax.set_xlabel(
-        f"Time in {granularity}s", 
-        fontsize=fontsize, 
-        fontweight='bold'
-        )
-    # Show hourly values in MW:
-    if type_of_heat_grid == 'local': 
-        if granularity == 'hour':
-            capacity = target_unit[:2] # delete h in targetunit string
-            ax.set_ylabel(
-                f"demand of {type_of_heat_grid} {type_of_energy} in {capacity}", 
-                fontsize=fontsize, 
-                fontweight='bold'
+            # plot bars on diagram above:
+            # just for chosen variables belonging to district heat demand: 
+            if asset == 'heat_demand' or asset == 'local_heat_grid.district_heat_feedin' or asset == 'heat_storage.heat_charging':
+                ax_top.bar(
+                    x_pos,             # positions on x axis
+                    values,             # values for heigh of bar
+                    width=bar_width,   # width of bar
+                    label=asset,       # label of bar
+                    color=color_asset,     # color of asset
+                    bottom=offsets_top,    # Offset for stacked bars
+                    zorder=2
                 )
-        else:
-            ax.set_ylabel(
-                f"demand of {type_of_heat_grid} {type_of_energy} in {target_unit}", 
-                fontsize=fontsize, 
-                fontweight='bold'
+                offsets_top += values
+            else: 
+            # Draw the bars for diagram below:
+            # all variables belonging to supply: 
+                ax_bottom.bar(
+                    x_pos,             # positions on x axis
+                    values,             # values for heigh of bar
+                    width=bar_width,   # width of bar
+                    label=asset,       # label of bar
+                    color=color_asset,     # color of asset
+                    bottom=offsets_bottom,    # Offset for stacked bars
+                    zorder=2
                 )
-    else: 
-        if granularity == 'hour':
-            capacity = target_unit[:2] # delete h in targetunit string
-            ax.set_ylabel(
-                f"demand of {type_of_energy} in {capacity}", 
-                fontsize=fontsize, 
-                fontweight='bold'
-                )
-        else:
-            ax.set_ylabel(
-                f"demand of {type_of_energy} in {target_unit}", 
-                fontsize=fontsize, 
-                fontweight='bold'
-                )
-    # set title for different amounts of assets (shifting legend height):
-    if len(demand_dict) <= 4: 
-        y_title = 1.08
-        height_legend = 1.0
-    elif 5 <= len(demand_dict) < 9: 
-        y_title = 1.18
-        height_legend = 1.1
-    else: 
-        raise("too many demands, y title not set. ")
-    # set title of plot: 
-    if type_of_energy == 'heat':  
-        if heat_name is not None: # local / district heating - adjustment for title possible. 
-            ax.set_title(
-                f"{heat_name} demand per {granularity}", 
-                fontsize=title_size, 
-                fontweight='bold', 
-                y=y_title
-                ) 
-        else: 
-            ax.set_title(
-                f"{type_of_energy} demand per {granularity}", 
-                fontsize=title_size, 
-                fontweight='bold', 
-                y=y_title
-                )
-    elif type_of_energy == 'power':
-        ax.set_title(
-            f"{type_of_energy} demand of {assets_with_power_demand[0]} per {granularity}", 
-            fontsize=title_size, 
-            fontweight='bold', 
-            y=y_title
-            ) 
-    # set labels on correct position, for hours shift labels to left.
-    ax.set_xticks(x_pos)
-    if granularity == 'hour' or 'day': 
-        ax.set_xticklabels(
-            periods, 
-            rotation=45, 
-            ha='right'
+                print("Asset gestapelt unteres Diagramm: ", asset)
+                # update offset for next level
+                offsets_bottom += values
+        # set axes and labels: 
+        ax_top.grid(
+            True, 
+            color='gray', 
+            linestyle='--', 
+            linewidth=0.5, 
+            zorder=1
             )
-    else: 
-        ax.set_xticklabels(
-            periods, 
-            rotation=45
+        ax_bottom.grid(
+            True, 
+            color='gray', 
+            linestyle='--', 
+            linewidth=0.5, 
+            zorder=1
             ) 
-    ax.tick_params(
-        axis='x', 
-        labelsize=fontsize
-        ) 
-    ax.tick_params(
-        axis='y', 
-        labelsize=fontsize
-        )
-    ax.legend(
-        loc="lower center",           # position of legend
-        bbox_to_anchor=(0.5, height_legend, 0, 0),   # anchor point (x=0.5 for central, y=1.0 for above)
-        ncol=3,                      # amount of columns in legend
-        frameon=True,                # Frame around legend
-        fontsize=fontsize,
-        title_fontsize=fontsize
-        )
-    # show diagram
-    # plt.show() # just activate if save_plot function is deactivated
-    plt.tight_layout()
+        ax_bottom.set_xlabel(
+            f"Time in {granularity}s", 
+            fontsize=fontsize - 2, 
+            fontweight='bold'
+            )
+        ax_top.set_ylabel(
+            f"{type_of_energy} demand in {target_unit}", 
+            fontsize=fontsize - 2, # usual fontsize too big for 2 diagrams under each other
+            fontweight='bold'
+            )
+        ax_bottom.set_ylabel(
+            f"{type_of_energy} supply in {target_unit}", 
+            fontsize=fontsize - 2, 
+            fontweight='bold'
+            )
+        fig.suptitle(
+            f"Coverage of {heat_name} demand per {granularity} {scenario_title}", 
+            fontsize=title_size, 
+            fontweight='bold',
+            y=1)
+        
+        # loop for identical data that belong to both diagrams: 
+        for ax in [ax_top, ax_bottom]:
+            ax.set_xticks(x_pos)
+            if granularity in ['hour','day']: 
+                ax.set_xticklabels(
+                    periods, 
+                    rotation=45, 
+                    ha='right'
+                    )
+            else: 
+                ax.set_xticklabels(
+                    periods,
+                    rotation=45
+                    ) 
+            ax.tick_params(
+                axis='x', 
+                labelsize=fontsize
+                ) 
+            ax.tick_params(
+                axis='y', 
+                labelsize=fontsize
+                )
+            ax.legend(
+                loc="lower center",           # position of legend
+                bbox_to_anchor=(0.5, 1.02, 0, 0),   # anchor point (x=0.5 for central, y=1.0 for above)
+                ncol=3,                      # amount of columns in legend
+                frameon=True,                # Frame around legend
+                fontsize=fontsize,
+                title_fontsize=fontsize
+                )
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.9)  # space for title of diagram above
     
     return fig   
 
@@ -1644,7 +1823,7 @@ def plot_demands(
 time_sums_df = calculate_sums_for_period(
     input_df=load_csv_results_in_df(input_path = '../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv'), 
     start_date = "2025-01-01", 
-    end_date = "2025-06-01", 
+    end_date = "2025-12-31", 
     granularity="month"
     )
 
@@ -1652,7 +1831,7 @@ time_sums_df = calculate_sums_for_period(
 asset_plot_dict, supply_shares_dict, periods = get_asset_data_for_plot(
     time_series_df=time_sums_df, 
     all_assets=('heatpump_2', 'solar_thermal'),
-    selected_assets=('heatpump_2', 'solar_thermal'),
+    selected_assets=('chp_1', 'chp_2'),
     type_of_energy='heat',
     granularity='month',
     actual_unit='MWh',
@@ -1670,21 +1849,22 @@ heat_demand_dict = get_demand_for_plot(
             type_of_energy='heat',
             target_unit='GWh',
             actual_unit='MWh',
-            type_of_heat_grid='local'
+            type_of_heat_grid=None
         )
 fig = plot_demands(
     demand_dict= heat_demand_dict,
     periods=periods,
     assigned_colors_dict=colors_dict,
-    colormap='rainbow',
+    colormap='nipy_spectral',
     granularity='month',
     type_of_energy='heat',
     fontsize=14,
     title_size=16,
     target_unit='GWh',
     assets_with_power_demand=None,
-    type_of_heat_grid='local',
-    heat_name='Local',
+    type_of_heat_grid=None,
+    heat_name='Coverage of',
+    scenario_title = "(0 % H2, UE24)"
 )
 ````
 
@@ -1959,12 +2139,62 @@ def plot_shares_and_storage(
     return fig
 
 # example execution:
-# ergänzen!
+# all defined variables are set in input values in the space of main!
+# 1 Load Data from csv INPUT PATH: 
+time_sums_df = calculate_sums_for_period(
+    input_df=load_csv_results_in_df(input_path = '../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv'), 
+    start_date = "2025-01-01", 
+    end_date = "2025-12-31", 
+    granularity="month"
+    )
+
+# 2 Process data fitting for box plot visualization: 
+asset_plot_dict, supply_shares_dict, periods = get_asset_data_for_plot(
+    time_series_df=time_sums_df, 
+    all_assets=('heatpump_2', 'solar_thermal'),
+    selected_assets=('chp_1', 'chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+
+# 3 load colors from json file: 
+colors_dict, color_file_json = load_color_data_from_json(
+    colors_file='assigned_colors.json', 
+    output_path='../data/postprocessing/'
+    )
+
+# 4 get storage dict:
+storage_dict = get_data_for_storage_plot(
+    type_of_energy='heat',
+    type_of_heat_storage='local',
+    time_series_df=time_sums_df,
+    asset_dict=asset_plot_dict,
+    actual_unit='MWh',
+    target_unit='GWh'
+    )
+# 5 plot figure:      
+fig = plot_shares_and_storage(
+    asset_dict= asset_plot_dict, 
+    supply_shares_dict = supply_shares_dict,
+    storage_dict=storage_dict,
+    granularity='month',
+    type_of_energy='heat',
+    sharename="Test",
+    fontsize=16,
+    title_size=18,
+    key_to_label=None,
+    periods = periods,
+    target_unit = 'GWh',
+    colormap='nipy spectral',
+    assigned_colors_dict=colors_dict,
+    heat_name = 'Local heat'
+    )
 ````
 
 #### Output Example: 
 <img src="../data/postprocessing/zzz_pictures_readme/plot_shares_and_storage.png" alt="plot_shares_and_storage" width="900">
-
 
 **plot_storage**:  
 Same plot as above showing charging and discharging as well as balance (difference) of storage in set time granularity. Charging is divided into asset shares and has negative prefix. It's necessary to set variable storage_diagram to 'single', so just storage without supply is shown. This diagram is preferred as the diagram with fusion of supply and storage has developed, so that there is no advantage in information by choosing the fusion variant. 
@@ -1981,7 +2211,8 @@ def plot_storage(
     fontsize: int,
     title_size: int,
     target_unit: str,
-    heat_name = None
+    heat_name = None,
+    scenario_title = None
     ):
     """same plot as above but standalone without showing asset supply above. Just represents storage. Charging values are supply values from 
     assets and are negative. positive values are supply by storage that runs into excess heat grid or local heat grid (demand).
@@ -1996,7 +2227,8 @@ def plot_storage(
         fontsize (int): size of font in diagram
         title_size (int): size of font from diagram title.
         target_unit (str): energy unit (default: GWh)
-        heat_name (_type_, optional): Special title name for heat grid like local. Defaults to None.
+        heat_name (str, optional): Special title name for heat grid like local. Defaults to None.
+        scenario_title (str, optional): Special title name at the end for information on scenario (like 0 % H2, UE24)
 
     Raises:
         ValueError: if too many assets title height is not defined and ValueError is given.
@@ -2021,13 +2253,14 @@ def plot_storage(
     bottom_positive = np.zeros(len(periods))  # Stacking for positive bars 
     bottom_negative = np.zeros(len(periods))  # Stacking for negative bars
     storage_colors = {}
-    for storage in storage_dict.keys():
+    for storage in storage_dict.keys(): # hier in cleaned ändern
             storage_colors[storage] = get_color_for_key(
                 asset_name=storage, 
                 assigned_colors=assigned_colors_dict, 
                 cmap_name=colormap, 
                 amount_colors=10
                 )
+    print("[plot_storage] Storage colors: ", storage_colors)
     # stacked lines for hours than bars:
     if granularity == 'hour':
         stacked_data_positive = []
@@ -2036,7 +2269,7 @@ def plot_storage(
         colors = []
         for item, values in storage_dict.items():
             color_storage = storage_colors[item]
-            if "difference" not in item:
+            if "balance" not in item:
                 positive_values = [v if v >= 0 else 0 for v in values]
                 negative_values = [v if v < 0 else 0 for v in values]
                 stacked_data_positive.append(positive_values)
@@ -2073,7 +2306,7 @@ def plot_storage(
         for item, values in storage_dict.items():
             color_storage = storage_colors[item] 
             # print("item of storage: ", item)
-            if "difference" not in item: # neu
+            if "balance" not in item: # neu
             # categorize bars for positive or negative values: 
                 # print("item after Bedingung: ", item)
                 for i, value in enumerate(values):
@@ -2141,14 +2374,14 @@ def plot_storage(
     if type_of_energy == 'heat': 
         if heat_name is not None: 
             ax.set_title(
-                f"{heat_name} storage charge and discharge per {granularity}", # local / district heating     
+                f"{heat_name} storage charge and discharge per {granularity} {scenario_title}", # local / district heating     
                 fontsize=title_size, 
                 fontweight='bold', 
                 y=y_title
                 )        
     else:
         ax.set_title(
-            f"Battery storage charge and discharge per {granularity}", 
+            f"Battery storage charge and discharge per {granularity} {scenario_title}", 
             fontsize=title_size, 
             fontweight='bold', 
             y=y_title
@@ -2222,7 +2455,54 @@ def plot_storage(
     # plt.show() # activate if not saved later on. 
     return fig
 # example execution: 
-# ergänzen!
+# 1 Load Data from csv INPUT PATH: 
+time_sums_df = calculate_sums_for_period(
+    input_df=load_csv_results_in_df(input_path = '../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv'), 
+    start_date = "2025-01-01", 
+    end_date = "2025-12-31", 
+    granularity="month"
+    )
+
+# 2 Process data fitting for box plot visualization: 
+asset_plot_dict, supply_shares_dict, periods = get_asset_data_for_plot(
+    time_series_df=time_sums_df, 
+    all_assets=('heatpump_2', 'solar_thermal'),
+    selected_assets=('chp_1', 'chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+
+# 3 load colors from json file: 
+colors_dict, color_file_json = load_color_data_from_json(
+    colors_file='assigned_colors.json', 
+    output_path='../data/postprocessing/'
+    )
+
+# 4 get storage dict:
+storage_dict = get_data_for_storage_plot(
+    type_of_energy='heat',
+    type_of_heat_storage='local',
+    time_series_df=time_sums_df,
+    asset_dict=asset_plot_dict,
+    actual_unit='MWh',
+    target_unit='GWh'
+    )
+# 5 plot figure:      
+fig = plot_storage(
+    storage_dict=storage_dict,
+    assigned_colors_dict=colors_dict,
+    colormap='nipy spectral',
+    periods=periods,
+    granularity='month',
+    type_of_energy='heat',
+    fontsize=16,
+    title_size=18,
+    target_unit='GWh',
+    heat_name = 'Local heat',
+    scenario_title = '(0 % H2, UE24)'
+    )
 ````
 
 #### Output example: 
@@ -2247,7 +2527,8 @@ def compare_plots(
     fontsize: int,
     title_size: int,
     target_unit: str,
-    heat_name = None
+    heat_name = None,
+    scenario_title = None
     ):
     """Function that plots stacked supply of assets from 2 scenarios (csv). Left plot (input_path_1) is in colors from colors dict (json),
     right plot has same colors but slightly darker to distinguish scenarios and still get the assignment of assets to colors.
@@ -2264,6 +2545,7 @@ def compare_plots(
         title_size (int): size of fonts of title in diagram.
         target_unit (str): target unit of data in plot and label on y axis.
         heat_name (_type_, optional): special name for heat grid if 'local' used.. Defaults to None.
+        scenario_title (str, optional): Special space for information in title like (0 % H2, UE24)
 
     Returns:
         fig: Diagram figure from plt with stagged bars from supply. Two bars next to each other for one x tick.
@@ -2345,7 +2627,7 @@ def compare_plots(
         fontsize=fontsize, 
         fontweight='bold'
         )
-    # Zeige Stundenwerte in Megawatt an (Leistung):
+    # Show hourly values in MW:
     ax.set_ylabel(
         f"supply of {type_of_energy} in {target_unit}", 
         fontsize=fontsize, 
@@ -2370,14 +2652,14 @@ def compare_plots(
     if type_of_energy == 'heat': 
         if heat_name is not None: # local / district heating
             ax.set_title(
-                f"Comparison of {heat_name} supply per {granularity}", 
+                f"Comparison of {heat_name} supply per {granularity} {scenario_title}", 
                 fontsize=title_size, 
                 fontweight='bold', 
                 y=y_title
                 ) 
         else: 
             ax.set_title(
-                f"Comparison of {type_of_energy} supply per {granularity}", 
+                f"Comparison of {type_of_energy} supply per {granularity} {scenario_title}", 
                 fontsize=title_size, 
                 fontweight='bold', 
                 y=y_title
@@ -2403,7 +2685,240 @@ def compare_plots(
         axis='y', 
         labelsize=fontsize
         )
+    handles, labels = ax.get_legend_handles_labels()
+    # remove entries that are spelled the same:
+    unique_labels = {}
+    filtered_handles = []
+    filtered_labels = []
+
+    for handle, label in zip(handles, labels):
+        if label not in unique_labels:
+            unique_labels[label] = handle
+            filtered_handles.append(handle)
+            filtered_labels.append(label)
     ax.legend(
+        filtered_handles,
+        filtered_labels,
+        loc="lower center",           # position of legend
+        bbox_to_anchor=(0.5, height_legend, 0, 0),   # anchor point (x=0.5 for central, y=1.0 for above)
+        ncol=4,                      # amount of columns in legend
+        frameon=True,                # Frame around legend
+        fontsize=fontsize,
+        title_fontsize=fontsize
+        )
+    # show diagram
+    # plt.show() # just activate if save_plot function is deactivated
+    plt.tight_layout()
+    return fig  
+
+# example execution: 
+time_sums_df1 = calculate_sums_for_period(
+    input_df=load_csv_results_in_df(
+        input_path = '../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv'
+        ), 
+    start_date = '2025-01-01', 
+    end_date = '2025-12-31', 
+    granularity='month', 
+    time_column='date'
+    )
+time_sums_df2 = calculate_sums_for_period(
+    input_df=load_csv_results_in_df
+    (input_path = '../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv'
+    ), 
+    start_date = '2025-01-01', 
+    end_date = '2025-12-31', 
+    granularity='month', 
+    time_column='date'
+    )
+asset_plot_dict1, supply_shares_dict1, periods1 = get_asset_data_for_plot(
+    time_series_df=time_sums_df1, 
+    all_assets=('chp_1','chp_2'),
+    selected_assets=('chp_1','chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+asset_plot_dict2, supply_shares_dict2, periods2 = get_asset_data_for_plot(
+    time_series_df=time_sums_df2,
+    all_assets=('chp_1','chp_2'),
+    selected_assets=('chp_1','chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+
+colors_dict, color_file_json = load_color_data_from_json(
+    colors_file='assigned_colors.json', 
+    output_path='../data/postprocessing/'
+    )
+
+fig =compare_plots(
+    asset_dict1 = asset_plot_dict1,
+    asset_dict2= asset_plot_dict2,
+    assigned_colors_dict=colors_dict,
+    colormap='nipy spectral',
+    periods=periods1,
+    granularity='month',
+    type_of_energy='heat',
+    fontsize=16,
+    title_size=18,
+    target_unit='GWh',
+    heat_name = 'District heat', 
+    scenario_title='(0 % H2, UE24)'
+    )
+````
+
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/compare_plots_example.png" alt="compare_plots_example" width="900">
+
+### 3.12 Plot specific value from csv.
+
+**plot_specific_value**:  
+Sometimes it is necessary to plot a value from csv output, that is not included in other plot functions. This function generates a boxplot for the set granularity and time span with a column as preferred. I used it for example to plot storage content.
+
+#### Code example: 
+````python
+def plot_specific_value(
+    name_of_value: str,
+    time_series_df: pd.DataFrame,
+    assigned_colors_dict:dict,
+    colormap:str,
+    periods: list,
+    granularity: str,
+    fontsize: int,
+    title_size: int,
+    target_unit: str,
+    scenario_title = None
+    ):
+    """ A simple function for plotting a value from csv as bar charts. For this name of value is necessary.
+    The filtered time series df is a necessary input. 
+
+    Args:
+        name_of_value (str): Column name given in csv data
+        time_series_df (pd.DataFrame): Dataframe with timefiltered data from csv.
+        assigned_colors_dict (dict): dictionary with colors matching column names of csv.
+        colormap (str): colormap for color allocation to column name.
+        periods (list): x values with time in set granularity.
+        granularity (str): time granularity (months, weeks etc.)
+        fontsize (int): Size of fonts in diagram
+        title_size (int): Size of title in diagram
+        target_unit (str): wished y-unit appearance in diagram.
+        scenario_title (str, optional): Extra information in title like (0 % H2, UE24) . Defaults to None.
+
+    Raises:
+        ValueError: Lengths of periods and loaded values from column need to be the same.
+
+    Returns:
+        fig: Matplotlib figure for saving.
+    """
+    
+    # get value from df:
+    value_dict = {}
+    if name_of_value in time_series_df.columns:
+        value_dict[name_of_value] = list(time_series_df[name_of_value])
+    if len(value_dict[name_of_value]) != len (periods):
+        raise ValueError(f"Länge von '{name_of_value}' ({len(value_dict[name_of_value])}) stimmt nicht mit Anzahl der Zeitstempel ({len(periods)}) überein.")
+    print("[plot_specific_value] specific value data: ", value_dict)
+    # plot data: 
+    # width of plotted bar
+    bar_width = 0.7
+    # Positions of the time data on the x-axis
+    x_pos = np.arange(len(periods))
+    # darkmode:
+    plt.style.use('dark_background')
+    # Create plot for Box plot
+    fig, ax = plt.subplots(
+        figsize=(16, 9), 
+        dpi=100, 
+        facecolor="black"
+        )
+    # Initialization for the offset of the stacked bars 
+    offsets = np.zeros(len(periods))
+    for asset, values in value_dict.items():
+    # Get the color for the current asset
+        color_asset = get_color_for_key(
+            asset_name=asset, 
+            assigned_colors=assigned_colors_dict, 
+            cmap_name=colormap,
+            amount_colors=10
+            )
+        # Draw the bars for the current asset
+        ax.bar(
+            x_pos,           
+            values,             # values for heigh of bar
+            width=bar_width,   # width of bar
+            label=asset,       # label of bar
+            color=color_asset, # color of asset
+            bottom=offsets,    # Offset for stacked bars
+            zorder=2
+        )
+        offsets += np.array(values)
+    # axis and labels
+    ax.grid(
+        True, 
+        color='gray', 
+        linestyle='--', 
+        linewidth=0.5, 
+        zorder=1
+        ) 
+    ax.set_xlabel(
+        f"Time in {granularity}s", 
+        fontsize=fontsize, 
+        fontweight='bold'
+        )
+    # Show hourly values in MW:
+    ax.set_ylabel(
+        f"{name_of_value} in {target_unit}", 
+        fontsize=fontsize, 
+        fontweight='bold'
+        )
+    # set title for different amounts of assets (shifting legend height):
+    y_title = 1.08
+    height_legend = 1.0
+    # set title of plot: 
+    ax.set_title(
+        f"{name_of_value} per {granularity} {scenario_title}", 
+        fontsize=title_size, 
+        fontweight='bold', 
+        y=y_title
+        ) 
+    # set labels on correct position, for hours shift labels to left.
+    ax.set_xticks(x_pos)
+    if granularity == 'hour' or 'day': 
+        ax.set_xticklabels(
+            periods, 
+            rotation=45, 
+            ha='right'
+            )
+    else: 
+        ax.set_xticklabels(
+            periods, 
+            rotation=45
+            ) 
+    ax.tick_params(
+        axis='x', 
+        labelsize=fontsize
+        ) 
+    ax.tick_params(
+        axis='y', 
+        labelsize=fontsize
+        )
+    handles, labels = ax.get_legend_handles_labels()
+    # remove entries that are spelled the same:
+    unique_labels = {}
+    filtered_handles = []
+    filtered_labels = []
+
+    for handle, label in zip(handles, labels):
+        if label not in unique_labels:
+            unique_labels[label] = handle
+            filtered_handles.append(handle)
+            filtered_labels.append(label)
+    ax.legend(
+        filtered_handles,
+        filtered_labels,
         loc="lower center",           # position of legend
         bbox_to_anchor=(0.5, height_legend, 0, 0),   # anchor point (x=0.5 for central, y=1.0 for above)
         ncol=4,                      # amount of columns in legend
@@ -2415,14 +2930,50 @@ def compare_plots(
     # plt.show() # just activate if save_plot function is deactivated
     plt.tight_layout()
     return fig 
+
 # example execution: 
-# ergänzen!
+time_sums_df = calculate_sums_for_period(
+    input_df=load_csv_results_in_df(input_path = '../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv'), 
+    start_date = "2025-02-01", 
+    end_date = "2025-02-01", 
+    granularity="hour"
+    )
+
+# 2 Process data fitting for box plot visualization: 
+asset_plot_dict, supply_shares_dict, periods = get_asset_data_for_plot(
+    time_series_df=time_sums_df, 
+    all_assets=('heatpump_2', 'solar_thermal'),
+    selected_assets=('chp_1', 'chp_2'),
+    type_of_energy='heat',
+    granularity='month',
+    actual_unit='MWh',
+    target_unit='GWh'
+)
+
+# 3 load colors from json file: 
+colors_dict, color_file_json = load_color_data_from_json(
+    colors_file='assigned_colors.json', 
+    output_path='../data/postprocessing/'
+    )
+
+fig = plot_specific_value(
+    name_of_value='geo_heat_storage.heat_content',
+    time_series_df=time_sums_df,
+    assigned_colors_dict=colors_dict,
+    colormap='nipy spectral',
+    periods=periods,
+    granularity='hour',
+    fontsize=16,
+    title_size=18,
+    target_unit='MWh',
+    scenario_title = '(0 % H2, UE24)'
+    ):
+
 ````
-
 #### Output example: 
-<img src="../data/postprocessing/zzz_pictures_readme/compare_plots_example.png" alt="compare_plots_example" width="900">
+<img src="../data/postprocessing/zzz_pictures_readme/plot_specific_value.png" alt="plot_specific_value" width="900">
 
-### 3.12 Function for saving plots of any kind.
+### 3.13 Function for saving plots of any kind.
 **save_plot**:  
 Last but not least our generated plot, whatever we generated, is given back as a fig variable, that we can save with a filename in our output_path. It is set as an input variable. 
 
@@ -2497,7 +3048,7 @@ When our figure is saved, we get a notification with the path, where it was save
 
 <img src="../data/postprocessing/zzz_pictures_readme/save_plot_example2.png" alt="save_plot_example2" width="1200">
 
-### 3.13 Wrapper for Main function - Decide for plot with input value
+### 3.14 Wrapper for Main function - Decide for plot with input value
 
 **decide_for_diagram_and_plot**:  
 This function is used to shorten main script. With variables like storage_diagram, heat_demand_diagram, compare_supplies_diagram and all other necessary data this function selects the correct plot function on given input parameters. It is important that just one of the mentioned variables are True or set to a string. As a result the wished plot is returned as a fig variable for saving later.
@@ -2532,7 +3083,10 @@ def decide_for_diagram_and_plot(
     key_to_label = None,
     heat_name = None,
     assets_demand = None,
-    time_series_df2 = None
+    time_series_df2 = None,
+    scenario_title = None,
+    specific_value_diagram = None,
+    specific_value = None
     ):
     """Wrapper function for Main script: Executes get asset data and plot functions. 
     Chooses if storage is included in plot or only share of assets.
@@ -2542,6 +3096,7 @@ def decide_for_diagram_and_plot(
         only storage is plotted, else share of assets diagram is plotted.
         heat_demand_diagram (bool): set to True if demand is supposed to be plotted. 
         compare_supplies_diagram (bool): Set to True if two datasets are compared. Second time series df necessary.
+        specific_value_diagram (bool): Set to True if specific value is wished to be shown.
         time_series_df1 (pd.DataFrame): DataFrame from output csv from input path 1 that is filtered by time and granularity.
         all_assets (tuple): A tuple with all assets that are to be displayed.
         selected_assets (tuple): my selected assets for which share of supply is calculated f. e. RES or District Heating.
@@ -2559,6 +3114,8 @@ def decide_for_diagram_and_plot(
         heat_name (str, optional): title for special heat grid. Defaults to None.
         assets_demand (tuple, optional): Tuple with asset names that have power demand (f. e. heatpumps). Defaults to None.
         time_series_df2 (pd.DataFrame, optional): second dataframe from input path 2. Necessary for compare plot. Defaults to None.
+        scenario_title (str, optional): Extra field for title to add scenario like (0 % H2, UE24)
+        specific_value (str, optional): If wished, string of specific value from output csv is needed.
 
     Raises:
         ValueError: No diagram is selected. Variables of input need to be checked. 
@@ -2634,7 +3191,8 @@ def decide_for_diagram_and_plot(
             fontsize=fontsize,
             title_size=title_size,
             target_unit=target_unit,
-            heat_name = heat_name
+            heat_name = heat_name,
+            scenario_title = scenario_title
             )
     # plot of demand: 
     elif heat_demand_diagram == True: 
@@ -2649,7 +3207,8 @@ def decide_for_diagram_and_plot(
              target_unit=target_unit,
              actual_unit=actual_unit,
              type_of_heat_grid=type_of_heat_grid,
-             assets_with_power_demand=assets_demand
+             assets_with_power_demand=assets_demand,
+             assets_for_district_heat=all_assets
          )
         fig = plot_demands(
             demand_dict=heat_demand_dict,
@@ -2663,7 +3222,8 @@ def decide_for_diagram_and_plot(
             target_unit=target_unit,
             type_of_heat_grid=type_of_heat_grid,
             heat_name=heat_name,
-            assets_with_power_demand=assets_demand
+            assets_with_power_demand=assets_demand,
+            scenario_title = scenario_title
         )
     # plot with comparison of two datasets next to each other from csv output (input path 1 and 2): 
     elif compare_supplies_diagram == True: 
@@ -2693,14 +3253,14 @@ def decide_for_diagram_and_plot(
             periods=periods1,
             granularity=granularity,
             type_of_energy=type_of_energy,
-            groupname=sharename,
             fontsize=fontsize,
             title_size=title_size,
             target_unit=target_unit,
-            heat_name = None
+            heat_name = None, 
+            scenario_title=scenario_title
             )
     # single plot with shares of asset supply:
-    elif storage_diagram == None:
+    elif storage_diagram == 'supply':
         asset_plot_dict, supply_shares_dict, periods = get_asset_data_for_plot(
             time_series_df=time_series_df1, 
             all_assets=all_assets,
@@ -2723,17 +3283,41 @@ def decide_for_diagram_and_plot(
             target_unit = target_unit,
             colormap=colormap,
             assigned_colors_dict=assigned_colors_dict,
-            heat_name = heat_name
+            heat_name = heat_name,
+            scenario_title = scenario_title
             )
+    # plot specific value from csv output: 
+    elif specific_value_diagram == True: 
+        asset_plot_dict, supply_shares_dict, periods = get_asset_data_for_plot(
+            time_series_df=time_series_df1, 
+            all_assets=all_assets,
+            selected_assets=selected_assets,
+            type_of_energy=type_of_energy,
+            granularity=granularity,
+            actual_unit=actual_unit,
+            target_unit=target_unit
+        )
+        fig = plot_specific_value(
+            name_of_value=specific_value,
+            time_series_df=time_series_df1,
+            assigned_colors_dict=assigned_colors_dict,
+            colormap=colormap,
+            periods=periods,
+            granularity=granularity,
+            fontsize=fontsize,
+            title_size=title_size,
+            target_unit=target_unit,
+            scenario_title=scenario_title
+        )
     else:
         raise ValueError("No diagram can be generated! Check input!")        
     return fig
 ````
 
 #### Output example: 
-It's just a wrapper function used to shorten main script. To execute it anyways look at 3.14 main execution. 
+It's just a wrapper function used to shorten main script. To execute it anyways look at 3.15 main execution. 
 
-### 3.14 Main script for generating results – need to be executed!
+### 3.15 Main script for generating results – need to be executed!
 **Structure**: 
 - Input values
 - Main script
@@ -2749,61 +3333,68 @@ This is the key section for setting parameters for our plot. And it's normally t
 - end_date
 - sharename
 - key_to_label
+- type_of_heat_grid ('local' / None) 
 
 and the set diagram we want to plot: 
-- storage_diagram (= single / fusion / None) 
+- storage_diagram (= single / fusion / supply / None) 
 - heat_demand_diagram (= True / False)
 - compare_supplies_diagram (= True / False)
+- plot_specific_value (= True / False)
 
-*Note that for the last three variables just one definition is allowed (True or for storage_diagram a string). 
-- If storage_diagram is set to None we plot a normal share of supply box plot. 
-- If you want a label with share of an asset/s on a bar set key_to_label to variable you want to be shown on the bar. Also you need to define the assets in tuple my_assets.
+*Note that for the four variables of plot variables just one True/string definition is allowed (True or for storage_diagram a string). 
+- If storage_diagram is set to None we skip function. 
+- If you want a label with share of an asset/s on a bar set key_to_label to variable you want to be shown on the bar. Also you need to define the assets in tuple my_assets for which percentage needs to be calculated.
 - If a power demand of a heatpump is interesting set type_of_energy to power and put heatpump as asset for demand in tuple.*
 - If 2 scenarios are compared in a plot make sure you set an INPUT_PATH_2.
 - Sometimes if can make sense to check and adjust colors (rgba tupels) in assigned_colors.json. New variables get new colors so adjustments can be necessary because they use the next color from given colormap.
+- If you want to plot a specific value from csv, set a string for specific_value_from_csv exactly how it is displayed in csv.
+- Moreover you should always set a filename (everything is saved as a png), a time span and titles you wish for your diagram.
 
 See the example below: 
 
 #### Code example: 
 ````python
 # 1 ! Definition Pathes, file and folder names for diagram: !
-filename = 'xxx.png'
-output_folder_name = 'share_of_assets'
+filename = '1b_ue24_heatcontent_0201.png'
+output_folder_name = 'share_of_assets/'
 colors_filename = "assigned_colors.json"
-INPUT_PATH_1 = '../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv'
-OUTPUT_PATH = '../data/postprocessing/' + output_folder_name
+INPUT_PATH_1 = '../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv'
+OUTPUT_PATH = '../data/postprocessing/' + output_folder_name 
 # optional: necessary for comparison of two data sets: 
-INPUT_PATH_2 = '../data/output/gee23_ST-min_NW-ref_2028_output_geo.csv'
+INPUT_PATH_2 = '../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv'
 
 # 2 ! Decide for diagram type.!
 # side note: Just set one parameter on True / string, or both False!
-storage_diagram = 'single' # 'fusion' = together in one plot with supply, ‘single’ only storage, None = only supply
-heat_demand_diagram = False # true if you want demand plot
-compare_supplies_diagram = False # true if you want to compare supplies of all assets
+storage_diagram = None # 'fusion' = together in one plot with supply, ‘single’ only storage, 'supply' = only supply, None = skip
+heat_demand_diagram = False # True if you want demand plot
+compare_supplies_diagram = False # True if you want to compare supplies of all assets
+specific_value_diagram = True # True if you want to plot another value. Important: set string for variable specific_value_from_csv.
 
 # 3 ! Assets for visualization:!
-my_assets = ('heatpump_2','solar_thermal') # don't forget comma for one asset!
-all_considered_assets = ('heatpump_2','solar_thermal') # local heating: ('heatpump_2','solar_thermal'), district heating: ('chp_1','chp_2') power: ('chp_1','chp_2', 'pv')
+my_assets = ('chp_1','chp_2') # 'solar_thermal','heatpump_s2') # don't forget comma for one asset!
+all_considered_assets = ('chp_1','chp_2') # local heating: ('heatpump_s1','heatpump_s2','solar_thermal'), district heating: ('chp_1','chp_2') power: ('chp_1','chp_2', 'pv'), 
 
 # 4 ! set heat type of diagram: !
 type_of_energy = 'heat'
 
 # 5 ! time and units:!
 actual_unit = 'MWh'
-target_unit = 'GWh'
-granularity = 'month' # 'hour', 'day', 'week', 'month'
+target_unit = 'MWh'
+granularity = 'hour' # 'hour', 'day', 'week', 'month' allowed
 time_column = 'date'
-start_date = '2025-01-01' 
-end_date = '2025-12-31'
+start_date = '2025-02-01' 
+end_date = '2025-02-01'
 
 # 6 optional: assets with power demand (just necessary for demand plot.)
-assets_with_power_demand = ('heatpump_2',) # assets that have power demand ('heatpump_2') # None = heat
+assets_with_power_demand = ('heatpump_s2',) # assets that have power demand ('heatpump_2') # None = heat
+specific_value_from_csv = 'geo_heat_storage.heat_content'
 
 # 7 optional: Texts variables for visualization:
-sharename = 'all assets' 
-key_to_label = None #f'heatpump_s2.{type_of_energy}' # if set to "None" - no label in diagram is set! if set as string needs to be variable of output_time_series.csv.
-type_of_heat_grid = 'local' # 'local' = local_heat, None = (district) heat
+sharename = 'heatpumps' 
+key_to_label = None # f'solar_thermal' # if set to "None" - no label in diagram is set! if set as string needs to be variable of output_time_series.csv.
+type_of_heat_grid = None # 'local' = local_heat, None = (district) heat
 heat_name = 'heat' # title string, add if f. e. local heat in titel highlighted
+scenario_title = '(UE24, 0 % H2)'
 
 # 8 optional: other settings for visualization: 
 fontsize = 16
@@ -2868,7 +3459,8 @@ if __name__ == "__main__":
             assigned_colors_dict = colors_dict,
             type_of_heat_grid = type_of_heat_grid,
             heat_name=heat_name,
-            assets_demand=assets_with_power_demand
+            assets_demand=assets_with_power_demand, 
+            scenario_title=scenario_title
         )
     # or plot one scenario: 
     # compatible for all other functions with one csv input:
@@ -2903,7 +3495,10 @@ if __name__ == "__main__":
             assigned_colors_dict = colors_dict,
             type_of_heat_grid = type_of_heat_grid,
             heat_name=heat_name,
-            assets_demand=assets_with_power_demand
+            assets_demand=assets_with_power_demand,
+            scenario_title=scenario_title, 
+            specific_value_diagram = specific_value_diagram,
+            specific_value = specific_value_from_csv
         )
 
     # 4 save figure of plot in # 4.
@@ -2930,7 +3525,7 @@ ______________________________________________________________
 ## 4 clean_spark_spread.ipynb
 ### 4.1 What is it for?
 This script processes data from output csv files in data/output. 
-The focus lies on generating stacked box plots, that show supply of different assets for a given time period (f. e. in summer) and granularity (weeks, months etc.). It is possible to add a tag in plot that shows the percentage of an asset or a group of assets on total supply.
+Here any cost data processing is taking place like plotting Clean Spark Spread or calculating and cumulating costs and plotting them. It's a good measure for verification of model calculation as a separate instance. 
 
 ### 4.2 Structure
 - Import Packages
@@ -2956,7 +3551,53 @@ from datetime import datetime
 import os
 ````
 ### 4.4 General Helpers
-Look at the explanation in section 3.4 of share_of_assets for the first 4 functions. These are the same functions as in this section.
+Look at the explanation in section 3.4 of share_of_assets for the first 4 functions. These are the same functions as in this section. New is here: 
+
+**change_cost_dimension**:  
+For plotting costs in different time spans it can make sense to change unit from € to T € or Mio. €. This is done in this function where our costs are laying in a list.
+
+#### Code example: 
+````python
+def change_cost_dimension(
+    values: list, 
+    target_unit: str
+):
+    """Function to change unit of costs from € to thousand or million €.
+
+    Args:
+        values (list): List of € values.
+        target_unit (str): wished unit as string.
+
+    Raises:
+        KeyError: if unit is not listed in function, error appears. 
+
+    Returns:
+        list: list of changed cost values.
+    """
+    
+    target_values = []
+    for value in values: 
+        if target_unit == '€':
+            target_values.append(round((value),2))
+        elif target_unit == 'T €': 
+            target_values.append(round((value / 1000),2))
+        elif target_unit == 'Mio. €':
+            target_values.append(round((value / 1000000),2))
+        elif target_unit == 'Mrd. €': 
+            target_values.append(round((value / 1000000000),2))
+        else: 
+            raise KeyError("Unit not found. Check spelling or add unit in function.")
+    return target_values
+
+# example execution: 
+changed_costs = change_cost_dimension(
+    values = [1500, 250000, 3200000, 750000000], 
+    target_unit = 'T €'
+)
+
+````
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/change_cost_dimension_example.png" alt="change_cost_dimension_example" width="600">
 
 ### 4.5 Load data from csv output
 Look at the explanation in section 3.6 of share_of_assets. This function is the same as in this section.
@@ -2966,6 +3607,8 @@ Look at the explanation in section 3.6 of share_of_assets. This function is the 
 - add_timestamp_and_filter
 - extract_price_data_to_dict
 - get_time_data_for_plot
+- insert_data_to_df
+- get_data_for_cost_simulation
 
 **add_timestamp_and_filter**:  
 In this function we filter our given csv file for a set time span. In this case we're looking for hourly data and do not sum up values, as the css is a figure of the moment. Therefore dates and hours are given as an input value as well. Make sure not to use a big time span because hours are set as labels on x axis so the plot may look too overfilled.
@@ -3149,6 +3792,132 @@ print('occurences: ', occurences)
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures_readme/get_time_data_for_plot_example.png" alt="get_time_data_for_plot_example" width="1200">
 
+**insert_data_to_df**:  
+As a workaround (especially for H2 price which changes in time), we need to add extra data to our time_series_df when it's not in csv output file. Therefore we paste it in manually with this function so the rest of functions can be normally used.
+
+#### Code example: 
+````python
+def insert_data_to_df(
+    csv_filepath: str,
+    input_df: pd.DataFrame
+):
+    """
+    Reads a csv data and extract name of file as column name. Adds values as new column in DataFrame. 
+
+    Args:
+        input_df (pd.DataFrame): existing DataFrame in which data is to be added.
+        csv_filepath (str): Complete path of csv data file. 
+
+    Returns:
+        pd.DataFrame: updated DataFrame with new column.
+
+    Raises:
+        ValueError: If amount of values does not fit amount of lines occur this error.
+    """
+
+    # Extrahiere den Dateinamen ohne Endung als Spaltenname
+    new_column_name = os.path.splitext(os.path.basename(csv_filepath))[0]
+
+    # Lese die CSV-Datei (angenommen, dass sie eine Spalte enthält)
+    new_values_df = pd.read_csv(csv_filepath)
+    
+    # Hole die Werte der ersten Spalte
+    new_values = new_values_df.iloc[:, 1].tolist()
+
+    print("[insert_data_to_df] H2_values: ", new_values)
+    # Prüfe, ob die Anzahl der Werte mit der Anzahl der Zeilen im DataFrame übereinstimmt
+    if len(new_values) != len(input_df):
+        raise ValueError(f"Fehler: Anzahl der neuen Werte ({len(new_values)}) passt nicht zur Anzahl der Zeilen im DataFrame ({len(input_df)}).")
+
+    # Füge die neue Spalte hinzu
+    input_df[new_column_name] = new_values
+
+    return input_df
+
+# example execution: 
+INPUT_PATH = "../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv"
+df = load_csv_results_in_df(input_path=INPUT_PATH)
+insert_data_to_df (
+    csv_filepath='../data/input/prices/ue24/h2_price_2028.csv',
+    input_df=df
+)
+````
+
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/insert_data_to_df_example.png" alt="insert_data_to_df_example" width="1200">
+
+
+**get_data_for_cost_simulation**:  
+Extracting cost and energy data from output csv that's necessary for economic evaluation of our model. Like checking target value or verifying parts of it. 
+
+#### Code example: 
+````python
+def get_data_for_cost_simulation(
+    key_gas_price: str,
+    key_power_price: str,
+    key_h2_price: str,
+    assets: tuple,
+    time_filtered_df: pd.DataFrame,
+    H2_PRICE = None
+):  
+    """Function for getting cost values from output csv table. Also necessary data is loaded by assets tuple to calculate related costs. 
+    H2_PRICE is just placeholder for putting constant value in list. Later it needs to be replaced by data from csv with key (already preparated).
+
+    Args:
+        key_gas_price (str): Name of column from gas price.
+        key_power_price (str): Name of column from power price.
+        key_h2_price (str): Name of column from h2 price.
+        assets (tuple): Tuple with names of assets that are relevant for cost calculation.
+        time_filtered_df (pd.DataFrame): dataframe from csv output already given in correct time span and granularity.
+        H2_PRICE (_type_, optional): Constant H2_PRICE until h2_price is listed in csv output. Defaults to None. 
+
+    Returns:
+        dict: Dictionary with all relevant cost and energy data.
+    """
+    
+    # Generate the complete column names
+    column_names = [key_gas_price, 
+                    key_power_price, 
+                    key_h2_price,
+                    'electrical_grid.power_balance',
+                    'heat_grid.heat_feedin',
+                    'hydrogen_grid.hydrogen_balance',
+                    'ngas_grid.ngas_balance'
+                    ] # convert input data for price names in list
+    
+    for asset in assets:   
+        column_names.append(str(f"{asset}.co2")) # get keys of set assets in input data emitting co2 √
+    print("[get_data_for_cost_simulation] column names: ", column_names)
+    
+    # Filter the desired columns:
+    extracted_columns_dict = {col: list(time_filtered_df[col]) for col in column_names if col in time_filtered_df.columns}
+    # print("[get_data_for_cost_simulation] Data from CSV: ", extracted_columns_dict[key_h2_price])
+    extracted_columns_dict[key_h2_price] = [H2_PRICE] * len(extracted_columns_dict[key_gas_price])
+    print("[get_data_for_cost_simulation] Values: ", extracted_columns_dict)
+    # print("[get_data_for_cost_simulation] constant H2_Price: ", extracted_columns_dict[key_h2_price])
+    # for t in range(0, len(column_names)):
+    #     print(f"[get_data_for_cost_simulation] Data value no. in columns dict {t}", extracted_columns_dict[column_names[t]])
+    
+    return extracted_columns_dict
+
+# example execution: 
+INPUT_PATH = "../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv"
+df = load_csv_results_in_df(input_path=INPUT_PATH)
+START_DATE = "2028-02-01 00:00"
+END_DATE = "2028-02-28 12:00"
+filtered_df = add_timestamp_and_filter(df, START_DATE, END_DATE)
+cost_data = get_data_for_cost_simulation(
+    key_gas_price='gas_price',
+    key_power_price='power_price',
+    key_h2_price='h2_price',
+    assets=('chp_1', 'chp_2'),
+    time_filtered_df=filtered_df,
+    H2_PRICE=160)
+````
+
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/get_data_for_cost_simulation_example.png" alt="get_data_for_cost_simulation_example" width="900">
+
 ### 4.7 Calculate CSS
 
 **calculate_css**:  
@@ -3182,17 +3951,19 @@ def calculate_css(
     Returns:
         list: list of calculated css values for plot (y-axis)
     """
+    # all necessary economic data is necessary for calculation:
     if key_gas_price not in price_dict or key_electr_price not in price_dict:
         raise KeyError(f"[calculate_css] Keys {key_gas_price} or {key_electr_price} are missing in price_dict")
-    # print("P_co2: ", P_co2)
+    # print("P_CO2: ", P_CO2)
     # print("eta_el: ", eta_el)
     # print("alpha: ", alpha)
     # print("beta: ", beta)
     css_values = []
+    # formula of target function:
     for P_power, P_gas in zip(price_dict[key_electr_price], price_dict[key_gas_price]): 
-        css = P_power - (1/eta_el) * (alpha * P_gas + beta * P_co2) # formular calculation of CSS
+        css = P_power - (1/eta_el) * (alpha * P_gas + beta * P_CO2) # formular calculation of CSS
         css_values.append(round(css, 2))
-    return css_values 
+    return css_values
 
 # example execution: 
 INPUT_PATH = "../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv"
@@ -3219,13 +3990,213 @@ print("css_values: ", css_values)
 #### Output example: 
 <img src="../data/postprocessing/zzz_pictures_readme/calculate_css_example.png" alt="calculate_css_example" width="1000">
 
-### 4.8 Plot economic data
+### 4.8 Calculate Costs
+- calculate_costs
+- cumulate_costs
+
+**calculate_costs**:  
+For verifying target values and get a feeling of heights of each position we calculate each part of target function manually. 
+
+#### Code example: 
+````python
+def calculate_costs(
+    cost_dict: pd.DataFrame,
+    heat_price: float,
+    co2_price: float,
+    key_gas_price:str,
+    key_h2_price:str,
+    key_power_price:str
+    ):
+    """Calculating costs of simulation for each time step as set in target function. 
+    If target function and inputs are changed, function needs to be adjusted.
+
+    Args:
+        cost_dict (pd.DataFrame): Dictionary with cost and energy data as needed in target function.
+        heat_price (float): Actual heat price as constant value.
+        co2_price (float): Actual CO2 price as constant value.
+        key_gas_price (str): Key of gas price set in csv output to get value from dict.
+        key_h2_price (str): Key of h2 price set in csv output to get value from dict.
+        key_power_price (str): Key of power price set in csv output to get value from dict.
+
+    Returns:
+        list: list with costs for each time step (usually per hour) is returned for later plotting.
+    """
+    
+    # Debugging: 
+    # print("[calculate_costs] cost_dict", cost_dict)
+    # print("[calculate_costs] heat_price", heat_price)
+    # print("[calculate_costs] co2_price", co2_price)
+    
+    # extract values or use default ones (zeros if not given)
+    num_time_steps = len(next(iter(cost_dict.values())))  # Anzahl der Zeitschritte bestimmen
+    
+    ngas_balance = cost_dict.get("ngas_grid.ngas_balance", [0] * num_time_steps)
+    h2_balance = cost_dict.get("hydrogen_grid.hydrogen_balance", [0] * num_time_steps)
+    power_balance = [value for value in cost_dict.get("electrical_grid.power_balance", [0] * num_time_steps)]
+    heat_feedin = cost_dict.get("heat_grid.heat_feedin", [0] * num_time_steps)
+    gas_price_series = cost_dict.get(key_gas_price, [0] * num_time_steps)
+    h2_price_series = cost_dict.get(key_h2_price, [0] * num_time_steps)
+    power_price_series = cost_dict.get(key_power_price, [0] * num_time_steps)
+
+    # Looking dynamically for all CO2 emitting assets:
+    co2_assets = [key for key in cost_dict.keys() if key.endswith(".co2")]
+    
+    # Initialize list for calculated costs per time stamp:
+    costs_per_time = []
+    
+    # for Debugging: 
+    power_costs=[]
+    h2_costs=[]
+    ngas_costs=[]
+    co2_costs=[]
+    heat_costs = []
+    
+    # Calculation of each time step:
+    for i in range(num_time_steps): 
+        total_cost = (
+            ngas_balance[i] * gas_price_series[i] +
+            h2_balance[i] * h2_price_series[i] +
+            sum(cost_dict[co2_asset][i] * co2_price for co2_asset in co2_assets) + 
+            power_balance[i] * power_price_series[i] -
+            heat_feedin[i] * heat_price
+        )
+        costs_per_time.append(total_cost)
+        
+        # for debugging: 
+        power_costs.append((power_balance[i] * power_price_series[i]))
+        h2_costs.append((h2_balance[i] * h2_price_series[i]))
+        ngas_costs.append((ngas_balance[i] * gas_price_series[i]))
+        co2_costs.append(sum(cost_dict[co2_asset][i] * co2_price for co2_asset in co2_assets))
+        heat_costs.append((heat_feedin[i] * heat_price))
+    
+    # For Debugging:
+    # t = 1000
+    # print("ngas_costs[0]: ", ngas_costs[t]/1000)
+    # print("hydrogen_costs[0]", h2_costs[t]/1000)
+    # print("power_costs[0]", power_costs[t]/1000)
+    # print("co2_costs[0]", co2_costs[t]/1000)
+    # print("heat_costs[0]", heat_costs[t]/1000)
+    # print("Summe costs[0]:", (ngas_costs[t]+co2_costs[t]+power_costs[t]+h2_costs[t])/1000)
+    # print("[calculate_costs] Total costs: ", sum((ngas_costs+co2_costs+power_costs+h2_costs))/1000)
+    
+    print("Summe ngas_costs: ", sum(ngas_costs)/1000) # cost unit is here €. Unit is changed in plot function.
+    print("Summe hydrogen_costs", sum(h2_costs)/1000)
+    print("Summe power_costs", sum(power_costs)/1000)
+    print("Summe co2_costs", sum(co2_costs)/1000)
+    print("[calculate_costs] Costs per time step: ", costs_per_time)
+    print("[calculate_costs] Total costs (Mio): ", sum(costs_per_time)/1000000)
+    # print("[calculate_costs] Amount of cost values: ", len(costs_per_time))
+    
+    return costs_per_time
+
+# example execution:
+INPUT_PATHES = ['../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv','../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv','../data/output/ue24_ST-min_NW-ref_2028/2b_ue24_ST-min_NW-ref_2028_20250314_002620_output.csv']
+H2_POWER_CSV_PATH = '../data/input/prices/ue24/h2_price_2028.csv' 
+costs = []
+for i, item in enumerate(INPUT_PATHES): 
+    print(f"Scenario {i+1}:")
+    df_with_time = load_data(
+    input_path=item,
+    add_data_path=H2_POWER_CSV_PATH,
+    start_time='2028-06-01 00:00',
+    end_time='2028-06-01 12:00',
+)
+
+    data_dict = get_data_for_cost_simulation(
+    key_gas_price='gas_price',
+    key_power_price='power_price',
+    key_h2_price='h2_price_2028',
+    assets=('chp_1', 'chp_2'),
+    time_filtered_df=df_with_time, 
+    H2_PRICE=160
+    )
+    print(f"[Main] cost scenario {i+1}:", INPUT_PATHES[i])
+    costs.append(calculate_costs(
+        cost_dict=data_dict,
+        heat_price=0,
+        co2_price=95,
+        key_gas_price='gas_price',
+        key_h2_price='h2_price_2028',
+        key_power_price='power_price'
+        ))
+````
+
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/calculate_costs_example.png" alt="calculate_costs_example" width="1000">
+
+**cumulate_costs**:  
+In this function we take the cost list and cumulate entries for getting target value (last value) of model. This can later be plotted.
+
+#### Code example: 
+````python
+def cumulate_costs(
+        costs_per_time: list
+        ):
+    """Function cumulating costs one after another. If done for one year last value corresponds target value of optimization.
+
+    Args:
+        costs_per_time (list): cost values that need to be cumulated.
+
+    Returns:
+        list: List with cumulated values.
+    """
+    cumulated_costs = []
+    # counting variable
+    total = 0
+    # cumulating costs and save in list:
+    for value in costs_per_time: 
+        total += value
+        cumulated_costs.append(total)
+    print("[cumulate_costs] cumulated_costs (Mio): ", cumulated_costs[-1]/1000000)
+    return cumulated_costs
+
+# example execution: 
+INPUT_PATHES = ['../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv','../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv','../data/output/ue24_ST-min_NW-ref_2028/2b_ue24_ST-min_NW-ref_2028_20250314_002620_output.csv']
+H2_POWER_CSV_PATH = '../data/input/prices/ue24/h2_price_2028.csv' 
+costs = []
+for i, item in enumerate(INPUT_PATHES): 
+    print(f"[Main] Scenario {i+1}:")
+    df_with_time = load_data(
+    input_path=item,
+    add_data_path=H2_POWER_CSV_PATH,
+    start_time='2028-01-01 00:00',
+    end_time='2028-12-31 23:00',
+)
+
+    data_dict = get_data_for_cost_simulation(
+    key_gas_price='gas_price',
+    key_power_price='power_price',
+    key_h2_price='h2_price_2028',
+    assets=('chp_1', 'chp_2'),
+    time_filtered_df=df_with_time, 
+    H2_PRICE=160
+    )
+    print(f"Cost scenario {i+1}:", INPUT_PATHES[i])
+    costs.append(calculate_costs(
+        cost_dict=data_dict,
+        heat_price=0,
+        co2_price=95,
+        key_gas_price='gas_price',
+        key_h2_price='h2_price_2028',
+        key_power_price='power_price'
+        ))
+all_cumulated_costs = []
+for i in range(0,len(INPUT_PATHES)):
+    cumulated_costs = cumulate_costs(
+        costs_per_time=costs[i])
+    all_cumulated_costs.append(cumulated_costs)
+````
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/cumulate_costs_example.png" alt="cumulate_costs_example" width="1000">
+
+
+### 4.9 Plot economic data
 - plot_css
+- plot_costs
 - save_plot
 
 **plot_css**:  
 In this graphic we plot the css as a line chart with hourly values but different time spans on the x axis. Also price data like Co2 price, gas price and power price are shown in the graphic. See the code example below. Occurencies are necessary for showing the right labels on x axis.
-
 
 #### Code example: 
 ````python
@@ -3240,7 +4211,9 @@ def plot_css(
     other_cost_data: dict, 
     key_gas_price: str,
     key_power_price: str, 
-    P_CO2: float
+    key_h2_price: str,
+    P_CO2: float,
+    scenario_title = None
 ): 
     """Line chart plotting css in hourly granulation (ticks). Granularity of x axis is adjustable. 
 
@@ -3255,12 +4228,14 @@ def plot_css(
         other_cost_data (dict): Dictionary with other cost data than css.
         key_gas_price (str): key of gas price.
         key_power_price (str): key of power price.
-        P_Co2 (float): constant of Co2 price.
+        P_CO2 (float): constant of Co2 price.
+        scenario_title (str, optional): Extra information in title for scenario data like (0 % H2, UE24). Default is to None.
 
     Returns:
         fig: Figure from matplotlib showing 4 types of cost data in one diagram as lines with different colors. 
     """
     
+    shortened_label_h2 = 'H2_price'
     labels = list(colors_dict.keys())
     # plot CSS, gas_price, power price: 
     plt.style.use('dark_background') # dark Layout for slides
@@ -3289,6 +4264,13 @@ def plot_css(
         linestyle='-', 
         label=key_power_price, 
         color=colors_dict[key_power_price]
+        )
+    ax.plot(
+        x_values, 
+        other_cost_data[key_h2_price], 
+        linestyle='-', 
+        label=shortened_label_h2, 
+        color=colors_dict[key_h2_price]
         )
     # given constant, needs to be integrated as list 
     repeated_list = [P_CO2 for _ in range(len(x_values))]
@@ -3331,7 +4313,7 @@ def plot_css(
         fontweight='bold'
         )
     ax.set_title(
-        "Clean Spark Spread of scenario GEE23", 
+        f"Clean Spark Spread of {scenario_title}", 
         fontsize=title_size, 
         fontweight='bold', 
         y=1.1
@@ -3354,13 +4336,13 @@ def plot_css(
     ax.legend(
         loc="lower center",           # position of legend
         bbox_to_anchor=(0.5, 1.0, 0, 0),   # anchor point (x=0.5 for central, y=1.0 for above)
-        ncol=4,                      # amount of columns in legend
+        ncol=5,                      # amount of columns in legend
         frameon=True,                # Frame around legend
         fontsize=fontsize,
         title_fontsize=fontsize
         )
-
-    plt.show() # aktivieren, wenn nicht gespeichert wird. 
+    plt.tight_layout()
+    # plt.show() # aktivieren, wenn nicht gespeichert wird. 
     return fig
 
 # example execution: 
@@ -3434,11 +4416,242 @@ fig = plot_css(
 ````
 
 #### Output example: 
-
 <img src="../data/postprocessing/zzz_pictures_readme/plot_css_example.png" alt="plot_css_example" width="900">
 
+**plot_costs**:  
+Here we can plot costs as a line diagram. It is possible to plot more than one line as input y-data is a nested list that is iterated through. 
+
+#### Code example: 
+````python
+def plot_costs(
+    nested_y_values: list,
+    x_values: list,
+    granularity: str,
+    x_axis_occurencies: dict, 
+    title_size: str,
+    fontsize: str, 
+    colors_dict: dict,
+    labels: list,
+    target_cost_unit = '€',
+    scenario_title = None
+    ):
+    """Function for plotting costs as line diagram. Possibility to plot more than one line because input data is a nested list.
+    Function iterates through lists and plots each of it as line. Makes sense for plotting (cumulated) costs.
+
+    Args:
+        nested_y_values (list): cost data (other data) as lists in a list (nested lists). Function will iterate through list.
+        x_values (list): Time values.
+        granularity (str): granularity of time like months etc.
+        x_axis_occurencies (dict): For labels of x-axis. Shows position, when values (like days) occur.
+        title_size (str): for formatting title in plot.
+        fontsize (str): for formatting font in plot.
+        colors_dict (dict): set colors for different plots.
+        labels (list): name of scenarios.
+        target_cost_unit (str, optional): wished unit of costs. Defaults to '€'.
+        scenario_title (_type_, optional): Name of plot as scenario. Defaults to None.
+
+    Returns:
+        fig: MatPlotLib figure for later saving.
+    """
+
+    plt.style.use('dark_background') # dark Layout for slides
+    fig, ax = plt.subplots(
+        figsize=(16, 9), 
+        facecolor="black"
+        )
+    print("x-Values: ", x_values)
+    
+    for i, scenario_data in enumerate(nested_y_values):
+        y_values = change_cost_dimension(
+            values=scenario_data,
+            target_unit=target_cost_unit
+        )
+        ax.plot(
+            x_values, 
+            y_values, 
+            marker=None, 
+            linestyle='-', 
+            label=labels[i], 
+            color=colors_dict[labels[i]]
+            )
+    
+    plt.xlim(min(x_values), max(x_values))
+    # condition that more than 24 hours are plotted in one graph: 
+    if granularity == 'hour': 
+        ax.set_xticks([x_values[i] for i in x_axis_occurencies.values()])
+        # Convert the complete date information to just “HH:MM” for the axis labeling
+        ax.set_xticklabels(
+            [key[-5:] for key in x_axis_occurencies.keys()],  # cut "HH:MM" out of string
+            rotation=45 
+            )
+    else: 
+        ax.set_xticks(
+        [x_values[i] for i in x_axis_occurencies.values()],  # reduce X values
+        [tick for tick in x_axis_occurencies.keys()],  # set labels as granularity
+        rotation=45 
+        )
+    # Set title of axis. 
+    ax.axhline(
+        y=0, 
+        color='white', 
+        linewidth=0.7, 
+        linestyle='-'
+        )
+    ax.set_xlabel(
+        f"Time in {granularity}s", 
+        fontsize=fontsize, 
+        fontweight='bold'
+        )
+    ax.set_ylabel(
+        f"Costs in {target_cost_unit}", 
+        fontsize=fontsize, 
+        fontweight='bold'
+        )
+    ax.set_title(
+        f"Costs of {scenario_title}", 
+        fontsize=title_size, 
+        fontweight='bold', 
+        y=1.1
+        )
+    ax.grid(
+        True, 
+        color='gray', 
+        linestyle='--', 
+        linewidth=0.5, 
+        zorder=1
+        )
+    ax.tick_params(
+        axis='x', 
+        labelsize=fontsize
+        ) 
+    ax.tick_params(
+        axis='y', 
+        labelsize=fontsize
+        )
+    ax.legend(
+        loc="lower center",           # position of legend
+        bbox_to_anchor=(0.5, 1.0, 0, 0),   # anchor point (x=0.5 for central, y=1.0 for above)
+        ncol=5,                      # amount of columns in legend
+        frameon=True,                # Frame around legend
+        fontsize=fontsize,
+        title_fontsize=fontsize
+        )
+
+    # plt.show() # aktivieren, wenn nicht gespeichert wird. 
+    return fig
+
+# example execution: 
+INPUT_PATHES = ['../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv','../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv','../data/output/ue24_ST-min_NW-ref_2028/2b_ue24_ST-min_NW-ref_2028_20250314_002620_output.csv']
+H2_POWER_CSV_PATH = '../data/input/prices/ue24/h2_price_2028.csv' 
+scenario_labels = ['0 % H2','50 % H2','100 % H2']
+all_cumulated_costs = []
+costs = []
+colors_dict = {
+    "gas_price": [
+        0.5843137255,
+        0.3254901961,
+        0.2784313725,
+        1.0
+    ],
+    "power_price": [
+        1.0, 
+        0.85, 
+        0.0, 
+        1.0
+    ],
+    "CO2_price": [
+        0.3882352941, 
+        0.8470588235,
+        0.2509803922,
+        1.0
+    ],
+    "CSS": [
+        0.2, 
+        0.6, 
+        1.0, 
+        1.0
+    ],
+    "h2_price_2028": [
+        0.5960784314,
+        0.9607843137,
+        1.0,
+        1.0
+    ],
+    "0 % H2": [
+        0.5843137255,
+        0.3254901961,
+        0.2784313725,
+        1.0
+    ],
+"50 % H2": [
+        1.0, 
+        0.85, 
+        0.0, 
+        1.0
+    ],
+"100 % H2": [
+        0.3882352941, 
+        0.8470588235,
+        0.2509803922,
+        1.0
+    ],
+}
+
+for i, item in enumerate(INPUT_PATHES): 
+    print(f"[Main] Scenario {i+1}:")
+    df_with_time = load_data(
+    input_path=item,
+    add_data_path=H2_POWER_CSV_PATH,
+    start_time='2028-01-01 00:00',
+    end_time='2028-12-31 23:00',
+)
+
+    data_dict = get_data_for_cost_simulation(
+    key_gas_price='gas_price',
+    key_power_price='power_price',
+    key_h2_price='h2_price_2028',
+    assets=('chp_1', 'chp_2'),
+    time_filtered_df=df_with_time, 
+    H2_PRICE=160
+    )
+    print(f"Cost scenario {i+1}:", INPUT_PATHES[i])
+    costs.append(calculate_costs(
+        cost_dict=data_dict,
+        heat_price=0,
+        co2_price=95,
+        key_gas_price='gas_price',
+        key_h2_price='h2_price_2028',
+        key_power_price='power_price'
+        ))
+
+    hourly_timestamps, occurencies_dict = get_time_data_for_plot(
+                time_filtered_df=df_with_time,
+                granularity='month')
+
+    cumulated_costs = cumulate_costs(
+        costs_per_time=costs[i])
+    all_cumulated_costs.append(cumulated_costs)
+
+fig = plot_costs(
+                nested_y_values=all_cumulated_costs,
+                x_values=hourly_timestamps,
+                granularity='month',
+                x_axis_occurencies=occurencies_dict, 
+                title_size=18,
+                fontsize=16, 
+                colors_dict=colors_dict,
+                labels=scenario_labels,
+                target_cost_unit='Mio. €',
+                scenario_title='UE 24'
+            )
+
+````
+
+#### Output example: 
+<img src="../data/postprocessing/zzz_pictures_readme/plot_costs_example.png" alt="plot_costs_example.png" width="900">
+
 **save_plot**:  
-Like in section 3.12 we need to save our dark figure in a folder for later use as png. For example executoin look at section 3.12 above.
+Like in section 3.13 we need to save our dark figure in a folder for later use as png. For example executoin look at section 3.13 above.
 
 #### Code example: 
 ````python
@@ -3475,8 +4688,58 @@ def save_plot(
     plt.close(fig)
     print(f"Diagram saved as: {output_file}")
 ````
+### 4.10 Wrapper functions
+- load_data
 
-### 4.9 Main Script
+**load data**:
+Wrapper Function for isolating specific data and filter with time. 
+
+#### Code example:
+````python
+def load_data(
+    input_path: str, 
+    start_time: str,
+    end_time: str,
+    add_data_path = None,
+    time_column = 'date'
+          ):
+    """Wrapper function for loading data and filtering and setting time parameters for plot. 
+    If data is not listed in csv output from optimization possibility to add data by setting add data path. If its a csv file the given
+    data is added to df. In this case often used for setting h2 data in df because it was not in optimization before.
+
+    Args:
+        input_path (str): Path of csv output data.
+        start_time (str): beginning of time span.
+        end_time (str): end of time span.
+        add_data_path (_type_, optional): Extra csv data that needs to be added to Dataframe. In this case often H2 data. Defaults to None.
+        time_column (str, optional): Name of column in which date is listed. Defaults to 'date'.
+
+    Returns:
+        pd.DataFrame: Table with 
+    """
+    
+    input_csv = load_csv_results_in_df(input_path=input_path)
+    
+    # possibility to load extra data into DataFrame:
+    if add_data_path is not None: 
+        df_adjusted = insert_data_to_df(input_df=input_csv, csv_filepath=add_data_path)
+    else: 
+        df_adjusted = input_csv
+    
+    # Filter and add time:
+    df_with_time = add_timestamp_and_filter(
+        input_df = df_adjusted, 
+        start_time = start_time, 
+        end_time = end_time, 
+        time_column = time_column
+        )
+    return df_with_time
+    
+````
+#### Output example: 
+Not necessary as it is part of main function in 4.11.
+
+### 4.11 Main Script
 - Input values
 - main script
 
@@ -3485,34 +4748,48 @@ In this section we adjust our graphics because we set our input parameters here.
 
 #### Code example: 
 ````python
+
 # 1 ! Definition Pathes, file and folder names for diagram:!
-filename = 'css_0515.png' # name of our file we want to generate
-output_folder_name = 'clean_spark_spread' # folder where we want to save it
-colors_filename = "assigned_colors.json" # filename of our colors, not working yet!
-INPUT_PATH = '../data/output/gee23_ST-min_NW-ref_2028_output_cleaned.csv' #Input path of our data from simulation
-OUTPUT_PATH = '../data/postprocessing/' + output_folder_name # our built output path where we save our graphics.
+filename = '1_b_ue24_ST-min_NW-ref_2028_hp_0201.png' # name of output file that is going to be saved.
+output_folder_name = 'clean_spark_spread' # folder name of output
+colors_filename = "assigned_colors.json" # not used yet, needs to be implemented later
+INPUT_PATH = '../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv' # path of csv data (one data set)
+H2_POWER_CSV_PATH = '../data/input/prices/ue24/h2_price_2028.csv' # name of file with H2 data (workaround), is later to be exchanged with data in csv output
+INPUT_PATHES = ['../data/output/ue24_ST-min_NW-ref_2028/1b_ue24_ST-min_NW-ref_2028_20250313_231545_output.csv','../data/output/ue24_ST-min_NW-ref_2028/3b_ue24_ST-min_NW-ref_2028_20250314_000706_output.csv','../data/output/ue24_ST-min_NW-ref_2028/2b_ue24_ST-min_NW-ref_2028_20250314_002620_output.csv'] # for cost plots with more than one data set
+OUTPUT_PATH = '../data/postprocessing/' + output_folder_name
 
 # 2 ! time data: !
-start_time = "2025-05-15 00:00" # Day and time beginning of time period
-end_time = "2025-05-15 23:00" # Day and time end of time period
-granularity = 'hour' # granularity we want for our x-axis as labels.
+start_time = "2028-02-01 00:00" 
+end_time = "2028-02-01 23:00"
+granularity = 'hour'
 
 # 3 ! asset data: !
-my_assets = ('chp_1', 'chp_2') # only assets with co2 variable
-key_gas_price = 'gas_price' # name from csv
-key_power_price = 'power_price' # name from csv
+my_assets = ('chp_1', 'chp_2') # only assets with CO2 variable
+key_gas_price = 'gas_price' # from csv
+key_power_price = 'power_price' # from csv
+key_h2_price = 'h2_price_2028'
+H2_PRICE = 160 # constant price (needs to be exchanged later by reading out of csv file)
 
-# 4 ! Constant price parameters: !
-P_CO2 = 76 # € / t
+# 4 ! Constant price parameter: !
+P_CO2 = 95.98 # € / t
+P_HEAT = 0 # €
 ETA_EL = 0.41
 ALPHA = 1.107
 BETA = 0.2016
 
-# 5 Plot constants: 
+# 5 simulation parameters / Only one is allowed to be set! 
+get_css_plot = True # if you want CSS plot = True 
+get_cost_plot = False # if you want cost plot = True
+type_of_costs = 'cumulation' # set to 'cumulation' or 'single'
+
+# 6 Plot constants: 
+scenario_title = "01.02.2028 (0% H2)"
+scenario_labels = ['0 % H2', '50 % H2', '100 % H2'] # for more than one data set in plot (legend)
+target_cost_unit = 'Mio. €' # 'Mrd. €' / 'T €' / '€' # wished unit of costs
 title_size = 18
 fontsize = 16
 
-# 6 set colors and keys of css and co2 price (TODO: later load colors from same json as share of assets)
+# 7 set colors and keys of css and co2 price, manually (later load colors from same json as share of assets)
 colors_dict = {
     "gas_price": [
         0.5843137255,
@@ -3526,7 +4803,7 @@ colors_dict = {
         0.0, 
         1.0
     ],
-    "Co2_price": [
+    "CO2_price": [
         0.3882352941, 
         0.8470588235,
         0.2509803922,
@@ -3537,9 +4814,35 @@ colors_dict = {
         0.6, 
         1.0, 
         1.0
-    ]
+    ],
+    "h2_price_2028": [
+        0.5960784314,
+        0.9607843137,
+        1.0,
+        1.0
+    ],
+    "0 % H2": [
+        0.5843137255,
+        0.3254901961,
+        0.2784313725,
+        1.0
+    ],
+"50 % H2": [
+        1.0, 
+        0.85, 
+        0.0, 
+        1.0
+    ],
+"100 % H2": [
+        0.3882352941, 
+        0.8470588235,
+        0.2509803922,
+        1.0
+    ],
 }
 ````
+#### Output example: 
+No output given at this point. It's used for main script.
 
 **main script**:  
 This is the main script executing all functions. Here we don't need to change anything because we make main changes in input parameters. Nevertheless it is important because we always need to execute it. 
@@ -3547,56 +4850,143 @@ This is the main script executing all functions. Here we don't need to change an
 #### Code example: 
 ````python
 if __name__ == "__main__":
-    #TODO: kürzen in Wrapper!
-    input_csv = load_csv_results_in_df(input_path=INPUT_PATH)
-    df_with_time = add_timestamp_and_filter(
-    input_df = input_csv, 
-    start_time = start_time, 
-    end_time = end_time, 
-    time_column = 'date'
-    )
-    # print_df(df=df_with_time)
-    price_dict = extract_price_data_to_dict(
-    time_filtered_df = df_with_time, 
-    assets = my_assets,
-    key_gas_price = key_gas_price,
-    key_power_price = key_power_price
-    )
-    trimmed_price_dict = {key: value[:5] for key, value in price_dict.items()}
-    print("price dict: ", trimmed_price_dict)
-    hourly_timestamps, occurencies_dict = get_time_data_for_plot(
-        time_filtered_df=df_with_time,
-        granularity=granularity
-    )
-    print("hourly_timestamps: ", hourly_timestamps[:5])
-    print("occurencies_dict: ", occurencies_dict)
-    css_values = calculate_css(
-    price_dict = price_dict,
-    key_gas_price = key_gas_price,
-    key_electr_price = key_power_price,
-    P_CO2=P_CO2,
-    eta_el = ETA_EL,
-    alpha = ALPHA,
-    beta = BETA)
-    print("css_values: ", css_values[:5])
-    fig = plot_css(
-    y_values = css_values,
-    x_values = hourly_timestamps,
-    granularity = granularity,
-    x_axis_occurencies =occurencies_dict,
-    title_size=title_size,
-    fontsize = fontsize, 
-    colors_dict = colors_dict,
-    other_cost_data = price_dict, 
-    key_gas_price = key_gas_price, 
-    key_power_price = key_power_price, 
-    P_CO2 = P_CO2
-    )
-save_plot(
+    
+    # get css plot if it's set to True:
+    if get_css_plot == True:
+        df_with_time = load_data(
+        input_path=INPUT_PATH,
+        add_data_path=H2_POWER_CSV_PATH,
+        start_time=start_time,
+        end_time=end_time,
+    ) 
+        price_dict = extract_price_data_to_dict(
+            time_filtered_df = df_with_time, 
+            assets = my_assets,
+            key_gas_price = key_gas_price,
+            key_power_price = key_power_price,
+            key_h2_price = key_h2_price
+        )
+        trimmed_price_dict = {key: value[:5] for key, value in price_dict.items()}
+        print("[Main] price dict: ", trimmed_price_dict)
+        hourly_timestamps, occurencies_dict = get_time_data_for_plot(
+            time_filtered_df=df_with_time,
+            granularity=granularity
+        )
+        print("[Main] hourly_timestamps: ", hourly_timestamps[:5])
+        print("[Main] occurencies_dict: ", occurencies_dict)
+        css_values = calculate_css(
+            price_dict = price_dict,
+            key_gas_price = key_gas_price,
+            key_electr_price = key_power_price,
+            P_CO2=P_CO2,
+            eta_el = ETA_EL,
+            alpha = ALPHA,
+            beta = BETA)
+        print("[Main] css_values: ", css_values[:5])
+        
+        fig = plot_css(
+            y_values = css_values,
+            x_values = hourly_timestamps,
+            granularity = granularity,
+            x_axis_occurencies =occurencies_dict,
+            title_size=title_size,
+            fontsize = fontsize, 
+            colors_dict = colors_dict,
+            other_cost_data = price_dict, 
+            key_gas_price = key_gas_price, 
+            key_power_price = key_power_price, 
+            key_h2_price=key_h2_price,
+            P_CO2 = P_CO2,
+            scenario_title=scenario_title
+        )
+        save_plot(
         fig=fig,
         output_path=OUTPUT_PATH,
         filename=filename 
-    )
+        )
+    
+    # get cost plot if set to True:
+    elif get_cost_plot == True:
+        costs = []
+        for i, item in enumerate(INPUT_PATHES): 
+            print(f"[Main] Scenario {i+1}:")
+            df_with_time = load_data(
+            input_path=item,
+            add_data_path=H2_POWER_CSV_PATH,
+            start_time=start_time,
+            end_time=end_time,
+        )
+     
+            data_dict = get_data_for_cost_simulation(
+            key_gas_price=key_gas_price,
+            key_power_price=key_power_price,
+            key_h2_price=key_h2_price,
+            assets=my_assets,
+            time_filtered_df=df_with_time, 
+            H2_PRICE=H2_PRICE
+            )
+            
+            print(f"[Main] cost scenario {i+1}:", INPUT_PATHES[i])
+            # print("key_h2_price: ", data_dict[key_h2_price])
+            costs.append(calculate_costs(
+                cost_dict=data_dict,
+                heat_price=P_HEAT,
+                co2_price=P_CO2,
+                key_gas_price=key_gas_price,
+                key_h2_price=key_h2_price,
+                key_power_price=key_power_price
+                ))
+            
+            hourly_timestamps, occurencies_dict = get_time_data_for_plot(
+                time_filtered_df=df_with_time,
+                granularity=granularity)
+            
+            print("------------------------------------------------------------")
+        
+        # Plot cost diagram of input files:  
+        if type_of_costs == 'single':
+            fig = plot_costs(
+                nested_y_values=costs,
+                x_values=hourly_timestamps,
+                granularity=granularity,
+                x_axis_occurencies=occurencies_dict, 
+                title_size=title_size,
+                fontsize=fontsize, 
+                colors_dict=colors_dict,
+                labels=scenario_labels,
+                target_cost_unit=target_cost_unit,
+                scenario_title=scenario_title
+            )
+        # get cumulated cost diagram of input files: 
+        elif type_of_costs == 'cumulation':
+            all_cumulated_costs = []
+            for i in range(0,len(INPUT_PATHES)):
+                cumulated_costs = cumulate_costs(
+                    costs_per_time=costs[i])
+                all_cumulated_costs.append(cumulated_costs)
+
+            fig = plot_costs(
+                nested_y_values=all_cumulated_costs,
+                x_values=hourly_timestamps,
+                granularity=granularity,
+                x_axis_occurencies=occurencies_dict, 
+                title_size=title_size,
+                fontsize=fontsize, 
+                colors_dict=colors_dict,
+                labels=scenario_labels,
+                target_cost_unit=target_cost_unit,
+                scenario_title=scenario_title
+            )
+        else: 
+            print(f"[Main] This type is not available: {type_of_costs}!")
+            
+        save_plot(
+        fig=fig,
+        output_path=OUTPUT_PATH,
+        filename=filename 
+        )
+    else: 
+        print("[Main] no plot variant chosen.")
 ````
 #### Output example:
 
