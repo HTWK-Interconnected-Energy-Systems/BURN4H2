@@ -1,4 +1,10 @@
 {
+  "parameters":{
+    "INSTALLED_ST_POWER" : 5.16,
+    "HYDROGEN_ADMIXTURE_CHP_1" : 0,
+    "HYDROGEN_ADMIXTURE_CHP_2" : 0
+  },
+  "timeseries":{
     "gas_price": {
       "file": "prices/ue24/gas_price_2028.csv",
       "index": "t",
@@ -8,6 +14,10 @@
       "file": "prices/ue24/power_price_2028.csv",
       "index": "t",
       "param": "power_price"
+    },
+    "hydrogen_price": {
+      "file": "prices/ue24/h2_price_2028.csv",
+      "index": "t"
     },
     "heat_demand": {
       "file": "demands/district_heating/default/heat.csv",
@@ -22,8 +32,13 @@
     "local_heat_demand": {
       "file": "demands/local_heating/Bedarf NW-Netz_zusaetzl Abnehmer/local_heat_ext_2028.csv",
       "index": "t",
-      "param": "local_heat_demand"
+      "param": ["local_heat_demand", "supply_temperature", "return_temperature"]
+    },
+    "normalized_solar_thermal_heat_profile":{
+      "file": "profiles/dummy/min_solarthermal_norm_profil_2028.csv",
+      "index": "t"
     }
   }
+}
 
   

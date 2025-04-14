@@ -1,0 +1,47 @@
+Solver command line: []
+
+Read LP format model from file C:\Users\wlhlm\AppData\Local\Temp\tmplccwu_x4.pyomo.lp
+Reading time = 0.04 seconds
+objective: 18325 rows, 16631 columns, 40483 nonzeros
+Set parameter TimeLimit to value 5000
+Set parameter MIPGap to value 0.08
+Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - Windows 11.0 (26100.2))
+
+CPU model: Intel(R) Core(TM) Ultra 7 258V, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+TimeLimit  5000
+MIPGap  0.08
+
+Optimize a model with 18325 rows, 16631 columns and 40483 nonzeros
+Model fingerprint: 0x1d35643c
+Model has 167 quadratic constraints
+Variable types: 14280 continuous, 2351 integer (2016 binary)
+Coefficient statistics:
+  Matrix range     [6e-03, 1e+03]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [4e+01, 3e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [2e-03, 1e+04]
+Presolve removed 15782 rows and 13581 columns
+Presolve time: 0.05s
+Presolved: 2543 rows, 3050 columns, 8567 nonzeros
+Variable types: 2393 continuous, 657 integer (657 binary)
+
+Root relaxation: objective 3.850967e+06, 1177 iterations, 0.01 seconds (0.01 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 3850966.73    0   25          - 3850966.73      -     -    0s
+H    0     0                    3858082.9701 3850966.73  0.18%     -    0s
+
+Explored 1 nodes (1188 simplex iterations) in 0.09 seconds (0.09 work units)
+Thread count was 8 (of 8 available processors)
+
+Solution count 1: 3.85808e+06 
+
+Optimal solution found (tolerance 8.00e-02)
+Best objective 3.858082970059e+06, best bound 3.850966726229e+06, gap 0.1845%
+

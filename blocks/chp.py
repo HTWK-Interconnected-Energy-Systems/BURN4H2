@@ -2,7 +2,7 @@ from pyomo.environ import *
 from pyomo.network import *
 
 import pandas as pd
-
+import os
 
 class Chp:
     """Class for constructing chp asset objects.
@@ -26,7 +26,6 @@ class Chp:
         self.kwargs = kwargs
         self.validate_kwargs()
 
-    
 
     def validate_kwargs(self):
         """Checks for unknown kwargs and returns a KeyError if some are 
@@ -45,7 +44,6 @@ class Chp:
             filepath,
             index_col=index_col
         )
-    
 
     def add_to_model(self, model):
         """Adds the asset as a pyomo block component to a given model."""
@@ -102,12 +100,15 @@ class Chp:
             include_splitfrac=False
         )
 
-
+        if 'hydrogen_admixture' in self.kwargs:
+            hydrogen_admixture_factor = float(self.kwargs['hydrogen_admixture'])
+            print(hydrogen_admixture_factor)
+        
+            
         # Declare construction rules for constraints
         def power_max_rule(_block, i):
             """Rule for the maximal power."""
             return _block.power[i] <= self.data.loc['max', 'power'] * _block.bin[i]
-
 
         def power_min_rule(_block, i):
             """Rule for the minimal power."""
@@ -200,13 +201,10 @@ class Chp:
                 expr=quicksum(block.bin[i] for i in t) >= kwarg_value
             )
 
+        # Proof if hydrogen_admixture is given
         if 'hydrogen_admixture' in self.kwargs:
+            admixture = float(self.kwargs['hydrogen_admixture'])
 
-            hydrogen_admixture_factor = self.kwargs['hydrogen_admixture']
-            if not 0 <= hydrogen_admixture_factor <= 1:
-                raise ValueError(
-                    'Admixture factor out of bounds. Should be >= 0 or <= 1'
-                )
             
             # Delete components
             block.del_component("co2_depends_on_power_constraint")

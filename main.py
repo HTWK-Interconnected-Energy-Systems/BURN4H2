@@ -35,18 +35,9 @@ PATH_IN = "data/input/"
 PATH_OUT = "data/output/"
 PATH_CONFIG = "data/config/"
 
-# Declare constant prices
-CO2_PRICE = 95.98  # price in €/t
-HEAT_PRICE = 0  # price in €/MWh
-H2_PRICE = 160  # price in €/MWh
-
-# config files
+# Config files
 AVAILABLE_CONFIGS = [
     "dummy.json",
-    "gee23_ST-min_NW-ref_2028.json",
-    "gee23_ST-max_NW-ref_2028.json",
-    "gee23_ST-min_NW-ext_2028.json",
-    "gee23_ST-max_NW-ext_2028.json",
     "ue24_ST-min_NW-ref_2028.json",
     "ue24_ST-max_NW-ref_2028.json",
     "ue24_ST-min_NW-ext_2028.json",
@@ -75,83 +66,110 @@ class Model:
 
     def load_timeseries_data(self):
         """Declare timeseries data for the optimization model."""
-        self.timeseries_data = DataPortal()
+        self.data_portal = DataPortal()
 
+        # Load global data
+        self.data_portal.load(filename = 'data/config/global.json')
+        
         # Load config
         with open(PATH_CONFIG + self.config_file, "r") as f:
             config = json.load(f)
 
         # Load timeseries data from config
-        for param_name, param_config in config.items():
-            self.timeseries_data.load(
+        for param_name, param_config in config.get("timeseries", {}).items():
+            self.data_portal.load(
                 filename=PATH_IN + param_config["file"],
                 index=param_config["index"],
-                param=param_config["param"], 
-            )
+                param=param_config["param"]
+        )
+            
+         # Load scalar parameters
+        for param_name, param_value in config.get("parameters", {}).items():
+            # For scalar parameters, use a dictionary with None as key
+            self.data_portal.data()[param_name] = {None: param_value}
         
-        ######## OLD Structure ###########
-
-        # self.timeseries_data.load(
-        #     filename=PATH_IN + 'prices/dummy/gas_price.csv',
-        #     # filename=PATH_IN + "prices/gee23/gas_price_2028.csv",
-        #     index="t",
-        #     param="gas_price",
-        # )
-        # self.timeseries_data.load(
-        #     filename=PATH_IN + 'prices/dummy/power_price.csv',
-        #     # filename=PATH_IN + "prices/gee23/power_price_2028.csv",
-        #     index="t",
-        #     param="power_price",
-        # )
-        # self.timeseries_data.load(
-        #     filename=PATH_IN + 'demands/district_heating/dummy/heat_short.csv',
-        #     # filename=PATH_IN + "demands/district_heating/default/heat.csv",
-        #     index="t",
-        #     param="heat_demand",
-        # )
-        # self.timeseries_data.load(
-        #     filename=PATH_IN + 'profiles/dummy/dummy_solarthermal_profil.csv',
-        #     index='t',
-        #     param='solar_thermal_heat_profile',
-        # )
-        # self.timeseries_data.load(
-        #     filename = PATH_IN + 'demands/local_heating/dummy/local_heat_short.csv',
-        #     # filename = PATH_IN + "demands/local_heating/Bedarf NW-Netz/local_heat_2028.csv",
-        #     index = 't',
-        #     param = 'local_heat_demand',
-        # )
-
-        ######## OLD Structure ########
 
     def add_components(self):
         """Adds pyomo component to the model."""
-
         # Define sets
         self.model.t = Set(ordered=True)
-
-        # Define parameters
+        
+        # Define indexed parameters
         self.model.gas_price = Param(self.model.t)
         self.model.power_price = Param(self.model.t)
+        self.model.hydrogen_price = Param(self.model.t)
         self.model.heat_demand = Param(self.model.t)
         self.model.local_heat_demand = Param(self.model.t)
-
-        # Define profiles
+        self.model.supply_temperature = Param(self.model.t)
+        self.model.return_temperature = Param(self.model.t)
         self.model.solar_thermal_heat_profile = Param(self.model.t)
+        self.model.normalized_solar_thermal_heat_profile = Param(self.model.t)
+        
+        # Define non-indexed parameters
+        self.model.CO2_PRICE = Param()
+        self.model.HEAT_PRICE = Param()
+        self.model.H2_PRICE = Param()
+        self.model.INSTALLED_ST_POWER = Param()
+        self.model.HYDROGEN_ADMIXTURE_CHP_1 = Param()
+        self.model.HYDROGEN_ADMIXTURE_CHP_2 = Param()
+
+        # Erlaubte hydrogen_admixture Werte
+        ALLOWED_ADMIXTURE_VALUES = [0, 0.3, 0.5, 1.0]
+        
+        # Konvertiere Pyomo-Parameter in konkrete Werte
+        # Verwende die Werte aus der Konfiguration, da die Pyomo-Parameter noch nicht instanziiert sind
+        with open(PATH_CONFIG + self.config_file, "r") as f:
+            config = json.load(f)
+        
+        h2_admixture_chp_1 = config.get("parameters", {}).get("HYDROGEN_ADMIXTURE_CHP_1", 0)
+        h2_admixture_chp_2 = config.get("parameters", {}).get("HYDROGEN_ADMIXTURE_CHP_2", 0)
+        
+        # Validiere die Werte
+        if h2_admixture_chp_1 not in ALLOWED_ADMIXTURE_VALUES:
+            raise ValueError(f"Invalid hydrogen_admixture value for CHP_1: {h2_admixture_chp_1}. "
+                            f"Allowed values are: {ALLOWED_ADMIXTURE_VALUES}")
+        if h2_admixture_chp_2 not in ALLOWED_ADMIXTURE_VALUES:
+            raise ValueError(f"Invalid hydrogen_admixture value for CHP_2: {h2_admixture_chp_2}. "
+                            f"Allowed values are: {ALLOWED_ADMIXTURE_VALUES}")
+        
+        # Bestimme die entsprechenden CSV-Dateien
+        def get_chp_csv_path(h2_value):
+            """Bestimmt den Pfad zur CHP-CSV-Datei basierend auf dem hydrogen_admixture_factor."""
+            if h2_value == 0:
+                return PATH_IN + "assets/chp.csv"  # Standarddatei für 0% H2
+            else:
+                # Prozentsatz für Dateinamen (30, 50, 100)
+                h2_percent = int(h2_value * 100)
+                specific_file = PATH_IN + f"assets/chp_h2_{h2_percent}.csv"
+                
+                # Prüfe, ob die spezifische Datei existiert
+                if os.path.exists(specific_file):
+                    return specific_file
+                else:
+                    print(f"Warning: Specific data file for {h2_percent}% hydrogen not found. Using default.")
+                    return PATH_IN + "assets/chp.csv"
+        
+        # Hole die Dateipfade für die jeweiligen H2-Beimischungen
+        chp1_filepath = get_chp_csv_path(h2_admixture_chp_1)
+        chp2_filepath = get_chp_csv_path(h2_admixture_chp_2)
+        
+        print(f"Using CHP 1 data file: {chp1_filepath} with {h2_admixture_chp_1*100}% hydrogen admixture")
+        print(f"Using CHP 2 data file: {chp2_filepath} with {h2_admixture_chp_2*100}% hydrogen admixture")
+
 
         # Define block components
         chp1 = chp.Chp(
             "chp_1", 
-            PATH_IN + "assets/chp.csv",
-            hydrogen_admixture=0
+            chp1_filepath,
+            hydrogen_admixture=self.model.HYDROGEN_ADMIXTURE_CHP_1
         )
         chp2 = chp.Chp(
             "chp_2", 
-            PATH_IN + "assets/chp.csv",
-            hydrogen_admixture=0
+            chp2_filepath,
+            hydrogen_admixture=self.model.HYDROGEN_ADMIXTURE_CHP_2
         )
         h2_grid = grid.HydrogenGrid(
-            "hydrogen_grid", 
-            PATH_IN + "assets/hydrogen_grid.csv"
+            "hydrogen_grid"
         )
         n_grid = grid.NGasGrid(
             "ngas_grid"
@@ -198,13 +216,14 @@ class Model:
             "heatpump_s2", 
             PATH_IN + "assets/heatpump.csv"
         )
-        lh_storage = storage.LocalHeatStorage(
-            "local_heat_storage", 
-            PATH_IN + "assets/local_heat_storage.csv"
-        )
         gh_storage = storage.GeoHeatStorage(
             "geo_heat_storage", 
             PATH_IN + "assets/geo_heat_storage.csv"
+        )
+        sh_storage = storage.StratifiedHeatStorage(
+            "stratified_storage",
+            PATH_IN + "assets/stratified_storage.csv",
+            seasonal_discharge_restriction=True,
         )
 
 
@@ -222,8 +241,10 @@ class Model:
         solar_thermal.add_to_model(self.model)
         hp_s1.add_to_model(self.model)
         hp_s2.add_to_model(self.model)
-        lh_storage.add_to_model(self.model)
+        # lh_storage.add_to_model(self.model)
         gh_storage.add_to_model(self.model)
+        sh_storage.add_to_model(self.model)
+
 
     def add_objective(self):
         """Adds the objective to the abstract model."""
@@ -231,7 +252,7 @@ class Model:
 
     def instantiate(self):
         """Creates a concrete model from the abstract model."""
-        self.instance = self.model.create_instance(self.timeseries_data)
+        self.instance = self.model.create_instance(self.data_portal)
 
     def expand_arcs(self):
         """Expands arcs and generate connection constraints."""
@@ -391,40 +412,80 @@ class Model:
             destination=self.instance.heatpump_s2.power_in,
         )
         
-        # LOCAL HEAT: Solar Thermal -> LOCAL HEAT STORAGE
-        # CHECK
-        self.instance.arc22 = Arc(
-            source = self.instance.solar_thermal.heat_out,
-            destination = self.instance.local_heat_storage.heat_in,
+        ############
+
+        # # LOCAL HEAT: Solar Thermal -> LOCAL HEAT STORAGE
+        # # CHECK
+        # self.instance.arc22 = Arc(
+        #     source = self.instance.solar_thermal.heat_out,
+        #     destination = self.instance.local_heat_storage.heat_in,
+        # )
+        
+        # # LOCAL HEAT: 2. Stage Heat Pump  -> Local HEAT STORAGE
+        # # CHECK
+        # self.instance.arc23 = Arc(
+        #     source=self.instance.heatpump_s2.heat_out,
+        #     destination=self.instance.local_heat_storage.heat_in,
+        # )
+
+        # # LOCAL HEAT: Local HEAT STORAGE -> Local Heat Grid
+        # # CHECK
+        # self.instance.arc24 = Arc(
+        #     source=self.instance.local_heat_storage.heat_out,
+        #     destination=self.instance.local_heat_grid.heat_in,
+        # )
+
+        # # EXCESS LOCAL HEAT: Local Heat Storage -> Heat Grid
+        # # CHECK
+        # self.instance.arc25 = Arc(
+        #     source=self.instance.local_heat_storage.excess_heat_out,
+        #     destination=self.instance.heat_grid.excess_heat_in 
+        # )
+
+        # # HEAT: Heat Grid -> Local Heat Grid
+        # # CHECK
+        # self.instance.arc26 = Arc(
+        #     source=self.instance.heat_grid.heat_grid_to_local_out,
+        #     destination=self.instance.local_heat_grid.district_heat_in,
+        # )
+
+        #####
+
+        
+      
+        ###### NEW ######
+
+        self.instance.arc27 = Arc(
+            source=self.instance.solar_thermal.heat_out,
+            destination=self.instance.stratified_storage.st_heat_in,
+        )
+
+        self.instance.arc28 = Arc(
+            source=self.instance.heatpump_s2.heat_out,
+            destination=self.instance.stratified_storage.wp_heat_in,
+        )
+
+        self.instance.arc29 = Arc(
+            source=self.instance.stratified_storage.Z1_FW_heat_out,
+            destination=self.instance.heat_grid.excess_heat_in,
+        )
+
+        self.instance.arc30 = Arc(
+            source=self.instance.stratified_storage.Z1_NW_heat_out,
+            destination=self.instance.local_heat_grid.Z1_NW_heat_in,
         )
         
-        # LOCAL HEAT: 2. Stage Heat Pump  -> Local HEAT STORAGE
-        # CHECK
-        self.instance.arc23 = Arc(
-            source=self.instance.heatpump_s2.heat_out,
-            destination=self.instance.local_heat_storage.heat_in,
+        self.instance.arc31 = Arc(
+            source=self.instance.stratified_storage.Z2_NW_heat_out,
+            destination=self.instance.local_heat_grid.Z2_NW_heat_in,
         )
 
-        # LOCAL HEAT: Local HEAT STORAGE -> Local Heat Grid
-        # CHECK
-        self.instance.arc24 = Arc(
-            source=self.instance.local_heat_storage.heat_out,
-            destination=self.instance.local_heat_grid.heat_in,
-        )
-
-        # EXCESS LOCAL HEAT: Local Heat Storage -> Heat Grid
-        # CHECK
-        self.instance.arc25 = Arc(
-            source=self.instance.local_heat_storage.excess_heat_out,
-            destination=self.instance.heat_grid.excess_heat_in 
-        )
-
-        # HEAT: Heat Grid -> Local Heat Grid
-        # CHECK
-        self.instance.arc26 = Arc(
-            source=self.instance.heat_grid.heat_grid_to_local_out,
+        self.instance.arc32 = Arc(
+            source=self.instance.heat_grid.heat_grid_to_local_out, 
             destination=self.instance.local_heat_grid.district_heat_in,
         )
+
+
 
 
     def solve(self, output_dir):
@@ -460,31 +521,86 @@ class Model:
 
         for parameter in self.instance.component_objects(Param, active=True):
             name = parameter.name
-            if "hydrogen_admixture_factor" in name:
+            # Write only indexed parameters
+            try:
+                if hasattr(parameter, 'index_set') and parameter.index_set() is not None:
+                    # Vergleiche die String-Repräsentation der Sets
+                    if str(parameter.index_set()) == str(self.instance.t):
+                        df_parameters[name] = [value(parameter[t]) for t in self.instance.t]
+            
+            # Skip scalar Parameters
+            except:
                 continue
-            df_parameters[name] = [value(parameter[t]) for t in self.instance.t]
 
+        #########
+
+        # for variable in self.instance.component_objects(Var, active=True):
+        #     name = variable.name
+        #     if "aux" in name:  # Filters auxiliary variables from the output data
+        #         continue
+        #     if "splitfrac" in name:
+        #         continue
+        #     # Skip arc variables if not included
+        #     if not include_arcs and "arc" in name.lower():
+        #         continue
+            
+        #     # Füge nur berechnete Variablen hinzu
+        #     values = []
+        #     for t in self.instance.t:
+        #         v = value(variable[t], exception=False)  # Gibt None zurück, wenn nicht initialisiert
+        #         if v is not None:  # Nur initialisierte Variablen hinzufügen
+        #             values.append(v)
+        #         else:
+        #             values.append(None)  # Optional: None hinzufügen, um Lücken zu markieren
+        #     if any(v is not None for v in values):  # Nur hinzufügen, wenn mindestens ein Wert gesetzt ist
+        #         df_variables[name] = values
+        
+        ######
+
+        # Verbesserte Variable-Verarbeitung für mehrfach indizierte Variablen
         for variable in self.instance.component_objects(Var, active=True):
             name = variable.name
-            if "aux" in name:  # Filters auxiliary variables from the output data
-                continue
-            if "splitfrac" in name:
-                continue
-            # Skip arc variables if not included
-            if not include_arcs and "arc" in name.lower():
+            if "aux" in name or "splitfrac" in name or (not include_arcs and "arc" in name.lower()):
                 continue
             
-            # Füge nur berechnete Variablen hinzu
-            values = []
-            for t in self.instance.t:
-                v = value(variable[t], exception=False)  # Gibt None zurück, wenn nicht initialisiert
-                if v is not None:  # Nur initialisierte Variablen hinzufügen
-                    values.append(v)
-                else:
-                    values.append(None)  # Optional: None hinzufügen, um Lücken zu markieren
-            if any(v is not None for v in values):  # Nur hinzufügen, wenn mindestens ein Wert gesetzt ist
-                df_variables[name] = values
-        
+            # Prüfen, ob die Variable mehrfach indiziert ist
+            try:
+                next(variable.iteritems())
+                index_dims = sum(1 for _ in next(variable.iteritems())[0]) if variable else 0
+            except (StopIteration, TypeError):
+                index_dims = 0
+            
+            if index_dims > 1:
+                # Mehrfach indizierte Variable (z.B. T_sto[t, layer])
+                # Erstelle für jede zweite Dimension einen eigenen Eintrag
+                second_indices = set(idx[1] for idx in variable.keys())
+                for second_idx in second_indices:
+                    values = []
+                    for t in self.instance.t:
+                        try:
+                            v = value(variable[t, second_idx], exception=False)
+                            values.append(v)
+                        except (KeyError, IndexError):
+                            values.append(None)
+                            
+                    if any(v is not None for v in values):
+                        col_name = f"{name}_{second_idx}"
+                        df_variables[col_name] = values
+            else:
+                # Einfach indizierte Variable (nur nach Zeit)
+                values = []
+                for t in self.instance.t:
+                    try:
+                        v = value(variable[t], exception=False)
+                        values.append(v)
+                    except (KeyError, IndexError):
+                        values.append(None)
+                        
+                if any(v is not None for v in values):
+                    df_variables[name] = values
+
+
+
          # Get expressions
         for expr in self.instance.component_objects(Expression, active=True):
             name = expr.name
@@ -501,8 +617,6 @@ class Model:
         df_output = pd.concat([df_parameters, df_variables, df_expressions], axis=1)
         df_output.index = self.instance.t
         df_output.index.name = "t"
-
-        
 
         self.result_data = df_output
 
@@ -531,9 +645,9 @@ class Model:
                 "chp_1": self.instance.chp_1.hydrogen_admixture_factor.value,
                 "chp_2": self.instance.chp_2.hydrogen_admixture_factor.value,
             },
-            "H2_PRICE": H2_PRICE,
-            "CO2_PRICE": CO2_PRICE,
-            "HEAT_PRICE": HEAT_PRICE,
+            "H2_PRICE": self.instance.H2_PRICE.value,
+            "CO2_PRICE": self.instance.CO2_PRICE.value,
+            "HEAT_PRICE": self.instance.HEAT_PRICE.value,
 
             # Add more relevant metadata e.g, Geothermal unit
         }
@@ -541,18 +655,128 @@ class Model:
         with open(os.path.join(run_dir, f"{config_name}_{self.timestamp}_metadata.json"), 'w') as f:
             json.dump(metadata, f, indent=4)
 
+    def calculate_costs(self, component_param, price_param):
+        """
+        Calculate costs for a component using its values and a price parameter.
+        
+        Parameters:
+        ----------
+        component_values : Pyomo component or expression
+            The component whose cost should be calculated (e.g., CO2 emissions, gas consumption)
+        price_param : Pyomo parameter
+            The price parameter, which can be constant or time-dependent
+            
+        Returns:
+        -------
+        float
+            Total costs, rounded to 2 decimal places
+        """
+        if hasattr(price_param, 'index_set') and price_param.index_set() is self.instance.t:
+            is_price_indexed = True
+        else:
+            is_price_indexed = False
+        
+        # is_price_indexed = hasattr(price_param, 'index_set') 
+        # print(price_param.index_set())
+        # print(f"Price indexed: {is_price_indexed}")
+        total_costs = 0
+        
+        try:
+            for i in self.instance.t:
+
+                # Get appropriate price (time dependent or constant)
+                if is_price_indexed:
+                    price = value(price_param[i])
+                else:
+                    price = value(price_param)
+
+                component = value(component_param[i])
+                
+                total_costs += component * price
+
+            return round(total_costs, 2)
+        except Exception as e:
+            print(f"Error calculating costs: {e}")
+            return 0.0
+
+
+
+    def save_costs(self, output_dir):
+        """Saves the costs of the optimization."""
+
+        costs = {
+            "costs":{
+                "CO2_costs_chp_1": self.calculate_costs(
+                self.instance.chp_1.co2, self.instance.CO2_PRICE
+                ),
+                "CO2_costs_chp_2": self.calculate_costs(
+                    self.instance.chp_2.co2, self.instance.CO2_PRICE
+                ),
+                "gas_costs": self.calculate_costs(
+                    self.instance.ngas_grid.ngas_supply, self.instance.gas_price
+                ),
+                "power_costs": self.calculate_costs(
+                    self.instance.electrical_grid.power_balance, self.instance.power_price
+                ),
+                "hydrogen_costs": self.calculate_costs(
+                    self.instance.hydrogen_grid.hydrogen_supply, self.instance.H2_PRICE
+                )
+            },
+            "revenue": {
+                "heat_revenue": self.calculate_costs(
+                    self.instance.heat_grid.heat_feedin, self.instance.HEAT_PRICE
+                )
+            }
+        }
+
+        # Berechne die Summe aller Kosten
+        total_costs = sum(cost for cost in costs["costs"].values())
+        costs["costs"]["total"] = round(total_costs, 2)
+        
+        # Berechne die Summe aller Einnahmen
+        total_revenue = sum(rev for rev in costs["revenue"].values())
+        costs["revenue"]["total"] = round(total_revenue, 2)
+        
+        # Berechne den Nettobetrag (Kosten - Einnahmen)
+        net_total = total_costs - total_revenue
+        costs["net_total"] = round(net_total, 2)
+        
+        # Ausgabe der Werte
+        print("\nCost Summary:")
+        print("=============")
+        for name, cost in costs["costs"].items():
+            print(f"{name.replace('_', ' ').title()}: {cost:,.2f} €")
+        
+        print("\nRevenue Summary:")
+        print("===============")
+        for name, rev in costs["revenue"].items():
+            print(f"{name.replace('_', ' ').title()}: {rev:,.2f} €")
+        
+        print(f"\nNet Total (Costs - Revenue): {net_total:,.2f} €")
+        
+        # Create subdirectory for runs
+        config_name = os.path.basename(self.config_file).replace('.json','')
+        run_dir = os.path.join(output_dir, config_name)
+        os.makedirs(run_dir, exist_ok=True)
+        
+        # Kosten in JSON-Datei speichern
+        cost_filename = f"{config_name}_{self.timestamp}_costs.json"
+        with open(os.path.join(run_dir, cost_filename), 'w') as f:
+            json.dump(costs, f, indent=4)
+            
+        return costs
 
     # Zielfunktion
-    # + quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t) # neu
     def obj_expression(self, m):
         """Rule for the model objective."""
         return (
-            quicksum(m.ngas_grid.ngas_balance[t] * m.gas_price[t] for t in m.t)
-            + quicksum(m.chp_1.co2[t] * CO2_PRICE for t in m.t)
-            + quicksum(m.chp_2.co2[t] * CO2_PRICE for t in m.t)
+            quicksum(m.ngas_grid.ngas_supply[t] * m.gas_price[t] for t in m.t)
+            + quicksum(m.chp_1.co2[t] * m.CO2_PRICE for t in m.t)
+            + quicksum(m.chp_2.co2[t] * m.CO2_PRICE for t in m.t)
             + quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t)
-            + quicksum(m.hydrogen_grid.hydrogen_balance[t] * H2_PRICE for t in m.t)
-            - quicksum(m.heat_grid.heat_feedin[t] * HEAT_PRICE for t in m.t)
+            #+ quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.H2_PRICE for t in m.t)
+            + quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.hydrogen_price[t] for t in m.t)
+            - quicksum(m.heat_grid.heat_feedin[t] * m.HEAT_PRICE for t in m.t)
         )
 
 
@@ -578,7 +802,7 @@ if __name__ == "__main__":
         MIPGap=0.08, # solver will stop if gap <= x %
     )
 
-    print("PREPARING DATA")
+    print("LOADING TIMESERIES DATA")
     lp.load_timeseries_data()
 
     print("DECLARING MODEL")
@@ -601,5 +825,14 @@ if __name__ == "__main__":
     print("START SOLVING...")
     lp.solve(output_dir=PATH_OUT)
 
+    # Write results
+    print("WRITING RESULTS...")
     lp.write_results()
+    
+    # Save results
+    print("SAVING RESULTS...")
     lp.save_result_data(output_dir=PATH_OUT)
+
+    # Calculate costs
+    print("CALCULATING COSTS...")
+    lp.save_costs(output_dir=PATH_OUT)
