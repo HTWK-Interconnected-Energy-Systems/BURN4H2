@@ -497,6 +497,8 @@ class GeoHeatStorage:
         block.heat_content = Var(t, domain=NonNegativeReals)
         block.bin_charge = Var(t, within=Binary)
         block.bin_discharge = Var(t, within=Binary)
+ 
+        block.initial_content = Param(initialize=self.data.loc['max', 'content']/2) # Initial fill level
 
         # Declare ports
         block.heat_in = Port()
@@ -544,7 +546,7 @@ class GeoHeatStorage:
         def actual_heat_content_rule(_block, i):
             """Rule for calculating the actual energy content of the heat storage."""
             if i == 1:
-                return _block.heat_content[i] == 0 - _block.heat_balance[i]
+                return _block.heat_content[i] == _block.initial_content - _block.heat_balance[i]
             else:
                 return _block.heat_content[i] == _block.heat_content[i - 1] - _block.heat_balance[i]
         
@@ -574,7 +576,7 @@ class GeoHeatStorage:
             t,
             rule=max_heat_content_rule
         )
-        block.min_heat_content_rule = Constraint(
+        block.min_heat_content_constraint = Constraint(
             t,
             rule=min_heat_content_rule
         )

@@ -31,7 +31,7 @@
       "param": "solar_thermal_heat_profile"
     },
     "local_heat_demand": {
-      "file": "demands/local_heat_2028.csv",
+      "file": "demands/local_heating/Bedarf NW-Netz/local_heat_2028.csv",
       "index": "t",
       "param": ["local_heat_demand", "supply_temperature", "return_temperature"]
     },

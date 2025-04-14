@@ -241,7 +241,6 @@ class Model:
         solar_thermal.add_to_model(self.model)
         hp_s1.add_to_model(self.model)
         hp_s2.add_to_model(self.model)
-        # lh_storage.add_to_model(self.model)
         gh_storage.add_to_model(self.model)
         sh_storage.add_to_model(self.model)
 
@@ -266,221 +265,161 @@ class Model:
         """Adds arcs to the model instance."""
         
         # POWER: CHP 1 -> Electrical Grid
-        # CHECK
         self.instance.arc01 = Arc(
             source=self.instance.chp_1.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
         # POWER: CHP 2 -> Electrical Grid
-        # CHECK
         self.instance.arc02 = Arc(
             source=self.instance.chp_2.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
         # POWER: PV -> Electrical Grid
-        # CHECK
         self.instance.arc03 = Arc(
             source=self.instance.pv.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
         # POWER: Battery Storage -> Electrical Grid
-        # CHECK
         self.instance.arc04 = Arc(
             source=self.instance.battery_storage.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
         # POWER: Electrical Grid -> Battery Storage
-        # CHECK
         self.instance.arc05 = Arc(
             source=self.instance.electrical_grid.power_out,
             destination=self.instance.battery_storage.power_in,
         )
         
         # NGAS: NGAS Grid -> CHP 1
-        # CHECK
         self.instance.arc06 = Arc(
             source=self.instance.ngas_grid.ngas_out,
             destination=self.instance.chp_1.natural_gas_in,
         )
         
         # NGAS: NGAS Grid -> CHP 2
-        # CHECK
         self.instance.arc07 = Arc(
             source=self.instance.ngas_grid.ngas_out,
             destination=self.instance.chp_2.natural_gas_in,
         )
         
         # HYDROGEN: Hydrogen Grid -> CHP 1
-        # CHECK
         self.instance.arc08 = Arc(
             source=self.instance.hydrogen_grid.hydrogen_out,
             destination=self.instance.chp_1.hydrogen_in,
         )
         
         # HYDROGEN: Hydrogen Grid -> CHP 2
-        # CHECK
         self.instance.arc09 = Arc(
             source=self.instance.hydrogen_grid.hydrogen_out,
             destination=self.instance.chp_2.hydrogen_in,
         )
         
-        # HEAT: CHP 1 -> Heat Grid
-        # CHECK
+        # DISTRICT HEAT: CHP 1 -> District Heat Grid
         self.instance.arc10 = Arc(
             source=self.instance.chp_1.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
         
-        # HEAT: CHP 2 -> Heat Grid
-        # CHECK
+        # DISTRICT HEAT: CHP 2 -> District Heat Grid
         self.instance.arc11 = Arc(
             source=self.instance.chp_2.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
         
-        # HEAT: Heat Storage -> Heat Grid
-        # CHECK
+        # DISTRICT HEAT: District Heat Storage -> District Heat Grid
         self.instance.arc12 = Arc(
             source=self.instance.heat_storage.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
         
-        # HEAT: Heat Grid -> Heat Storage
-        # CHECK
+        # DISTRICT HEAT: District Heat Grid -> District Heat Storage
         self.instance.arc13 = Arc(
             source=self.instance.heat_grid.heat_out,
             destination=self.instance.heat_storage.heat_in,
         )
         
-        # WASTE: CHP 1 -> Waste Grid
-        # CHECK
+        # WASTE: CHP 1 -> Waste Heat Grid
         self.instance.arc14 = Arc(
             source=self.instance.chp_1.waste_heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
         
-        # WASTE: CHP 2 -> Waste Grid
-        # CHECK
+        # WASTE: CHP 2 -> Waste Heat Grid
         self.instance.arc15 = Arc(
             source=self.instance.chp_2.waste_heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
 
-        # WASTE: Waste Grid -> Geo Storage
-        # CHECK
+        # WASTE: Waste Heat Grid -> Geo Storage
         self.instance.arc16 = Arc(
             source=self.instance.waste_heat_grid.waste_heat_out,
             destination=self.instance.geo_heat_storage.heat_in
         )
         
         # GEO: Geo Storage -> 1. Stage Heat Pump
-        # CHECK
         self.instance.arc17 = Arc(
             source=self.instance.geo_heat_storage.heat_out,
             destination=self.instance.heatpump_s1.heat_in
         )
 
-        # GEO: 1. Stage Heat Pump -> Waste Heat Grid
-        # CHECK 
+        # GEO: 1. Stage Heat Pump -> Waste Heat Grid 
         self.instance.arc18 = Arc(
             source=self.instance.heatpump_s1.heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in
         )
 
-        # WASTE: Waste Grid -> 2. Stage Heat Pump
-        # CHECK 
+        # WASTE: Waste Heat Grid -> 2. Stage Heat Pump
         self.instance.arc19 = Arc(
             source=self.instance.waste_heat_grid.waste_heat_out,
             destination=self.instance.heatpump_s2.waste_heat_in,
         )
 
         # POWER: Electrical Grid -> 1.Stage Heat Pump
-        # CHECK
         self.instance.arc20 = Arc(
                 source=self.instance.electrical_grid.power_out,
                 destination=self.instance.heatpump_s1.power_in,
         )
         
         # POWER: Electrical Grid -> 2. Stage Heat Pump 
-        # CHECK
         self.instance.arc21 = Arc(
             source=self.instance.electrical_grid.power_out,
             destination=self.instance.heatpump_s2.power_in,
         )
         
-        ############
-
-        # # LOCAL HEAT: Solar Thermal -> LOCAL HEAT STORAGE
-        # # CHECK
-        # self.instance.arc22 = Arc(
-        #     source = self.instance.solar_thermal.heat_out,
-        #     destination = self.instance.local_heat_storage.heat_in,
-        # )
-        
-        # # LOCAL HEAT: 2. Stage Heat Pump  -> Local HEAT STORAGE
-        # # CHECK
-        # self.instance.arc23 = Arc(
-        #     source=self.instance.heatpump_s2.heat_out,
-        #     destination=self.instance.local_heat_storage.heat_in,
-        # )
-
-        # # LOCAL HEAT: Local HEAT STORAGE -> Local Heat Grid
-        # # CHECK
-        # self.instance.arc24 = Arc(
-        #     source=self.instance.local_heat_storage.heat_out,
-        #     destination=self.instance.local_heat_grid.heat_in,
-        # )
-
-        # # EXCESS LOCAL HEAT: Local Heat Storage -> Heat Grid
-        # # CHECK
-        # self.instance.arc25 = Arc(
-        #     source=self.instance.local_heat_storage.excess_heat_out,
-        #     destination=self.instance.heat_grid.excess_heat_in 
-        # )
-
-        # # HEAT: Heat Grid -> Local Heat Grid
-        # # CHECK
-        # self.instance.arc26 = Arc(
-        #     source=self.instance.heat_grid.heat_grid_to_local_out,
-        #     destination=self.instance.local_heat_grid.district_heat_in,
-        # )
-
-        #####
-
-        
-      
-        ###### NEW ######
-
-        self.instance.arc27 = Arc(
+        # LOCAL HEAT: Solar Thermal -> Stratified Storage
+        self.instance.arc22 = Arc(
             source=self.instance.solar_thermal.heat_out,
             destination=self.instance.stratified_storage.st_heat_in,
         )
-
-        self.instance.arc28 = Arc(
+        # LOCAL HEAT: 2.Stage Heat Pump -> Stratified Storage
+        self.instance.arc23 = Arc(
             source=self.instance.heatpump_s2.heat_out,
             destination=self.instance.stratified_storage.wp_heat_in,
         )
 
-        self.instance.arc29 = Arc(
+        # LOCAL HEAT: Stratified Storage Z1 -> District Heat Grid 
+        self.instance.arc24 = Arc(
             source=self.instance.stratified_storage.Z1_FW_heat_out,
             destination=self.instance.heat_grid.excess_heat_in,
         )
-
-        self.instance.arc30 = Arc(
+        # LOCAL HEAT: Stratified Storage Z1 -> Local Heat Grid
+        self.instance.arc25 = Arc(
             source=self.instance.stratified_storage.Z1_NW_heat_out,
             destination=self.instance.local_heat_grid.Z1_NW_heat_in,
         )
         
-        self.instance.arc31 = Arc(
+        # LOCAL HEAT: Stratified Storage Z2 -> Local Heat Grid
+        self.instance.arc26 = Arc(
             source=self.instance.stratified_storage.Z2_NW_heat_out,
             destination=self.instance.local_heat_grid.Z2_NW_heat_in,
         )
 
-        self.instance.arc32 = Arc(
+        # DISTRICT HEAT: District Heat Grid -> Local Heat Grid
+        self.instance.arc27 = Arc(
             source=self.instance.heat_grid.heat_grid_to_local_out, 
             destination=self.instance.local_heat_grid.district_heat_in,
         )
@@ -494,7 +433,7 @@ class Model:
         # Generate timestamp once
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         config_name = os.path.basename(self.config_file).replace('.json','')
-        log_filename = f"{config_name}_{self.timestamp}_solver.log"
+        log_filename = f"{config_name}_{self.instance.HYDROGEN_ADMIXTURE_CHP_1.value}h2_{self.timestamp}_solver.log"
 
         # Create subdirectory
         run_dir = os.path.join(output_dir, config_name)
@@ -626,7 +565,7 @@ class Model:
         
         # Create filename with config and timestamp
         config_name = os.path.basename(self.config_file).replace('.json','')
-        output_filename = f"{config_name}_{self.timestamp}_output.csv"
+        output_filename = f"{config_name}_{self.instance.HYDROGEN_ADMIXTURE_CHP_1.value}h2_{self.timestamp}_output.csv"
         
         # Create subdirectory for runs
         run_dir = os.path.join(output_dir, config_name)
@@ -652,7 +591,7 @@ class Model:
             # Add more relevant metadata e.g, Geothermal unit
         }
 
-        with open(os.path.join(run_dir, f"{config_name}_{self.timestamp}_metadata.json"), 'w') as f:
+        with open(os.path.join(run_dir, f"{config_name}_{self.instance.HYDROGEN_ADMIXTURE_CHP_1.value}h2_{self.timestamp}_metadata.json"), 'w') as f:
             json.dump(metadata, f, indent=4)
 
     def calculate_costs(self, component_param, price_param):
@@ -760,7 +699,7 @@ class Model:
         os.makedirs(run_dir, exist_ok=True)
         
         # Kosten in JSON-Datei speichern
-        cost_filename = f"{config_name}_{self.timestamp}_costs.json"
+        cost_filename = f"{config_name}_{self.instance.HYDROGEN_ADMIXTURE_CHP_1.value}h2_{self.timestamp}_costs.json"
         with open(os.path.join(run_dir, cost_filename), 'w') as f:
             json.dump(costs, f, indent=4)
             
