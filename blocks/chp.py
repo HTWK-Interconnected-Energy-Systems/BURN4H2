@@ -102,7 +102,7 @@ class Chp:
 
         if 'hydrogen_admixture' in self.kwargs:
             hydrogen_admixture_factor = float(self.kwargs['hydrogen_admixture'])
-            print(hydrogen_admixture_factor)
+            # print(hydrogen_admixture_factor)
         
             
         # Declare construction rules for constraints

@@ -31,56 +31,54 @@ class HeatpumpStageOne:
         t = block.model().t
 
         # Heatpump Variables
-        block.bin = Var(t, within=Binary) # Binärvariable
-        block.power = Var(t, domain=NonNegativeReals) # Power needed for the heat pump 
-        block.heat_input = Var(t, domain=NonNegativeReals) # Q_zu 
-        block.heat = Var(t, domain=NonNegativeReals) # Q_0
+        block.bin = Var(t, within=Binary) # Binary operation variable
+        block.power = Var(t, domain=NonNegativeReals) # Electrical power consumption [MW]
+        block.heat_input = Var(t, domain=NonNegativeReals) # Q_zu: Heat input to the heat pump [MW]
+        block.heat = Var(t, domain=NonNegativeReals) # Q_0: Heat output from the heat pump [MW]
         
         # Parameters
         block.delta_T_min = Param(t, initialize=5)  
     
-        # Parameters Kältemittel
-        block.R = Param(t, initialize=488) #spezifischer Gaskonstante R-717 [J/kgK]
-        block.k = Param(t, initialize=1.31) # Iseotropenexponent R-717  
+        # Refrigerant Parameters
+        block.R = Param(t, initialize=488) # Specific gas constant for R-717 [J/kgK]
+        block.k = Param(t, initialize=1.31) # Isentropic exponent for R-717
 
         
-        # Zustandsgrößen Kreisprozess 
-
-        # Äußere Verhältnisse für Medium Wasser
-        block.T_q  = Param(t, initialize=16+273.15) # Temperatur Quelle in Kelvin -> äußeres Medium
-        block.T_k = Param(t, initialize=35+273.15) # Temperatur Senke in Kelvin -> äußeres Medium
+        # Process state variables
+        # External conditions for water medium
+        block.T_q  = Param(t, initialize=16+273.15) # Source temperature, outer medium [K]
+        block.T_k = Param(t, initialize=35+273.15) # Sink temperature, outer medium [K]
           
-        # Innere Verhältnisse für Kältemittel R-717
-        # Parameters Druck p
-        block.p1 = Param(t, initialize=5.5 * 10**5) # bar in Pa Eintrittsdruck Verdichter  
-        block.p2 = Param(t, initialize=16 * 10**5) # bar in Pa Austrittsdruck Verdichter
-        block.p3 = Param(t, initialize=16 * 10**5) # bar in Pa Austrittsdruck Kondensator
-        block.p4 = Param(t, initialize=5.5 * 10**5) # bar in Pa Eintrittsdruck Verdampfer
+        # Internal conditions for R-717 refrigerant
+        # Pressure parameters [Pa]
+        block.p1 = Param(t, initialize=5.5 * 10**5) # Compressor inlet pressure [Pa] 
+        block.p2 = Param(t, initialize=16 * 10**5) # Compressor outlet pressure [Pa]
+        block.p3 = Param(t, initialize=16 * 10**5) # Condenser outlet pressure [Pa]
+        block.p4 = Param(t, initialize=5.5 * 10**5) # Evaporator inlet pressure [Pa]
 
-        # Parameter Temperatur T
-        block.T1 = Param(t, initialize=8+273.15) # Grad Celsius in Kelvin 
-        block.T2 = Param(t, initialize=85+273.15) # Grad Celsius in Kelvin 
-        block.T3 = Param(t, initialize=40+273.15) # Grad Celsius in Kelvin 
-        block.T4 = Param(t, initialize=8+273.15) # Grad Celsius in Kelvin 
+        # Temperature parameters [K]
+        block.T1 = Param(t, initialize=8+273.15) # Compressor inlet temperature [K]
+        block.T2 = Param(t, initialize=85+273.15) # Compressor outlet temperature [K]
+        block.T3 = Param(t, initialize=40+273.15) # Condenser outlet temperature [K]
+        block.T4 = Param(t, initialize=8+273.15) # Evaporator inlet temperature [K]
 
-        # Parameter Enthalpie h
-        block.h1 = Param(t, initialize=1480) # Enthalpie kJ/kg 
-        block.h2 = Param(t, initialize=1625) # Enthalpie kJ/kg
-        block.h3 = Param(t, initialize=395) # Enthalpie kJ/kg
-        block.h4 = Param(t, initialize=395) # Enthalpie kJ/kg
+        # Enthalpy parameters [kJ/kg]
+        block.h1 = Param(t, initialize=1480) # Compressor inlet enthalpy [kJ/kg]
+        block.h2 = Param(t, initialize=1625) # Compressor outlet enthalpy [kJ/kg]
+        block.h3 = Param(t, initialize=395) # Condenser outlet enthalpy [kJ/kg]
+        block.h4 = Param(t, initialize=395) # Evaporator inlet enthalpy [kJ/kg]
 
-        # Verdichter 
+        # Compressor Variables
+        block.capacity_compressor = Var(t, domain=NonNegativeReals) # Compressor power output [MW]
+        block.volume_flow = Var(t, domain=NonNegativeReals) # Compressor volume flow [m³/s]
+        block.massflow_refigerant = Var(t, domain=NonNegativeReals) # Refrigerant mass flow [kg/s]
+        block.swept_volume = Var(t, domain=NonNegativeReals) # Compressor swept volume [m³]
 
-        # Variables
-        block.capacity_compressor = Var(t, domain=NonNegativeReals) # Verdichterleistung [MW]
-        block.volume_flow = Var(t, domain=NonNegativeReals) # Volumenstrom Verdichter [m^3/s]
-        block.massflow_refigerant = Var(t, domain=NonNegativeReals) # Massenstrom Kältemittel [kg/s]
-        block.swept_volume = Var(t, domain=NonNegativeReals) # Hubraum Verdichter [m^3/s]
 
-        # Parameters
-        block.electrical_efficiency_compressor = Param(t, initialize=0.9) # Elektrische Effizienz Verdichter
-        block.n = Param(t, initialize=1500/60) # Drehzahl Verdichter [1/min] in [1/s] !!! muss zwischen 500 und 1500 liegen !!!
-        block.z = Param(t, initialize=6) # Anzahl der Zylinder Verdichter
+        # Compressor Parameters
+        block.electrical_efficiency_compressor = Param(t, initialize=0.9)  # Electrical efficiency of compressor
+        block.n = Param(t, initialize=1500/60)  # Compressor speed [1/s] (converted from rpm)
+        block.z = Param(t, initialize=6) # Number of compressor cylinders
 
 
         # Port 1
@@ -247,14 +245,13 @@ class HeatpumpStageTwo:
         # Parameters
         block.delta_T_min = Param(t, initialize=5) 
     
-        # Parameters Kältemittel
+        # Refrigerant Parameters
         block.R = Param(t, initialize=488) # Specific gas constant for R-717 [J/kgK]
         block.k = Param(t, initialize=1.31) # Isentropic exponent for R-717
 
         
-        # Zustandsgrößen Kreisprozess 
-
-        # Äußere Verhältnisse für Medium Wasser
+        # Process state variables
+        # External conditions for water medium
         block.T_q  = Param(t, initialize=30+273.15) # Source temperature, outer medium [K]
         block.T_k = Param(t, initialize=80+273.15) # Sink temperature, outer medium [K]
           
