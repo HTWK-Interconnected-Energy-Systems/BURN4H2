@@ -37,7 +37,7 @@ class HeatpumpStageOne:
         block.heat = Var(t, domain=NonNegativeReals) # Q_0
         
         # Parameters
-        block.delta_T_min = Param(t, initialize=10)  
+        block.delta_T_min = Param(t, initialize=5)  
     
         # Parameters Kältemittel
         block.R = Param(t, initialize=488) #spezifischer Gaskonstante R-717 [J/kgK]
@@ -78,7 +78,6 @@ class HeatpumpStageOne:
         block.swept_volume = Var(t, domain=NonNegativeReals) # Hubraum Verdichter [m^3/s]
 
         # Parameters
-        block.max_volume_flow_compressor = Param(t, initialize=257/3600) # Maximaler Volumenstrom Verdichter [m^3/h] in [m^3/s]
         block.electrical_efficiency_compressor = Param(t, initialize=0.9) # Elektrische Effizienz Verdichter
         block.n = Param(t, initialize=1500/60) # Drehzahl Verdichter [1/min] in [1/s] !!! muss zwischen 500 und 1500 liegen !!!
         block.z = Param(t, initialize=6) # Anzahl der Zylinder Verdichter
@@ -144,7 +143,7 @@ class HeatpumpStageOne:
         # Constraints
         def heat_pump_operation_rule(_block, i):
             """Rule for the heat pump operation."""
-            return _block.heat[i] == _block.ideal_cop[i]  * _block.capacity_compressor[i]  # in MW
+            return _block.heat[i] == _block.real_cop[i]  * _block.capacity_compressor[i]  # in MW
         
         def capacity_compressor_rule(_block, i):
             """
@@ -179,20 +178,6 @@ class HeatpumpStageOne:
             """Rule for the power input. (Elektrische Leistung  Verdichter in MW)"""
             return _block.power[i]  == _block.capacity_compressor[i] / _block.electrical_efficiency_compressor[i]
 
-        
-        def min_speed_rule(_block, i):
-            """
-            Variable: n (Drehzahl)
-            Rule for the range of the speed.
-            """
-            return _block.n[i] >= 500 / 60
-        
-        def max_speed_rule(_block, i):
-            """
-            Variable: n (Drehzahl)
-            Rule for the range of the speed.
-            """
-            return _block.n[i] <= 1500 / 60
 
         # Define constraints
         block.heat_pump_operation_constraint = Constraint(
@@ -225,41 +210,6 @@ class HeatpumpStageOne:
             rule=swept_volume_rule
         )
 
-        # block.min_speed_constraint = Constraint(
-        #     t,
-        #     rule=min_speed_rule
-        # )
-
-        # block.max_speed_constraint = Constraint(
-        #     t,
-        #     rule=max_speed_rule
-        # )
-
-        
-        ############## OLD RULES ####################
-        
-        # def powers_rule(_block, i):
-        #     """
-        #     Andere Option um P_v zu berechnen. 
-        #     Variable: P_v
-        #     Rule for the power input. (Verdichterleistung in kW)
-        #     """
-        #     if easy_way == True:
-        #         return _block.capacity_compressor[i] == 313 # in kW 
-        #     else:
-        #         return _block.capacity_compressor[i] == (_block.k[i]/(block.k[i] - 1))*_block.R[i]*_block.T_q[i]*((_block.p2[i] / _block.p1[i])**((block.k[i] - 1)/block.k[i]) - 1) * _block.massflow_refigerant[i] # in kW
-
-        # def massflow_refigerante_rule(_block, i): 
-        #     """
-        #     Andere Option um m_0 zu berechnen.
-        #     Variable: m_0
-        #     Rule for the massflow of the refrigerant.
-        #     """
-        #     return _block.massflow_refigerant[i] == _block.p1[i] * (10**5) / (_block.R[i] * _block.T_q[i]) * _block.volume_flow[i]   # mass flow in  kg/s
-        
-
-        ############## OLD RULES ####################
-
 
 
 class HeatpumpStageTwo:
@@ -289,57 +239,54 @@ class HeatpumpStageTwo:
         t = block.model().t
 
         # Heatpump Variables
-        block.bin = Var(t, within=Binary) # Binärvariable
-        block.power = Var(t, domain=NonNegativeReals) # Power needed for the heat pump 
-        block.heat_input = Var(t, domain=NonNegativeReals) # Q_zu 
-        block.heat = Var(t, domain=NonNegativeReals) # Q_0
+        block.bin = Var(t, within=Binary) # Binary operation variable
+        block.power = Var(t, domain=NonNegativeReals) # Electrical power consumption [MW]
+        block.heat_input = Var(t, domain=NonNegativeReals) # Q_zu: Heat input to the heat pump [MW]
+        block.heat = Var(t, domain=NonNegativeReals) # Q_0: Heat output from the heat pump [MW]
         
         # Parameters
-        block.delta_T_min = Param(t, initialize=10)  
+        block.delta_T_min = Param(t, initialize=5) 
     
         # Parameters Kältemittel
-        block.R = Param(t, initialize=488) #spezifischer Gaskonstante R-717 [J/kgK]
-        block.k = Param(t, initialize=1.31) # Iseotropenexponent R-717  
+        block.R = Param(t, initialize=488) # Specific gas constant for R-717 [J/kgK]
+        block.k = Param(t, initialize=1.31) # Isentropic exponent for R-717
 
         
         # Zustandsgrößen Kreisprozess 
 
         # Äußere Verhältnisse für Medium Wasser
-        block.T_q  = Param(t, initialize=30+273.15) # Temperatur Quelle in Kelvin -> äußeres Medium
-        block.T_k = Param(t, initialize=80+273.15) # Temperatur Senke in Kelvin -> äußeres Medium
+        block.T_q  = Param(t, initialize=30+273.15) # Source temperature, outer medium [K]
+        block.T_k = Param(t, initialize=80+273.15) # Sink temperature, outer medium [K]
           
-        # Innere Verhältnisse für Kältemittel R-717
-        # Parameters Druck p
-        block.p1 = Param(t, initialize=8.3 * 10**5) # bar in Pa Eintrittsdruck Verdichter  
-        block.p2 = Param(t, initialize=52 * 10**5) # bar in Pa Austrittsdruck Verdichter
-        block.p3 = Param(t, initialize=52 * 10**5) # bar in Pa Austrittsdruck Kondensator
-        block.p4 = Param(t, initialize=8.3 * 10**5) # bar in Pa Eintrittsdruck Verdampfer
+        # Internal conditions for R-717 refrigerant
+        # Pressure parameters [Pa]  
+        block.p1 = Param(t, initialize=10 * 10**5) # Compressor inlet pressure [Pa]
+        block.p2 = Param(t, initialize=45 * 10**5) # Compressor outlet pressure [Pa]
+        block.p3 = Param(t, initialize=45 * 10**5) # Condenser outlet pressure [Pa]
+        block.p4 = Param(t, initialize=10 * 10**5) # Evaporator inlet pressure [Pa]
 
-        # Parameter Temperatur T
-        block.T1 = Param(t, initialize=20+273.15) # Grad Celsius in Kelvin 
-        block.T2 = Param(t, initialize=170+273.15) # Grad Celsius in Kelvin 
-        block.T3 = Param(t, initialize=90+273.15) # Grad Celsius in Kelvin 
-        block.T4 = Param(t, initialize=20+273.15) # Grad Celsius in Kelvin 
+        # Temperature parameters [K]
+        block.T1 = Param(t, initialize=25+273.15) # Compressor inlet temperature [K]
+        block.T2 = Param(t, initialize=145+273.15) # Compressor outlet temperature [K]
+        block.T3 = Param(t, initialize=85+273.15) # Condenser outlet temperature [K]
+        block.T4 = Param(t, initialize=25+273.15) # Evaporator inlet temperature [K]
 
-        # Parameter Enthalpie h
-        block.h1 = Param(t, initialize=1480) # Enthalpie kJ/kg 
-        block.h2 = Param(t, initialize=1760) # Enthalpie kJ/kg
-        block.h3 = Param(t, initialize=660) # Enthalpie kJ/kg
-        block.h4 = Param(t, initialize=660) # Enthalpie kJ/kg
+        # Enthalpy parameters [kJ/kg]
+        block.h1 = Param(t, initialize=1490) # Compressor inlet enthalpy [kJ/kg]
+        block.h2 = Param(t, initialize=1710)  # Compressor outlet enthalpy [kJ/kg]
+        block.h3 = Param(t, initialize=650) # Condenser outlet enthalpy [kJ/kg]
+        block.h4 = Param(t, initialize=650) # Evaporator inlet enthalpy [kJ/kg]
 
-        # Verdichter 
+        # Compressor Variables
+        block.capacity_compressor = Var(t, domain=NonNegativeReals) # Compressor power output [MW]
+        block.volume_flow = Var(t, domain=NonNegativeReals) # Compressor volume flow [m³/s]
+        block.massflow_refigerant = Var(t, domain=NonNegativeReals) # Refrigerant mass flow [kg/s]
+        block.swept_volume = Var(t, domain=NonNegativeReals) # Compressor swept volume [m³]
 
-        # Variables
-        block.capacity_compressor = Var(t, domain=NonNegativeReals) # Verdichterleistung [kW]
-        block.volume_flow = Var(t, domain=NonNegativeReals) # Volumenstrom Verdichter [m^3/s]
-        block.massflow_refigerant = Var(t, domain=NonNegativeReals) # Massenstrom Kältemittel [kg/s]
-        block.swept_volume = Var(t, domain=NonNegativeReals) # Hubraum Verdichter [m^3/s]
-
-        # Parameters
-        block.max_volume_flow_compressor = Param(t, initialize=564/3600) # Maximaler Volumenstrom Verdichter [m^3/h] in [m^3/s]
-        block.electrical_efficiency_compressor = Param(t, initialize=0.85) # Elektrische Effizienz Verdichter
-        block.n = Param(t, initialize=1500/60) # Drehzahl Verdichter [1/min] in [1/s] !!! muss zwischen 500 und 1500 liegen !!!
-        block.z = Param(t, initialize=6) # Anzahl der Zylinder Verdichter
+        # Compressor Parameters
+        block.electrical_efficiency_compressor = Param(t, initialize=0.9)  # Electrical efficiency of compressor
+        block.n = Param(t, initialize=1500/60) # Compressor speed [1/s] (converted from rpm)
+        block.z = Param(t, initialize=6)  # Number of compressor cylinders
 
 
         # Port 1
@@ -402,7 +349,7 @@ class HeatpumpStageTwo:
         # Constraints
         def heat_pump_operation_rule(_block, i):
             """Rule for the heat pump operation."""
-            return _block.heat[i] * 1000 == _block.real_cop[i]  * _block.capacity_compressor[i]  # in kW
+            return _block.heat[i] == _block.real_cop[i]  * _block.capacity_compressor[i]  # in MW
         
         def capacity_compressor_rule(_block, i):
             """
@@ -410,7 +357,7 @@ class HeatpumpStageTwo:
             Rule for the compressor capacity. P_v depends on the mass flow and the enthalpy difference.
             Assuption: isentropic compression
             """
-            return _block.capacity_compressor[i]  == (_block.massflow_refigerant[i]) * (_block.h2[i]-_block.h1[i])  # in kW
+            return _block.capacity_compressor[i]  == (_block.massflow_refigerant[i]) * (_block.h2[i]-_block.h1[i]) / 1000 # in MW
         
         def massflow_depends_on_heat_input_rule(_block, i):
             """
@@ -435,22 +382,8 @@ class HeatpumpStageTwo:
         
         def power_rule(_block, i):
             """Rule for the power input. (Elektrische Leistung  Verdichter in MW)"""
-            return _block.power[i] * 1000  == _block.capacity_compressor[i] / _block.electrical_efficiency_compressor[i]
+            return _block.power[i]  == _block.capacity_compressor[i] / _block.electrical_efficiency_compressor[i]
 
-        
-        def min_speed_rule(_block, i):
-            """
-            Variable: n (Drehzahl)
-            Rule for the range of the speed.
-            """
-            return _block.n[i] >= 500 / 60
-        
-        def max_speed_rule(_block, i):
-            """
-            Variable: n (Drehzahl)
-            Rule for the range of the speed.
-            """
-            return _block.n[i] <= 1500 / 60
 
         # Define constraints
         block.heat_pump_operation_constraint = Constraint(
@@ -483,42 +416,7 @@ class HeatpumpStageTwo:
             rule=swept_volume_rule
         )
 
-        # block.min_speed_constraint = Constraint(
-        #     t,
-        #     rule=min_speed_rule
-        # )
-
-        # block.max_speed_constraint = Constraint(
-        #     t,
-        #     rule=max_speed_rule
-        # )
-
-        
-        ############## OLD RULES ####################
-        
-        # def powers_rule(_block, i):
-        #     """
-        #     Andere Option um P_v zu berechnen. 
-        #     Variable: P_v
-        #     Rule for the power input. (Verdichterleistung in kW)
-        #     """
-        #     if easy_way == True:
-        #         return _block.capacity_compressor[i] == 313 # in kW 
-        #     else:
-        #         return _block.capacity_compressor[i] == (_block.k[i]/(block.k[i] - 1))*_block.R[i]*_block.T_q[i]*((_block.p2[i] / _block.p1[i])**((block.k[i] - 1)/block.k[i]) - 1) * _block.massflow_refigerant[i] # in kW
-
-        # def massflow_refigerante_rule(_block, i): 
-        #     """
-        #     Andere Option um m_0 zu berechnen.
-        #     Variable: m_0
-        #     Rule for the massflow of the refrigerant.
-        #     """
-        #     return _block.massflow_refigerant[i] == _block.p1[i] * (10**5) / (_block.R[i] * _block.T_q[i]) * _block.volume_flow[i]   # mass flow in  kg/s
-        
-
-        ############## OLD RULES ####################
-
-
+    
 
 
    
