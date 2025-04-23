@@ -4,6 +4,8 @@
 import pandas as pd
 import json
 import os
+import glob
+import sys
 import argparse
 from datetime import datetime
 
@@ -25,24 +27,18 @@ from pyomo.environ import (
 from pyomo.network import Arc
 
 # import internal modules 
-from blocks import chp, grid, storage, res
-import blocks.electrolyzer as elec
-import blocks.heatpump as hp
-import blocks.collector as st
+from burn4h2.blocks import chp, grid, storage, res
+import burn4h2.blocks.heatpump as hp
+import burn4h2.blocks.collector as st
 
 # Path
 PATH_IN = "data/input/"
 PATH_OUT = "data/output/"
-PATH_CONFIG = "data/config/"
+PATH_CONFIG = "config/"
 
 # Config files
-AVAILABLE_CONFIGS = [
-    "dummy.json",
-    "ue24_ST-min_NW-ref_2028.json",
-    "ue24_ST-max_NW-ref_2028.json",
-    "ue24_ST-min_NW-ext_2028.json",
-    "ue24_ST-max_NW-ext_2028.json"
-]
+AVAILABLE_CONFIGS = [os.path.basename(f) for f in glob.glob(os.path.join(PATH_CONFIG + 'templates/', "*.json"))]
+# print(f"Available config files: {AVAILABLE_CONFIGS}")
 
 class Model:
     """Main class for the creation of the optimization model."""
@@ -69,10 +65,10 @@ class Model:
         self.data_portal = DataPortal()
 
         # Load global data
-        self.data_portal.load(filename = 'data/config/global.json')
+        self.data_portal.load(filename = PATH_CONFIG + 'global.json')
         
         # Load config
-        with open(PATH_CONFIG + self.config_file, "r") as f:
+        with open(PATH_CONFIG + 'templates/' + self.config_file, "r") as f:
             config = json.load(f)
 
         # Load timeseries data from config
@@ -118,7 +114,7 @@ class Model:
         
         # Konvertiere Pyomo-Parameter in konkrete Werte
         # Verwende die Werte aus der Konfiguration, da die Pyomo-Parameter noch nicht instanziiert sind
-        with open(PATH_CONFIG + self.config_file, "r") as f:
+        with open(PATH_CONFIG + 'templates/' + self.config_file, "r") as f:
             config = json.load(f)
         
         h2_admixture_chp_1 = config.get("parameters", {}).get("HYDROGEN_ADMIXTURE_CHP_1", 0)

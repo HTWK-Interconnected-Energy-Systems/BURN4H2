@@ -299,6 +299,7 @@ class WasteHeatGrid:
         # Declare components
         block.heat_balance = Var(t, domain=Reals)
         block.heat_supply = Var(t, domain=NonNegativeReals)
+        block.heat_dissipation = Var(t, domain=NonNegativeReals)
         block.heat_feedin = Var(t, domain=NonNegativeReals)
        
         # Ports
@@ -322,7 +323,8 @@ class WasteHeatGrid:
         def waste_heat_balance_rule(_block, i):
             """Rule for calculating the overall power."""
             return _block.heat_balance[i] == (
-                + _block.heat_supply[i] 
+                + _block.heat_supply[i]
+                + _block.heat_dissipation[i] 
                 - _block.heat_feedin[i]
                 )    
         
@@ -370,13 +372,7 @@ class LocalHeatGrid:
         block.Z1_heat_feedin = Var(t, domain=NonNegativeReals)
         block.Z2_heat_feedin = Var(t, domain=NonNegativeReals)
         block.district_heat_feedin = Var(t, domain=NonNegativeReals)
-
-        # Binärvariable für die exklusive Einspeisung
-        block.bin_Z1_active = Var(t, domain=Binary)
         
-        # Maximale Einspeisung für Big-M Constraints
-        block.max_Z1_feedin = Param(initialize=100)  # [MW] Maximale Einspeisung Z1
-        block.max_district_feedin = Param(initialize=100)  # [MW] Maximale Fernwärmeeinspeisung
 
         block.Z1_NW_heat_in = Port()
         block.Z1_NW_heat_in.add(
@@ -422,6 +418,11 @@ class LocalHeatGrid:
                 - _block.model().local_heat_demand[i]
             )
         
+        def max_district_heat_feedin_rule(_block, i):
+            """Rule for the maximal district heat feed in."""
+            return _block.district_heat_feedin[i] <= self.data.loc['max', 'heat']
+
+
         def annual_local_heat_share_rule(_block, i):
             """Rule for ensuring 80% annual share from local sources."""
             return (
@@ -443,6 +444,11 @@ class LocalHeatGrid:
         block.supply_heat_demand_balance_constraint = Constraint(
             t,
             rule=supply_heat_demand_balance_rule
+        )
+
+        block.max_district_heat_feedin_constraint = Constraint(
+            t,
+            rule=max_district_heat_feedin_rule
         )
 
     
