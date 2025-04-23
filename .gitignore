@@ -22,6 +22,7 @@ data/input/profiles/ST Süd_min
 data/input/profiles/normalized
 data/misc/scenarios
 data/misc/profiles
+data/misc/distributions
 data/input/demands/district_heating/default
 data/input/demands/local_heating/Bedarf NW-Netz
 data/input/demands/local_heating/Bedarf NW-Netz_zusätzl Abnehmer
