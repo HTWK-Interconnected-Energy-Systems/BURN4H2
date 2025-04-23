@@ -1,0 +1,37 @@
+Solver command line: []
+
+Read LP format model from file C:\Users\wlhlm\AppData\Local\Temp\tmp_3zvrej9.pyomo.lp
+Reading time = 0.04 seconds
+objective: 18325 rows, 16631 columns, 41491 nonzeros
+Set parameter TimeLimit to value 5000
+Set parameter MIPGap to value 0.08
+Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - Windows 11.0 (26100.2))
+
+CPU model: Intel(R) Core(TM) Ultra 7 258V, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+TimeLimit  5000
+MIPGap  0.08
+
+Optimize a model with 18325 rows, 16631 columns and 41491 nonzeros
+Model fingerprint: 0x768e94a1
+Model has 167 quadratic constraints
+Variable types: 14280 continuous, 2351 integer (2016 binary)
+Coefficient statistics:
+  Matrix range     [8e-03, 2e+02]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [4e+01, 3e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [2e-03, 1e+04]
+Presolve removed 3024 rows and 2184 columns
+Presolve time: 0.00s
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 1 (of 8 available processors)
+
+Solution count 0
+
+Model is infeasible or unbounded
+Best objective -, best bound -, gap -
+

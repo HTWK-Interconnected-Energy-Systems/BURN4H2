@@ -631,8 +631,8 @@ class StratifiedHeatStorage:
         
         # Declare components
         block.delta_t = Param(initialize=1)  # [h]
-        block.k_loss_Z1 = Param(initialize=0.0534)  # [%] Wärmeverlustrate Fernwärmespeicher
-        block.k_loss_Z2 = Param(initialize=0.0534)  # [%] Wärmeverlustrate Nahwärmespeicher
+        # block.Q_loss_Z1 = Param(initialize=(13.75/2)/1000)  # Nicht betrachtet: Wärmeverlust Fernwärmespeicher
+        # block.Q_loss_Z2 = Param(initialize=(13.75/2)/1000)  # Nicht betrachtet: Wärmeverlust Nahwärmespeicher
         block.water_density = Param(initialize=1000)  # # Water density [kg/m³]
         block.spec_heat_capacity = Param(initialize=4.1868/1000)  # Specific heat capacity [MJ/(kg·K)]
         block.delta_T_Z1 = Param(initialize=38)  # Temperature difference in zone 1 [K] (95°C - 57°C)
@@ -690,6 +690,11 @@ class StratifiedHeatStorage:
         block.Z2_NW_heat_out = Port()
         block.Z2_NW_heat_out.add(block.Q_dot_Z2_NW, 'local_heat', Port.Extensive, include_splitfrac=False)
         
+        # Verluste als Variablen definieren, die vom Speicherzustand abhängen können
+        block.Q_loss_Z1_actual = Var(t, domain=NonNegativeReals)
+        block.Q_loss_Z2_actual = Var(t, domain=NonNegativeReals)
+
+
         # Declare construction rules for constraints
         def max_fw_discharge_rule(_block, i):
             return _block.Q_dot_Z1_FW[i]  <= self.data.loc['max', 'heat']
@@ -708,7 +713,7 @@ class StratifiedHeatStorage:
                 return _block.U_Z1[i] == _block.init_capacity_Z1 + \
                     (_block.Q_dot_ST[i] - _block.Q_dot_Z1_FW[i] - _block.Q_dot_Z1_NW[i]) * _block.delta_t 
             else:
-                return _block.U_Z1[i] == (1 - _block.k_loss_Z1) * _block.U_Z1[i-1] + \
+                return _block.U_Z1[i] ==  _block.U_Z1[i-1] + \
                     (_block.Q_dot_ST[i] - _block.Q_dot_Z1_FW[i] - _block.Q_dot_Z1_NW[i]) * _block.delta_t
         
 
@@ -718,7 +723,7 @@ class StratifiedHeatStorage:
                 return _block.U_Z2[i] == _block.init_capacity_Z2 + \
                     (_block.Q_dot_WP[i] - _block.Q_dot_Z2_NW[i]) * _block.delta_t
             else:
-                return _block.U_Z2[i] == (1 - _block.k_loss_Z2) * _block.U_Z2[i-1] + \
+                return _block.U_Z2[i] == _block.U_Z2[i-1] + \
                     (_block.Q_dot_WP[i] - _block.Q_dot_Z2_NW[i]) * _block.delta_t
         
 
