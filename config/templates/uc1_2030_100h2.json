@@ -21,9 +21,18 @@
       "param": "hydrogen_price"
     },
     "heat_demand": {
-      "file": "demands/district_heating/default/heat.csv",
+      "file": "demands/district_heating/default/heat_normal.csv",
       "index": "t",
       "param": "heat_demand"
+    },
+    "normalized_pv_profile": {
+      "file": "pv_capacity_factors/leipzig_t45_a180_normal.csv",
+      "index": "t",
+      "param": [
+        "timestamps",
+        "dc_power",
+        "normalized_pv_profile"
+      ]
     },
     "solar_thermal_heat_profile": {
       "file": "profiles/ST Sued_min/min_solarthermal_profil_2030.csv",

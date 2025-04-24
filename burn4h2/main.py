@@ -100,7 +100,9 @@ class Model:
         self.model.return_temperature = Param(self.model.t)
         self.model.solar_thermal_heat_profile = Param(self.model.t)
         self.model.normalized_solar_thermal_heat_profile = Param(self.model.t)
-        
+        self.model.normalized_pv_profile = Param(self.model.t)
+
+
         # Define non-indexed parameters
         self.model.CO2_PRICE = Param()
         self.model.HEAT_PRICE = Param()
@@ -811,56 +813,100 @@ class Model:
 if __name__ == "__main__":
     # Parse arguments
     parser = argparse.ArgumentParser(description='Run energy system optimization')
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         '--config',
         choices=AVAILABLE_CONFIGS,
         default="dummy.json",
         help='Configuration file to use')
+    group.add_argument(
+        '--use-case',
+        help='Run all configuration files for a specific use case (e.g., "uc1")')
     args = parser.parse_args()
 
-    print(f"Running scenario: {args.config}")
+    # Function to run a single simulation
+    def run_simulation(config_file):
+        print(f"\n{'='*80}")
+        print(f"Running scenario: {config_file}")
+        print(f"{'='*80}\n")
+        
+        try:
+            # Create model instance
+            lp = Model(config_file=config_file)
 
-    # Create model instance
-    lp = Model(config_file=args.config)
+            print("SETTING SOLVER OPTIONS")
+            lp.set_solver(
+                solver_name="gurobi",
+                TimeLimit=5000,  # solver will stop after x seconds
+                MIPGap=0.2, # solver will stop if gap <= x %
+            )
 
-    print("SETTING SOLVER OPTIONS")
-    lp.set_solver(
-        solver_name="gurobi",
-        TimeLimit=5000,  # solver will stop after x seconds
-        MIPGap=0.08, # solver will stop if gap <= x %
-    )
+            print("LOADING TIMESERIES DATA")
+            lp.load_timeseries_data()
 
-    print("LOADING TIMESERIES DATA")
-    lp.load_timeseries_data()
+            print("DECLARING MODEL")
+            lp.add_components()
 
-    print("DECLARING MODEL")
-    lp.add_components()
+            # Declare Objective
+            print("DECLARING OBJECTIVE...")
+            lp.add_objective()
 
-    # Declare Objective
-    print("DECLARING OBJECTIVE...")
-    lp.add_objective()
+            # Create model instance
+            print("CREATING INSTANCE...")
+            lp.instantiate()
 
-    # Create model instance
-    print("CREATING INSTANCE...")
-    lp.instantiate()
+            # Define arcs
+            print("DECLARING ARCS...")
+            lp.add_arcs()
+            lp.expand_arcs()
 
-    # Define arcs
-    print("DECLARING ARCS...")
-    lp.add_arcs()
-    lp.expand_arcs()
+            # Solve the optimization problem
+            print("START SOLVING...")
+            lp.solve(output_dir=PATH_OUT)
 
-    # Solve the optimization problem
-    print("START SOLVING...")
-    lp.solve(output_dir=PATH_OUT)
+            # Write results
+            print("WRITING RESULTS...")
+            lp.write_results()
+            
+            # Save results
+            print("SAVING RESULTS...")
+            lp.save_result_data(output_dir=PATH_OUT)
 
-    # Write results
-    print("WRITING RESULTS...")
-    lp.write_results()
-    
-    # Save results
-    print("SAVING RESULTS...")
-    lp.save_result_data(output_dir=PATH_OUT)
+            # Calculate costs
+            print("CALCULATING COSTS...")
+            lp.save_costs(output_dir=PATH_OUT)
+            
+            print(f"\nFinished scenario: {config_file}\n")
+            return True
+        except Exception as e:
+            print(f"ERROR in scenario {config_file}: {str(e)}")
+            print("Continuing with next scenario...")
+            return False
 
-    # Calculate costs
-    print("CALCULATING COSTS...")
-    lp.save_costs(output_dir=PATH_OUT)
+    # Run simulations
+    if args.use_case:
+        # Filter configurations for the specified use case
+        use_case_configs = [cfg for cfg in AVAILABLE_CONFIGS if cfg.startswith(f"{args.use_case}_")]
+        
+        if not use_case_configs:
+            print(f"No configuration files found for use case: {args.use_case}")
+            sys.exit(1)
+        
+        print(f"Found {len(use_case_configs)} configuration files for use case {args.use_case}:")
+        for cfg in use_case_configs:
+            print(f"  - {cfg}")
+        
+        # Run sequentially with error handling
+        successful = 0
+        failed = 0
+        for config_file in use_case_configs:
+            if run_simulation(config_file):
+                successful += 1
+            else:
+                failed += 1
+                
+        print(f"All simulations for use case {args.use_case} completed.")
+        print(f"Results: {successful} successful, {failed} failed")
+    else:
+        # Run a single configuration
+        run_simulation(args.config)

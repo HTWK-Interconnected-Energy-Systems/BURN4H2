@@ -42,6 +42,8 @@ class Photovoltaics:
         # Get index from model
         t = block.model().t
 
+        # Get profile from model
+        norm_pv_profile = block.model().normalized_pv_profile
 
         # Declare components
         block.power = Var(t, domain=NonNegativeReals)
@@ -56,7 +58,7 @@ class Photovoltaics:
             installed_power = self.data.loc['value', 'installed_power']
             inverter_efficiency = self.data.loc['value', 'inverter_efficiency']
             capacity_factors = self.capacity_factors['capacity_factor']
-            return _block.power[i] == installed_power * inverter_efficiency * capacity_factors[i]
+            return _block.power[i] == installed_power * inverter_efficiency * norm_pv_profile[i]
         
 
         # Declare constraints
