@@ -105,6 +105,7 @@ class Model:
         self.model.CO2_PRICE = Param()
         self.model.HEAT_PRICE = Param()
         self.model.H2_PRICE = Param()
+        self.model.USE_CONST_H2_PRICE = Param()
         self.model.INSTALLED_ST_POWER = Param()
         self.model.HYDROGEN_ADMIXTURE_CHP_1 = Param()
         self.model.HYDROGEN_ADMIXTURE_CHP_2 = Param()
@@ -429,11 +430,10 @@ class Model:
         # Generate timestamp once
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         config_name = os.path.basename(self.config_file).replace('.json','')
-        log_filename = f"{config_name}_{self.instance.HYDROGEN_ADMIXTURE_CHP_1.value}h2_{self.timestamp}_solver.log"
+        log_filename = f"{config_name}_{self.timestamp}_solver.log"
 
-        # Create subdirectory
-        run_dir = os.path.join(output_dir, config_name)
-        os.makedirs(run_dir, exist_ok=True)
+        # Get directory structure
+        _, run_dir = self.get_directory_structure(output_dir)
 
 
         self.results = self.solver.solve(
@@ -534,9 +534,7 @@ class Model:
                 if any(v is not None for v in values):
                     df_variables[name] = values
 
-
-
-         # Get expressions
+        # Get expressions
         for expr in self.instance.component_objects(Expression, active=True):
             name = expr.name
             values = []
@@ -561,11 +559,10 @@ class Model:
         
         # Create filename with config and timestamp
         config_name = os.path.basename(self.config_file).replace('.json','')
-        output_filename = f"{config_name}_{self.instance.HYDROGEN_ADMIXTURE_CHP_1.value}h2_{self.timestamp}_output.csv"
+        output_filename = f"{config_name}_{self.timestamp}_output.csv"
         
-        # Create subdirectory for runs
-        run_dir = os.path.join(output_dir, config_name)
-        os.makedirs(run_dir, exist_ok=True)
+        # Get directory structure
+        _, run_dir = self.get_directory_structure(output_dir)
         
         # Save file
         output_filepath = os.path.join(run_dir, output_filename)
@@ -583,13 +580,46 @@ class Model:
             "H2_PRICE": self.instance.H2_PRICE.value,
             "CO2_PRICE": self.instance.CO2_PRICE.value,
             "HEAT_PRICE": self.instance.HEAT_PRICE.value,
+            "USE_CONST_H2_PRICE": self.instance.USE_CONST_H2_PRICE.value,
 
             # Add more relevant metadata e.g, Geothermal unit
         }
 
-        with open(os.path.join(run_dir, f"{config_name}_{self.instance.HYDROGEN_ADMIXTURE_CHP_1.value}h2_{self.timestamp}_metadata.json"), 'w') as f:
+        with open(os.path.join(run_dir, f"{config_name}_{self.timestamp}_metadata.json"), 'w') as f:
             json.dump(metadata, f, indent=4)
 
+    def get_directory_structure(self, output_dir):
+        """
+        Creates a directory structure based on use case and config.
+        Handles single-word config names specially to avoid redundant nesting.
+        
+        Returns:
+        -------
+        tuple
+            (use_case_dir, run_dir) - Paths to the use case directory and specific run directory
+        """
+        # Extract base config name without .json extension
+        config_name = os.path.basename(self.config_file).replace('.json', '')
+        
+        # Extract use case (part before first underscore)
+        if '_' in config_name:
+            # Regular case: "uc1_2028_0h2" -> use_case="uc1", full path="output/uc1/uc1_2028_0h2/"
+            use_case = config_name.split('_')[0]
+            use_case_dir = os.path.join(output_dir, use_case)
+            run_dir = os.path.join(use_case_dir, config_name)
+        else:
+            # Special case for configs without underscore (like "dummy")
+            # Just create a single directory: "output/dummy/"
+            use_case = config_name
+            use_case_dir = output_dir
+            run_dir = os.path.join(output_dir, config_name)
+        
+        # Create directories
+        os.makedirs(run_dir, exist_ok=True)
+    
+        return use_case_dir, run_dir
+    
+    
     def calculate_costs(self, component_param, price_param):
         """
         Calculate costs for a component using its values and a price parameter.
@@ -637,12 +667,41 @@ class Model:
 
 
     def save_costs(self, output_dir):
-        """Saves the costs of the optimization."""
-
+        """
+        Calculate, display, and save the cost breakdown of the optimization.
+        
+        This function:
+        1. Calculates all cost components based on model results
+        2. Compares calculated costs with solver objective
+        3. Displays a formatted cost summary
+        4. Saves the cost data to a JSON file
+        
+        Parameters:
+        ----------
+        output_dir : str
+            Directory path where cost results will be saved
+            
+        Returns:
+        -------
+        dict
+            Dictionary containing all cost components
+        """
+        # 1. Calculate costs using appropriate hydrogen price setting
+        if value(self.instance.USE_CONST_H2_PRICE):
+            h2_price_param = self.instance.H2_PRICE
+            h2_price_type = "constant"
+        else:
+            h2_price_param = self.instance.hydrogen_price
+            h2_price_type = "time-varying"
+        
+        # Get solver objective value for comparison
+        solver_objective = value(self.instance.objective)
+        
+        # 2. Calculate all cost components
         costs = {
-            "costs":{
+            "costs": {
                 "CO2_costs_chp_1": self.calculate_costs(
-                self.instance.chp_1.co2, self.instance.CO2_PRICE
+                    self.instance.chp_1.co2, self.instance.CO2_PRICE
                 ),
                 "CO2_costs_chp_2": self.calculate_costs(
                     self.instance.chp_2.co2, self.instance.CO2_PRICE
@@ -654,29 +713,36 @@ class Model:
                     self.instance.electrical_grid.power_balance, self.instance.power_price
                 ),
                 "hydrogen_costs": self.calculate_costs(
-                    self.instance.hydrogen_grid.hydrogen_supply, self.instance.H2_PRICE
+                    self.instance.hydrogen_grid.hydrogen_supply, h2_price_param
                 )
             },
             "revenue": {
                 "heat_revenue": self.calculate_costs(
                     self.instance.heat_grid.heat_feedin, self.instance.HEAT_PRICE
                 )
-            }
+            },
+            "solver_objective": round(solver_objective, 2)
         }
-
-        # Berechne die Summe aller Kosten
+        
+        # 3. Compute summary values
         total_costs = sum(cost for cost in costs["costs"].values())
-        costs["costs"]["total"] = round(total_costs, 2)
+        costs["costs"]["total"] = total_costs
         
-        # Berechne die Summe aller Einnahmen
         total_revenue = sum(rev for rev in costs["revenue"].values())
-        costs["revenue"]["total"] = round(total_revenue, 2)
+        costs["revenue"]["total"] = total_revenue
         
-        # Berechne den Nettobetrag (Kosten - Einnahmen)
         net_total = total_costs - total_revenue
-        costs["net_total"] = round(net_total, 2)
+        costs["net_total"] = net_total
         
-        # Ausgabe der Werte
+        # 4. Calculate discrepancy between calculated costs and solver objective
+        discrepancy = abs(net_total - solver_objective)
+        discrepancy_percent = (discrepancy / solver_objective * 100) if solver_objective != 0 else 0
+        costs["validation"] = {
+            "discrepancy": round(discrepancy, 2),
+            "discrepancy_percent": round(discrepancy_percent, 4),
+        }
+        
+        # 5. Display formatted cost summary
         print("\nCost Summary:")
         print("=============")
         for name, cost in costs["costs"].items():
@@ -687,30 +753,57 @@ class Model:
         for name, rev in costs["revenue"].items():
             print(f"{name.replace('_', ' ').title()}: {rev:,.2f} €")
         
-        print(f"\nNet Total (Costs - Revenue): {net_total:,.2f} €")
+        print("===============")
+        print(f"Info: Using {h2_price_type} hydrogen price")
+        print(f"Net Total (Costs - Revenue): {net_total:,.2f} €")
+        print(f"Solver Objective Value: {solver_objective:,.2f} €")
+        print(f"Discrepancy: {discrepancy:,.2f} € ({discrepancy_percent:.4f}%)")
+        print("===============")
+
+        # 6. Save cost data to file
+        config_name = os.path.basename(self.config_file).replace('.json', '')
         
-        # Create subdirectory for runs
-        config_name = os.path.basename(self.config_file).replace('.json','')
-        run_dir = os.path.join(output_dir, config_name)
-        os.makedirs(run_dir, exist_ok=True)
+        # Get directory structure
+        _, run_dir = self.get_directory_structure(output_dir)
         
-        # Kosten in JSON-Datei speichern
-        cost_filename = f"{config_name}_{self.instance.HYDROGEN_ADMIXTURE_CHP_1.value}h2_{self.timestamp}_costs.json"
-        with open(os.path.join(run_dir, cost_filename), 'w') as f:
-            json.dump(costs, f, indent=4)
-            
+        cost_filename = f"{config_name}_{self.timestamp}_costs.json"
+        try:
+            with open(os.path.join(run_dir, cost_filename), 'w') as f:
+                json.dump(costs, f, indent=4)
+        except IOError as e:
+            print(f"Warning: Could not save cost file: {e}")
+                
         return costs
 
     # Zielfunktion
+    # def obj_expression(self, m):
+    #     """Rule for the model objective."""
+    #     return (
+    #         quicksum(m.ngas_grid.ngas_supply[t] * m.gas_price[t] for t in m.t)
+    #         + quicksum(m.chp_1.co2[t] * m.CO2_PRICE for t in m.t)
+    #         + quicksum(m.chp_2.co2[t] * m.CO2_PRICE for t in m.t)
+    #         + quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t)
+    #         #+ quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.H2_PRICE for t in m.t)
+    #         + quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.hydrogen_price[t] for t in m.t)
+    #         - quicksum(m.heat_grid.heat_feedin[t] * m.HEAT_PRICE for t in m.t)
+    #     )
+    
     def obj_expression(self, m):
         """Rule for the model objective."""
+        # Determine which hydrogen price to use based on configuration
+        if value(m.USE_CONST_H2_PRICE):
+            # Verwende konstanten Preis
+            hydrogen_cost = quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.H2_PRICE for t in m.t)
+        else:
+            # Verwende zeitvariablen Preis
+            hydrogen_cost = quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.hydrogen_price[t] for t in m.t)
+        
         return (
             quicksum(m.ngas_grid.ngas_supply[t] * m.gas_price[t] for t in m.t)
             + quicksum(m.chp_1.co2[t] * m.CO2_PRICE for t in m.t)
             + quicksum(m.chp_2.co2[t] * m.CO2_PRICE for t in m.t)
             + quicksum(m.electrical_grid.power_balance[t] * m.power_price[t] for t in m.t)
-            #+ quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.H2_PRICE for t in m.t)
-            + quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.hydrogen_price[t] for t in m.t)
+            + hydrogen_cost
             - quicksum(m.heat_grid.heat_feedin[t] * m.HEAT_PRICE for t in m.t)
         )
 
