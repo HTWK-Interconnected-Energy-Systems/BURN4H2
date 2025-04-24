@@ -1,0 +1,44 @@
+Solver command line: ['C:\\gurobi1002\\win64\\bin\\gurobi.bat']
+
+Set parameter Username
+Academic license - for non-commercial use only - expires 2024-08-20
+Read LP format model from file C:\Users\mhafeman\AppData\Local\Temp\tmpj68ws7u0.pyomo.lp
+Reading time = 0.03 seconds
+obj: 6722 rows, 6047 columns, 15947 nonzeros
+Gurobi Optimizer version 10.0.2 build v10.0.2rc0 (win64)
+
+CPU model: AMD Ryzen 7 3800X 8-Core Processor, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 16 logical processors, using up to 16 threads
+
+Optimize a model with 6722 rows, 6047 columns and 15947 nonzeros
+Model fingerprint: 0x520e8541
+Model has 167 quadratic constraints
+Variable types: 4872 continuous, 1175 integer (840 binary)
+Coefficient statistics:
+  Matrix range     [1e-04, 3e+02]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [4e+01, 4e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [3e-03, 1e+03]
+Presolve removed 5743 rows and 4888 columns
+Presolve time: 0.02s
+Presolved: 979 rows, 1159 columns, 2781 nonzeros
+Variable types: 635 continuous, 524 integer (517 binary)
+Found heuristic solution: objective -422233.5937
+
+Root relaxation: objective -8.902598e+05, 296 iterations, 0.00 seconds (0.01 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0    -890259.8312 -890259.83  0.00%     -    0s
+
+Explored 1 nodes (395 simplex iterations) in 0.04 seconds (0.05 work units)
+Thread count was 16 (of 16 available processors)
+
+Solution count 2: -890260 -422234 
+No other solutions better than -890260
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective -8.902598312022e+05, best bound -8.902598312022e+05, gap 0.0000%
+
