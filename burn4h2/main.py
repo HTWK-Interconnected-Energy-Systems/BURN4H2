@@ -837,8 +837,8 @@ if __name__ == "__main__":
             print("SETTING SOLVER OPTIONS")
             lp.set_solver(
                 solver_name="gurobi",
-                TimeLimit=5000,  # solver will stop after x seconds
-                MIPGap=0.2, # solver will stop if gap <= x %
+                #TimeLimit=5000,  # solver will stop after x seconds
+                MIPGap=0.02, # solver will stop if gap <= x %
             )
 
             print("LOADING TIMESERIES DATA")

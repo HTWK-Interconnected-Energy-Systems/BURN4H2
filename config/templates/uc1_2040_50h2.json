@@ -2,7 +2,8 @@
   "parameters": {
     "INSTALLED_ST_POWER": 5.16,
     "HYDROGEN_ADMIXTURE_CHP_1": 0.5,
-    "HYDROGEN_ADMIXTURE_CHP_2": 0.5
+    "HYDROGEN_ADMIXTURE_CHP_2": 0.5,
+    "CO2_PRICE": 162.04
   },
   "timeseries": {
     "gas_price": {

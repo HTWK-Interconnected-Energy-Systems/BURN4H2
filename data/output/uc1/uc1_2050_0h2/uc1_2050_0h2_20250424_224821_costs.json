@@ -1,0 +1,20 @@
+{
+    "costs": {
+        "CO2_costs_chp_1": 9303567.92,
+        "CO2_costs_chp_2": 9071615.91,
+        "gas_costs": 16549836.94,
+        "power_costs": -40838583.66,
+        "hydrogen_costs": 0.0,
+        "total": -5913562.890000001
+    },
+    "revenue": {
+        "heat_revenue": 0.0,
+        "total": 0.0
+    },
+    "solver_objective": -5913562.89,
+    "net_total": -5913562.890000001,
+    "validation": {
+        "discrepancy": 0.0,
+        "discrepancy_percent": -0.0
+    }
+}

@@ -1,6 +1,5 @@
 {
-    "CO2_PRICE": 95.98,
     "HEAT_PRICE": 0,
-    "H2_PRICE": 1220,
+    "H2_PRICE": 200,
     "USE_CONST_H2_PRICE": false
 }
