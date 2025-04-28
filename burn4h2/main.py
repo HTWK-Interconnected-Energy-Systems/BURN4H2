@@ -365,10 +365,10 @@ class Model:
             destination=self.instance.heatpump_s1.heat_in
         )
 
-        # GEO: 1. Stage Heat Pump -> Waste Heat Grid 
+        # GEO: 1. Stage Heat Pump -> 2. Stage Heat Pump
         self.instance.arc18 = Arc(
             source=self.instance.heatpump_s1.heat_out,
-            destination=self.instance.waste_heat_grid.waste_heat_in
+            destination=self.instance.heatpump_s2.waste_heat_in,
         )
 
         # WASTE: Waste Heat Grid -> 2. Stage Heat Pump
@@ -880,7 +880,6 @@ if __name__ == "__main__":
             return True
         except Exception as e:
             print(f"ERROR in scenario {config_file}: {str(e)}")
-            print("Continuing with next scenario...")
             return False
 
     # Run simulations

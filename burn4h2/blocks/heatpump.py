@@ -92,6 +92,7 @@ class HeatpumpStageOne:
         # Port 3
         block.heat_out = Port()
         block.heat_out.add(block.heat,'waste_heat',Port.Extensive, include_splitfrac=False)
+
      
        
         # Expressions
