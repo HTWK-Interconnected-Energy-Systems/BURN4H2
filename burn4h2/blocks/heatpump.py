@@ -112,7 +112,7 @@ class HeatpumpStageOne:
             # Factors for working fluid R-717 
             A = 0.6932
             B = -0.4851
-            return A + B / _block.ideal_cop[i]
+            return A + (B / _block.ideal_cop[i])
         
         def real_cop_rule(_block, i):
             """
@@ -141,8 +141,13 @@ class HeatpumpStageOne:
 
         # Constraints
         def heat_pump_operation_rule(_block, i):
-            """Rule for the heat pump operation."""
-            return _block.heat[i] == _block.real_cop[i]  * _block.capacity_compressor[i]  # in MW
+            """Rule for the heat pump operation.
+            There are different options for the calculation of the heat output:
+            1. Ideal COP: Q_0 = COP_ideal * P_v for the ideal case
+            2. Real COP: Q_0 = COP_real * P_v for the real case
+            3. Q_0 = Q_in + P_v for the thermoynamic billance with the heat input (chosen option)
+            """
+            return _block.heat[i] == _block.capacity_compressor[i] + _block.heat_input[i]  # in MW
         
         def capacity_compressor_rule(_block, i):
             """
@@ -346,8 +351,13 @@ class HeatpumpStageTwo:
 
         # Constraints
         def heat_pump_operation_rule(_block, i):
-            """Rule for the heat pump operation."""
-            return _block.heat[i] == _block.real_cop[i]  * _block.capacity_compressor[i]  # in MW
+            """Rule for the heat pump operation.
+            There are different options for the calculation of the heat output:
+            1. Ideal COP: Q_0 = COP_ideal * P_v for the ideal case
+            2. Real COP: Q_0 = COP_real * P_v for the real case
+            3. Q_0 = Q_in + P_v for the thermoynamic billance with the heat input (chosen option)
+            """
+            return _block.heat[i] == _block.capacity_compressor[i] + _block.heat_input[i]  # in MW
         
         def capacity_compressor_rule(_block, i):
             """
@@ -381,6 +391,14 @@ class HeatpumpStageTwo:
         def power_rule(_block, i):
             """Rule for the power input. (Elektrische Leistung  Verdichter in MW)"""
             return _block.power[i]  == _block.capacity_compressor[i] / _block.electrical_efficiency_compressor[i]
+        
+        def max_heat_input_rule(_block, i):
+            """Rule for the maximum heat input.
+            The heat input is limited to 2.05 MW, which is the sum of the heat input for the two heat pumps of stage 2 from the R&I diagram.
+            """
+            return _block.heat_input[i] <= 2.05 # in MW
+        
+        
 
 
         # Define constraints
@@ -414,6 +432,10 @@ class HeatpumpStageTwo:
             rule=swept_volume_rule
         )
 
+        block.max_heat_input_constraint = Constraint(
+            t,
+            rule=max_heat_input_rule
+        )
     
 
 
