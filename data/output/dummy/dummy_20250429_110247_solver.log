@@ -1,0 +1,54 @@
+Solver command line: []
+
+Read LP format model from file C:\Users\wlhlm\AppData\Local\Temp\tmpxjo52ytw.pyomo.lp
+Reading time = 0.04 seconds
+objective: 18997 rows, 16799 columns, 43003 nonzeros
+Set parameter MIPGap to value 0.03
+Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - Windows 11.0 (26100.2))
+
+CPU model: Intel(R) Core(TM) Ultra 7 258V, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+MIPGap  0.03
+
+Optimize a model with 18997 rows, 16799 columns and 43003 nonzeros
+Model fingerprint: 0xf474427b
+Model has 167 quadratic constraints
+Variable types: 14448 continuous, 2351 integer (2016 binary)
+Coefficient statistics:
+  Matrix range     [8e-03, 2e+02]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [4e+01, 3e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [2e-03, 1e+04]
+Presolve removed 16135 rows and 13749 columns
+Presolve time: 0.05s
+Presolved: 2862 rows, 3050 columns, 9553 nonzeros
+Variable types: 2227 continuous, 823 integer (823 binary)
+Found heuristic solution: objective 2784419.7606
+
+Root relaxation: objective 2.575546e+06, 1162 iterations, 0.01 seconds (0.02 work units)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2575546.48    0   17 2784419.76 2575546.48  7.50%     -    0s
+H    0     0                    2576421.1955 2575546.48  0.03%     -    0s
+
+Cutting planes:
+  Gomory: 12
+  Implied bound: 3
+  MIR: 16
+  Flow cover: 16
+  RLT: 2
+  Relax-and-lift: 14
+
+Explored 1 nodes (1292 simplex iterations) in 0.11 seconds (0.13 work units)
+Thread count was 8 (of 8 available processors)
+
+Solution count 2: 2.57642e+06 2.78442e+06 
+
+Optimal solution found (tolerance 3.00e-02)
+Best objective 2.576421195465e+06, best bound 2.575554743974e+06, gap 0.0336%
+

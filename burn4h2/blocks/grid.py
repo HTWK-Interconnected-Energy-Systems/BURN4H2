@@ -189,9 +189,9 @@ class HeatGrid:
         block.bin_FW_to_NW_active = Var(t, domain=Binary)  # 1 wenn FW_to_NW > 0
 
         # Maximale Wärmeströme für Big-M-Constraints
-        block.max_excess_heat = Param(initialize=100)  # [MW] Max. Überschusswärme
-        block.max_FW_to_NW = Param(initialize=100)  # [MW] Max. Wärme von FW zu NW
-        
+        block.max_excess_heat = Param(initialize=10)  # [MW] Max. Überschusswärme
+        block.max_FW_to_NW = Param(initialize=10)  # [MW] Max. Wärme von FW zu NW
+        block.min_flow = Param(initialize=0.5)      # [MW] Minimum meaningful flow
 
         # Ports
         block.heat_in = Port()
@@ -250,6 +250,14 @@ class HeatGrid:
         def FW_to_NW_active_rule(_block, i):
             """Begrenze FW_to_NW basierend auf Binärvariable"""
             return _block.FW_to_NW[i] <= _block.max_FW_to_NW * _block.bin_FW_to_NW_active[i]
+        
+        def excess_heat_min_rule(_block, i):
+            """Stelle sicher, dass excess_heat_feedin bei aktivem Flag mindestens den Minimalwert hat"""
+            return _block.excess_heat_feedin[i] >= _block.min_flow * _block.bin_excess_active[i]
+    
+        def FW_to_NW_min_rule(_block, i):
+            """Stelle sicher, dass FW_to_NW bei aktivem Flag mindestens den Minimalwert hat"""
+            return _block.FW_to_NW[i] >= _block.min_flow * _block.bin_FW_to_NW_active[i]
 
         def exclusive_heat_flow_rule(_block, i):
             """Stelle sicher, dass nur eine Richtung des Wärmeflusses aktiv sein kann"""
@@ -259,6 +267,7 @@ class HeatGrid:
         block.excess_heat_active = Constraint(t, rule=excess_heat_active_rule)
         block.FW_to_NW_active = Constraint(t, rule=FW_to_NW_active_rule)
         block.exclusive_heat_flow = Constraint(t, rule=exclusive_heat_flow_rule)
+        
         # Define constraints
         block.heat_balance_constraint = Constraint(
             t,
@@ -268,6 +277,9 @@ class HeatGrid:
             t,
             rule=supply_heat_demand_rule
         )
+
+        block.excess_heat_min = Constraint(t, rule=excess_heat_min_rule)  # NEW
+        block.FW_to_NW_min = Constraint(t, rule=FW_to_NW_min_rule)        # NEW
 
 class WasteHeatGrid:
     """Class for constructing waste heat grid asset objects."""

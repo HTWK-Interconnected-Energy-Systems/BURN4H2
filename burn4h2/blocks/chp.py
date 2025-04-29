@@ -60,6 +60,12 @@ class Chp:
         # Get index from model
         t = block.model().t
 
+        # Define fuel property constants
+        HV_H2 = 120.0  # Hydrogen heating value [MJ/kg]
+        HV_NG = 47.0   # Natural gas heating value [MJ/kg]
+        RHO_H2 = 0.09  # Hydrogen density [kg/m³]
+        RHO_NG = 0.68  # Natural gas density [kg/m³]
+
         # Declare components
         block.bin = Var(t, within=Binary)
         block.gas = Var(t, domain=NonNegativeReals)
@@ -67,8 +73,11 @@ class Chp:
         block.heat = Var(t, domain=NonNegativeReals)
         block.co2 = Var(t, domain=NonNegativeReals)
         block.waste_heat = Var(t, domain=NonNegativeReals)
+        
+        # Declare components for hydrogen admixture
+        block.hydrogen = Var(t, domain=NonNegativeReals)
         block.hydrogen_admixture_factor = Param(initialize=self.kwargs['hydrogen_admixture'])
-
+            
 
         block.power_out = Port()
         block.power_out.add(
@@ -100,11 +109,14 @@ class Chp:
             include_splitfrac=False
         )
 
-        if 'hydrogen_admixture' in self.kwargs:
-            hydrogen_admixture_factor = float(self.kwargs['hydrogen_admixture'])
-            # print(hydrogen_admixture_factor)
-        
-            
+        block.hydrogen_in = Port()
+        block.hydrogen_in.add(
+            block.hydrogen,
+            'hydrogen',
+            Port.Extensive,
+            include_splitfrac=False
+        )
+
         # Declare construction rules for constraints
         def power_max_rule(_block, i):
             """Rule for the maximal power."""
@@ -201,14 +213,21 @@ class Chp:
                 expr=quicksum(block.bin[i] for i in t) >= kwarg_value
             )
 
-        # Proof if hydrogen_admixture is given
-        if 'hydrogen_admixture' in self.kwargs:
-            admixture = float(self.kwargs['hydrogen_admixture'])
-
-            
+        # Proof if hydrogen_admixture is given and > 0
+        if 'hydrogen_admixture' in self.kwargs and float(self.kwargs['hydrogen_admixture']) > 0: 
             # Delete components
             block.del_component("co2_depends_on_power_constraint")
             
+            # Declare additional components
+            block.natural_gas = Var(t, domain=NonNegativeReals)
+            block.natural_gas_in.remove('natural_gas')
+            block.natural_gas_in.add(
+                block.natural_gas,
+                'natural_gas',
+                Port.Extensive,
+                include_splitfrac=False
+            )
+
             def co2_when_admixtured_depends_on_power_rule(_block, i):
                 """Rule for calculating the co2 emissions when hydrogen is 
                 admixtured."""
@@ -225,41 +244,74 @@ class Chp:
                     + b * _block.bin[i])
                     * (1 - _block.hydrogen_admixture_factor))
             
+            # Old rule
+            # def hydrogen_depends_on_gas_rule(_block, i):
+            #     """Rule for determine the hydrogen demand for combustion."""                
+            #     return _block.hydrogen[i] == _block.gas[i] * _block.hydrogen_admixture_factor
+            
+
+            def hydrogen_depends_on_gas_rule(_block, i):
+                """Rule for determining the hydrogen demand for combustion.
+                
+                # Generelle Formel für Energieanteilsberechnung:
+                # Energieanteil H₂ an Feuerungswärmeleistung = (vol_h2 × ρ_h2 × HV_h2) / (vol_h2 × ρ_h2 × HV_h2 + vol_ng × ρ_ng × HV_ng)
+                # 
+                # Wobei:
+                # vol_h2, vol_ng = Volumenanteil H₂ bzw. Erdgas [dimensionslos]
+                # ρ_h2, ρ_ng = Dichte von H₂ bzw. Erdgas [kg/m³]
+                # HV_h2, HV_ng = Heizwert von H₂ bzw. Erdgas [MJ/kg]
+                """
+                # Volumetric proportions
+                vol_h2 = _block.hydrogen_admixture_factor
+                vol_ng = 1 - vol_h2
+                
+                # Energy densities [MJ/m³]
+                energy_density_h2 = RHO_H2 * HV_H2  # ~10.8 MJ/m³
+                energy_density_ng = RHO_NG * HV_NG  # ~32.0 MJ/m³
+                
+                # Energieanteil berechnen
+                energy_fraction_h2 = (vol_h2 * energy_density_h2) / (vol_h2 * energy_density_h2 + vol_ng * energy_density_ng)
+                
+                # Print for debugging
+                # print(f"Energy fraction H2: {energy_fraction_h2:.4f}")
+
+                # Wasserstoffanteil am Gesamtenergiestrom (MJ/s)
+                return _block.hydrogen[i] == _block.gas[i] * energy_fraction_h2
+            
+            # Old rule 
+            # def ngas_depends_on_gas_rule(_block, i):
+            #     """Rule for determine the ngas demand for combustion."""
+            #     return _block.natural_gas[i] == _block.gas[i] * (1 - _block.hydrogen_admixture_factor)
+
+            def ngas_depends_on_gas_rule(_block, i):
+                """Rule for determining the natural gas demand for combustion.
+                
+                # Generelle Formel für Energieanteilsberechnung:
+                # Energieanteil Erdgas an Feuerungswärmeleistung = (vol_ng × ρ_ng × HV_ng) / (vol_h2 × ρ_h2 × HV_h2 + vol_ng × ρ_ng × HV_ng)
+    
+                """
+                # Volumetric proportions
+                vol_h2 = _block.hydrogen_admixture_factor
+                vol_ng = 1 - vol_h2
+                
+                # Energy densities [MJ/m³]
+                energy_density_h2 = RHO_H2 * HV_H2  # ~10.8 MJ/m³
+                energy_density_ng = RHO_NG * HV_NG  # ~32.0 MJ/m³
+                
+                # Energieanteil berechnen
+                energy_fraction_ng = (vol_ng * energy_density_ng) / (vol_h2 * energy_density_h2 + vol_ng * energy_density_ng)
+                
+                # Print for debugging
+                # print(f"Energy fraction NG: {energy_fraction_ng:.4f}")
+
+                # Erdgasanteil am Gesamtenergiestrom (MJ/s)
+                return _block.natural_gas[i] == _block.gas[i] * energy_fraction_ng
+           
+           
             block.co2_when_admixtured_depends_on_power_constraint = Constraint(
                 t,
                 rule=co2_when_admixtured_depends_on_power_rule
             )
-
-
-            # Declare additional components
-            block.natural_gas = Var(t, domain=NonNegativeReals)
-            block.hydrogen = Var(t, domain=NonNegativeReals)
-
-            block.natural_gas_in.remove('natural_gas')
-            block.natural_gas_in.add(
-                block.natural_gas,
-                'natural_gas',
-                Port.Extensive,
-                include_splitfrac=False
-            )
-
-            block.hydrogen_in = Port()
-            block.hydrogen_in.add(
-                block.hydrogen,
-                'hydrogen',
-                Port.Extensive,
-                include_splitfrac=False
-            )
-
-            def hydrogen_depends_on_gas_rule(_block, i):
-                """Rule for determine the hydrogen demand for combustion."""
-                return _block.hydrogen[i] == _block.gas[i] * _block.hydrogen_admixture_factor
-            
-            def ngas_depends_on_gas_rule(_block, i):
-                """Rule for determine the ngas demand for combustion."""
-                return _block.natural_gas[i] == _block.gas[i] * (1 - _block.hydrogen_admixture_factor)
-
-            
             block.hydrogen_depends_on_gas_constraint = Constraint(
                 t,
                 rule=hydrogen_depends_on_gas_rule

@@ -109,8 +109,8 @@ class Model:
         self.model.H2_PRICE = Param()
         self.model.USE_CONST_H2_PRICE = Param()
         self.model.INSTALLED_ST_POWER = Param()
-        self.model.HYDROGEN_ADMIXTURE_CHP_1 = Param()
-        self.model.HYDROGEN_ADMIXTURE_CHP_2 = Param()
+        self.model.HYDROGEN_ADMIXTURE_CHP_1 = Param() # rel. Vol. H2 in NG
+        self.model.HYDROGEN_ADMIXTURE_CHP_2 = Param() # rel. Vol. H2 in NG
 
         # Erlaubte hydrogen_admixture Werte
         ALLOWED_ADMIXTURE_VALUES = [0, 0.3, 0.5, 1.0]
@@ -838,7 +838,7 @@ if __name__ == "__main__":
             lp.set_solver(
                 solver_name="gurobi",
                 #TimeLimit=5000,  # solver will stop after x seconds
-                MIPGap=0.02, # solver will stop if gap <= x %
+                MIPGap=0.03, # solver will stop if gap <= x %
             )
 
             print("LOADING TIMESERIES DATA")
