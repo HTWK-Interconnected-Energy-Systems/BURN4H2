@@ -112,18 +112,18 @@ class Model:
         self.model.HYDROGEN_ADMIXTURE_CHP_1 = Param() # rel. Vol. H2 in NG
         self.model.HYDROGEN_ADMIXTURE_CHP_2 = Param() # rel. Vol. H2 in NG
 
-        # Erlaubte hydrogen_admixture Werte
+        # Allowed hydrogen_admixture values
         ALLOWED_ADMIXTURE_VALUES = [0, 0.3, 0.5, 1.0]
         
-        # Konvertiere Pyomo-Parameter in konkrete Werte
-        # Verwende die Werte aus der Konfiguration, da die Pyomo-Parameter noch nicht instanziiert sind
+        # Convert Pyomo parameters to concrete values
+        # Use the values from the configuration, as the Pyomo parameters are not yet instantiated
         with open(PATH_CONFIG + 'templates/' + self.config_file, "r") as f:
             config = json.load(f)
         
         h2_admixture_chp_1 = config.get("parameters", {}).get("HYDROGEN_ADMIXTURE_CHP_1", 0)
         h2_admixture_chp_2 = config.get("parameters", {}).get("HYDROGEN_ADMIXTURE_CHP_2", 0)
         
-        # Validiere die Werte
+        # Validate the values
         if h2_admixture_chp_1 not in ALLOWED_ADMIXTURE_VALUES:
             raise ValueError(f"Invalid hydrogen_admixture value for CHP_1: {h2_admixture_chp_1}. "
                             f"Allowed values are: {ALLOWED_ADMIXTURE_VALUES}")
@@ -131,24 +131,24 @@ class Model:
             raise ValueError(f"Invalid hydrogen_admixture value for CHP_2: {h2_admixture_chp_2}. "
                             f"Allowed values are: {ALLOWED_ADMIXTURE_VALUES}")
         
-        # Bestimme die entsprechenden CSV-Dateien
+        # Determine the corresponding CSV files
         def get_chp_csv_path(h2_value):
-            """Bestimmt den Pfad zur CHP-CSV-Datei basierend auf dem hydrogen_admixture_factor."""
+            """Determine the path to the CHP CSV file based on the hydrogen_admixture_factor."""
             if h2_value == 0:
-                return PATH_IN + "assets/chp.csv"  # Standarddatei für 0% H2
+                return PATH_IN + "assets/chp.csv"  # Default file for 0% H2
             else:
-                # Prozentsatz für Dateinamen (30, 50, 100)
+                # Percentage for filename (30, 50, 100)
                 h2_percent = int(h2_value * 100)
                 specific_file = PATH_IN + f"assets/chp_h2_{h2_percent}.csv"
                 
-                # Prüfe, ob die spezifische Datei existiert
+                # Check if the specific file exists
                 if os.path.exists(specific_file):
                     return specific_file
                 else:
                     print(f"Warning: Specific data file for {h2_percent}% hydrogen not found. Using default.")
                     return PATH_IN + "assets/chp.csv"
         
-        # Hole die Dateipfade für die jeweiligen H2-Beimischungen
+        # Get the file paths for the respective H2 admixtures
         chp1_filepath = get_chp_csv_path(h2_admixture_chp_1)
         chp2_filepath = get_chp_csv_path(h2_admixture_chp_2)
         
@@ -263,167 +263,165 @@ class Model:
     def add_arcs(self):
         """Adds arcs to the model instance."""
         
-        # POWER: CHP 1 -> Electrical Grid
+        # Connect power from CHP 1 to electrical grid
         self.instance.arc01 = Arc(
             source=self.instance.chp_1.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
-        # POWER: CHP 2 -> Electrical Grid
+        # Connect power from CHP 2 to electrical grid
         self.instance.arc02 = Arc(
             source=self.instance.chp_2.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
-        # POWER: PV -> Electrical Grid
+        # Connect power from PV to electrical grid
         self.instance.arc03 = Arc(
             source=self.instance.pv.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
-        # POWER: Battery Storage -> Electrical Grid
+        # Connect power from battery storage to electrical grid
         self.instance.arc04 = Arc(
             source=self.instance.battery_storage.power_out,
             destination=self.instance.electrical_grid.power_in,
         )
         
-        # POWER: Electrical Grid -> Battery Storage
+        # Connect power from electrical grid to battery storage
         self.instance.arc05 = Arc(
             source=self.instance.electrical_grid.power_out,
             destination=self.instance.battery_storage.power_in,
         )
         
-        # NGAS: NGAS Grid -> CHP 1
+        # Connect NGAS grid to CHP 1
         self.instance.arc06 = Arc(
             source=self.instance.ngas_grid.ngas_out,
             destination=self.instance.chp_1.natural_gas_in,
         )
         
-        # NGAS: NGAS Grid -> CHP 2
+        # Connect NGAS grid to CHP 2
         self.instance.arc07 = Arc(
             source=self.instance.ngas_grid.ngas_out,
             destination=self.instance.chp_2.natural_gas_in,
         )
         
-        # HYDROGEN: Hydrogen Grid -> CHP 1
+        # Connect hydrogen grid to CHP 1
         self.instance.arc08 = Arc(
             source=self.instance.hydrogen_grid.hydrogen_out,
             destination=self.instance.chp_1.hydrogen_in,
         )
         
-        # HYDROGEN: Hydrogen Grid -> CHP 2
+        # Connect hydrogen grid to CHP 2
         self.instance.arc09 = Arc(
             source=self.instance.hydrogen_grid.hydrogen_out,
             destination=self.instance.chp_2.hydrogen_in,
         )
         
-        # DISTRICT HEAT: CHP 1 -> District Heat Grid
+        # Connect district heat from CHP 1 to district heat grid
         self.instance.arc10 = Arc(
             source=self.instance.chp_1.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
         
-        # DISTRICT HEAT: CHP 2 -> District Heat Grid
+        # Connect district heat from CHP 2 to district heat grid
         self.instance.arc11 = Arc(
             source=self.instance.chp_2.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
         
-        # DISTRICT HEAT: District Heat Storage -> District Heat Grid
+        # Connect district heat storage to district heat grid
         self.instance.arc12 = Arc(
             source=self.instance.heat_storage.heat_out,
             destination=self.instance.heat_grid.heat_in,
         )
         
-        # DISTRICT HEAT: District Heat Grid -> District Heat Storage
+        # Connect district heat grid to district heat storage
         self.instance.arc13 = Arc(
             source=self.instance.heat_grid.heat_out,
             destination=self.instance.heat_storage.heat_in,
         )
         
-        # WASTE: CHP 1 -> Waste Heat Grid
+        # Connect waste heat from CHP 1 to waste heat grid
         self.instance.arc14 = Arc(
             source=self.instance.chp_1.waste_heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
         
-        # WASTE: CHP 2 -> Waste Heat Grid
+        # Connect waste heat from CHP 2 to waste heat grid
         self.instance.arc15 = Arc(
             source=self.instance.chp_2.waste_heat_out,
             destination=self.instance.waste_heat_grid.waste_heat_in,
         )
 
-        # WASTE: Waste Heat Grid -> Geo Storage
+        # Connect waste heat grid to geothermal storage
         self.instance.arc16 = Arc(
             source=self.instance.waste_heat_grid.waste_heat_out,
             destination=self.instance.geo_heat_storage.heat_in
         )
         
-        # GEO: Geo Storage -> 1. Stage Heat Pump
+        # Connect geothermal storage to first stage heat pump
         self.instance.arc17 = Arc(
             source=self.instance.geo_heat_storage.heat_out,
             destination=self.instance.heatpump_s1.heat_in
         )
 
-        # GEO: 1. Stage Heat Pump -> 2. Stage Heat Pump
+        # Connect first stage heat pump to second stage heat pump
         self.instance.arc18 = Arc(
             source=self.instance.heatpump_s1.heat_out,
             destination=self.instance.heatpump_s2.waste_heat_in,
         )
 
-        # WASTE: Waste Heat Grid -> 2. Stage Heat Pump
+        # Connect waste heat grid to second stage heat pump
         self.instance.arc19 = Arc(
             source=self.instance.waste_heat_grid.waste_heat_out,
             destination=self.instance.heatpump_s2.waste_heat_in,
         )
 
-        # POWER: Electrical Grid -> 1.Stage Heat Pump
+        # Connect electrical grid to first stage heat pump
         self.instance.arc20 = Arc(
                 source=self.instance.electrical_grid.power_out,
                 destination=self.instance.heatpump_s1.power_in,
         )
         
-        # POWER: Electrical Grid -> 2. Stage Heat Pump 
+        # Connect electrical grid to second stage heat pump
         self.instance.arc21 = Arc(
             source=self.instance.electrical_grid.power_out,
             destination=self.instance.heatpump_s2.power_in,
         )
         
-        # LOCAL HEAT: Solar Thermal -> Stratified Storage
+        # Connect solar thermal to stratified storage
         self.instance.arc22 = Arc(
             source=self.instance.solar_thermal.heat_out,
             destination=self.instance.stratified_storage.st_heat_in,
         )
-        # LOCAL HEAT: 2.Stage Heat Pump -> Stratified Storage
+        # Connect second stage heat pump to stratified storage
         self.instance.arc23 = Arc(
             source=self.instance.heatpump_s2.heat_out,
             destination=self.instance.stratified_storage.wp_heat_in,
         )
 
-        # LOCAL HEAT: Stratified Storage Z1 -> District Heat Grid 
+        # Connect stratified storage Z1 to district heat grid 
         self.instance.arc24 = Arc(
             source=self.instance.stratified_storage.Z1_FW_heat_out,
             destination=self.instance.heat_grid.excess_heat_in,
         )
-        # LOCAL HEAT: Stratified Storage Z1 -> Local Heat Grid
+        # Connect stratified storage Z1 to local heat grid
         self.instance.arc25 = Arc(
             source=self.instance.stratified_storage.Z1_NW_heat_out,
             destination=self.instance.local_heat_grid.Z1_NW_heat_in,
         )
         
-        # LOCAL HEAT: Stratified Storage Z2 -> Local Heat Grid
+        # Connect stratified storage Z2 to local heat grid
         self.instance.arc26 = Arc(
             source=self.instance.stratified_storage.Z2_NW_heat_out,
             destination=self.instance.local_heat_grid.Z2_NW_heat_in,
         )
 
-        # DISTRICT HEAT: District Heat Grid -> Local Heat Grid
+        # Connect district heat grid to local heat grid
         self.instance.arc27 = Arc(
             source=self.instance.heat_grid.heat_grid_to_local_out, 
             destination=self.instance.local_heat_grid.district_heat_in,
         )
-
-
 
 
     def solve(self, output_dir):
@@ -461,7 +459,7 @@ class Model:
             # Write only indexed parameters
             try:
                 if hasattr(parameter, 'index_set') and parameter.index_set() is not None:
-                    # Vergleiche die String-Repräsentation der Sets
+                    # Compare the string representation of the sets
                     if str(parameter.index_set()) == str(self.instance.t):
                         df_parameters[name] = [value(parameter[t]) for t in self.instance.t]
             
@@ -469,38 +467,13 @@ class Model:
             except:
                 continue
 
-        #########
-
-        # for variable in self.instance.component_objects(Var, active=True):
-        #     name = variable.name
-        #     if "aux" in name:  # Filters auxiliary variables from the output data
-        #         continue
-        #     if "splitfrac" in name:
-        #         continue
-        #     # Skip arc variables if not included
-        #     if not include_arcs and "arc" in name.lower():
-        #         continue
-            
-        #     # Füge nur berechnete Variablen hinzu
-        #     values = []
-        #     for t in self.instance.t:
-        #         v = value(variable[t], exception=False)  # Gibt None zurück, wenn nicht initialisiert
-        #         if v is not None:  # Nur initialisierte Variablen hinzufügen
-        #             values.append(v)
-        #         else:
-        #             values.append(None)  # Optional: None hinzufügen, um Lücken zu markieren
-        #     if any(v is not None for v in values):  # Nur hinzufügen, wenn mindestens ein Wert gesetzt ist
-        #         df_variables[name] = values
-        
-        ######
-
-        # Verbesserte Variable-Verarbeitung für mehrfach indizierte Variablen
+        # Improved variable processing for multi-indexed variables
         for variable in self.instance.component_objects(Var, active=True):
             name = variable.name
             if "aux" in name or "splitfrac" in name or (not include_arcs and "arc" in name.lower()):
                 continue
             
-            # Prüfen, ob die Variable mehrfach indiziert ist
+            # Check if the variable is multi-indexed
             try:
                 next(variable.iteritems())
                 index_dims = sum(1 for _ in next(variable.iteritems())[0]) if variable else 0
@@ -508,8 +481,8 @@ class Model:
                 index_dims = 0
             
             if index_dims > 1:
-                # Mehrfach indizierte Variable (z.B. T_sto[t, layer])
-                # Erstelle für jede zweite Dimension einen eigenen Eintrag
+                # Multi-indexed variable (e.g., T_sto[t, layer])
+                # Create a separate entry for each second dimension
                 second_indices = set(idx[1] for idx in variable.keys())
                 for second_idx in second_indices:
                     values = []
@@ -524,7 +497,7 @@ class Model:
                         col_name = f"{name}_{second_idx}"
                         df_variables[col_name] = values
             else:
-                # Einfach indizierte Variable (nur nach Zeit)
+                # Single-indexed variable (only by time)
                 values = []
                 for t in self.instance.t:
                     try:
@@ -777,7 +750,7 @@ class Model:
                 
         return costs
 
-    # Zielfunktion
+    # Objective function
     # def obj_expression(self, m):
     #     """Rule for the model objective."""
     #     return (
@@ -794,10 +767,10 @@ class Model:
         """Rule for the model objective."""
         # Determine which hydrogen price to use based on configuration
         if value(m.USE_CONST_H2_PRICE):
-            # Verwende konstanten Preis
+            # Use constant price
             hydrogen_cost = quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.H2_PRICE for t in m.t)
         else:
-            # Verwende zeitvariablen Preis
+            # Use time-varying price
             hydrogen_cost = quicksum(m.hydrogen_grid.hydrogen_supply[t] * m.hydrogen_price[t] for t in m.t)
         
         return (

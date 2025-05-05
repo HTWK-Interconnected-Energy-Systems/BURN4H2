@@ -3,12 +3,15 @@ from pyomo.network import *
 import pandas as pd
 
 class Collector:
-    """Class for constructing collector asset objects."""
+    """Class for constructing collector asset objects.
+    
+    The Collector class creates a solar thermal collector that converts
+    solar radiation into heat based on a provided profile.
+    """
 
     def __init__(self, name, filepath, index_col=0) -> None:
         self.name = name
         self.get_data(filepath, index_col)
-        
 
     def get_data(self, filepath, index_col):
         """Collects data from a csv."""
@@ -22,11 +25,11 @@ class Collector:
         model.add_component(
             self.name,
             Block(rule=self.collector_block_rule)
-            )
-        
+        )
 
     def collector_block_rule(self, block):
         """Rule for creating a collector block with default components and constraints."""
+        
         # Get index from model
         t = block.model().t
 
@@ -39,7 +42,7 @@ class Collector:
         block.bin = Var(t, initialize=0, within=Binary)
         block.heat = Var(t, domain=NonNegativeReals)
     
-        # Declare blocks
+        # Declare ports
         block.heat_out = Port()
         block.heat_out.add(
             block.heat,
@@ -47,11 +50,6 @@ class Collector:
             Port.Extensive,
             include_splitfrac=False
         )
-
-        # Constraints
-        # def profile_rule(_block, i):
-        #     """Rule for the profile constraint. """
-        #     return _block.heat[i] == solar_profile[i]
         
         def profile_rule(_block, i):
             """Rule for the profile constraint. """
@@ -63,7 +61,6 @@ class Collector:
                 return _block.bin[i] == 0
             else:
                 return _block.bin[i] == 1
-
 
         # Declare constraints
         block.bin_rule = Constraint(

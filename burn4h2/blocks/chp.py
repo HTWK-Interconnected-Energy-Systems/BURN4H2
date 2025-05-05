@@ -4,6 +4,7 @@ from pyomo.network import *
 import pandas as pd
 import os
 
+
 class Chp:
     """Class for constructing chp asset objects.
     
@@ -239,27 +240,19 @@ class Chp:
                 a = (co2_max - co2_min) / (power_max - power_min)
                 b = co2_max - a * power_max
 
-                return _block.co2[i] == ((
-                    a * _block.power[i] 
-                    + b * _block.bin[i])
-                    * (1 - _block.hydrogen_admixture_factor))
-            
-            # Old rule
-            # def hydrogen_depends_on_gas_rule(_block, i):
-            #     """Rule for determine the hydrogen demand for combustion."""                
-            #     return _block.hydrogen[i] == _block.gas[i] * _block.hydrogen_admixture_factor
+                return _block.co2[i] == (a * _block.power[i] + b * _block.bin[i]) * (1 - _block.hydrogen_admixture_factor)
             
 
             def hydrogen_depends_on_gas_rule(_block, i):
                 """Rule for determining the hydrogen demand for combustion.
                 
-                # Generelle Formel für Energieanteilsberechnung:
-                # Energieanteil H₂ an Feuerungswärmeleistung = (vol_h2 × ρ_h2 × HV_h2) / (vol_h2 × ρ_h2 × HV_h2 + vol_ng × ρ_ng × HV_ng)
+                # General formula for energy share calculation:
+                # Energy share of H₂ in combustion heat output = (vol_h2 × ρ_h2 × HV_h2) / (vol_h2 × ρ_h2 × HV_h2 + vol_ng × ρ_ng × HV_ng)
                 # 
-                # Wobei:
-                # vol_h2, vol_ng = Volumenanteil H₂ bzw. Erdgas [dimensionslos]
-                # ρ_h2, ρ_ng = Dichte von H₂ bzw. Erdgas [kg/m³]
-                # HV_h2, HV_ng = Heizwert von H₂ bzw. Erdgas [MJ/kg]
+                # Where:
+                # vol_h2, vol_ng = Volume fraction of H₂ and natural gas [dimensionless]
+                # ρ_h2, ρ_ng = Density of H₂ and natural gas [kg/m³]
+                # HV_h2, HV_ng = Heating value of H₂ and natural gas [MJ/kg]
                 """
                 # Volumetric proportions
                 vol_h2 = _block.hydrogen_admixture_factor
@@ -269,26 +262,18 @@ class Chp:
                 energy_density_h2 = RHO_H2 * HV_H2  # ~10.8 MJ/m³
                 energy_density_ng = RHO_NG * HV_NG  # ~32.0 MJ/m³
                 
-                # Energieanteil berechnen
+                # Calculate energy fraction
                 energy_fraction_h2 = (vol_h2 * energy_density_h2) / (vol_h2 * energy_density_h2 + vol_ng * energy_density_ng)
                 
-                # Print for debugging
-                # print(f"Energy fraction H2: {energy_fraction_h2:.4f}")
-
-                # Wasserstoffanteil am Gesamtenergiestrom (MJ/s)
+                # Hydrogen share of total energy flow (MJ/s)
                 return _block.hydrogen[i] == _block.gas[i] * energy_fraction_h2
-            
-            # Old rule 
-            # def ngas_depends_on_gas_rule(_block, i):
-            #     """Rule for determine the ngas demand for combustion."""
-            #     return _block.natural_gas[i] == _block.gas[i] * (1 - _block.hydrogen_admixture_factor)
 
+            
             def ngas_depends_on_gas_rule(_block, i):
                 """Rule for determining the natural gas demand for combustion.
                 
-                # Generelle Formel für Energieanteilsberechnung:
-                # Energieanteil Erdgas an Feuerungswärmeleistung = (vol_ng × ρ_ng × HV_ng) / (vol_h2 × ρ_h2 × HV_h2 + vol_ng × ρ_ng × HV_ng)
-    
+                # General formula for energy share calculation:
+                # Energy share of natural gas in combustion heat output = (vol_ng × ρ_ng × HV_ng) / (vol_h2 × ρ_h2 × HV_h2 + vol_ng × ρ_ng × HV_ng)
                 """
                 # Volumetric proportions
                 vol_h2 = _block.hydrogen_admixture_factor
@@ -298,13 +283,10 @@ class Chp:
                 energy_density_h2 = RHO_H2 * HV_H2  # ~10.8 MJ/m³
                 energy_density_ng = RHO_NG * HV_NG  # ~32.0 MJ/m³
                 
-                # Energieanteil berechnen
+                # Calculate energy fraction
                 energy_fraction_ng = (vol_ng * energy_density_ng) / (vol_h2 * energy_density_h2 + vol_ng * energy_density_ng)
                 
-                # Print for debugging
-                # print(f"Energy fraction NG: {energy_fraction_ng:.4f}")
-
-                # Erdgasanteil am Gesamtenergiestrom (MJ/s)
+                # Natural gas share of total energy flow (MJ/s)
                 return _block.natural_gas[i] == _block.gas[i] * energy_fraction_ng
            
            

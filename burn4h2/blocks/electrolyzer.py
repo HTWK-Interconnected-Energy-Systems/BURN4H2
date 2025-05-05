@@ -3,7 +3,11 @@ from pyomo.network import *
 import pandas as pd
 
 class Electrolyzer:
-    """Class for constructing chp asset objects."""
+    """Class for constructing electrolyzer asset objects.
+    
+    The Electrolyzer class creates an asset that converts electrical power
+    into hydrogen, consuming water and producing heat as a byproduct.
+    """
 
     def __init__(self, name, filepath, index_col=0) -> None:
         self.name = name
@@ -27,6 +31,7 @@ class Electrolyzer:
     
     def electrolyzer_block_rule(self, block):
         """Rule for creating a electrolyzer block with default components and constraints."""
+        
         # Get index from model
         t = block.model().t
 
@@ -37,15 +42,30 @@ class Electrolyzer:
         block.water = Var(t, domain=NonNegativeReals)
         block.heat = Var(t, domain=NonNegativeReals)
 
+        # Declare ports
         block.power_in = Port()
-        block.power_in.add(block.power, 'power', Port.Extensive, include_splitfrac=False)
+        block.power_in.add(
+            block.power, 
+            'power', 
+            Port.Extensive, 
+            include_splitfrac=False
+        )
+        
         block.hydrogen_out = Port()
-        block.hydrogen_out.add(block.hydrogen, 'hydrogen', Port.Extensive, include_splitfrac=False)
+        block.hydrogen_out.add(
+            block.hydrogen, 
+            'hydrogen', 
+            Port.Extensive, 
+            include_splitfrac=False
+        )
 
         block.heat_out = Port()
-        block.heat_out.add(block.heat,'heat',Port.Extensive, include_splitfrac=False)
-
-
+        block.heat_out.add(
+            block.heat,
+            'heat',
+            Port.Extensive, 
+            include_splitfrac=False
+        )
 
         # Declare construction rules for constraints
         def power_max_rule(_block, i):
