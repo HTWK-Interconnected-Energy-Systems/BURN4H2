@@ -7,7 +7,7 @@
 ```
 
 Where:
-- price_scenario: gee23, kt23, ue23
+- price_scenario: gee23, kt23, ue23, ue24 
 - solar_thermal_scenario: ST-min, ST-max
 - local_heat_demand_scenario: NW-ref, NW-ext
 - year: 2028-2050

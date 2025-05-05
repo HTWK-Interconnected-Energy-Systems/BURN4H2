@@ -1,0 +1,126 @@
+Solver command line: []
+
+Read LP format model from file C:\Users\wlhlm\AppData\Local\Temp\tmp42ao830o.pyomo.lp
+Reading time = 2.49 seconds
+objective: 970608 rows, 878399 columns, 2173998 nonzeros
+Set parameter MIPGap to value 0.02
+Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - Windows 11.0 (26100.2))
+
+CPU model: Intel(R) Core(TM) Ultra 7 258V, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+MIPGap  0.02
+
+Optimize a model with 970608 rows, 878399 columns and 2173998 nonzeros
+Model fingerprint: 0x7e342a93
+Model has 8783 quadratic constraints
+Variable types: 755424 continuous, 122975 integer (105408 binary)
+Coefficient statistics:
+  Matrix range     [6e-03, 2e+02]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [1e-02, 4e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [8e-05, 1e+04]
+Presolve removed 776470 rows and 657904 columns
+Presolve time: 0.57s
+Presolved: 194138 rows, 220495 columns, 614221 nonzeros
+Variable types: 145809 continuous, 74686 integer (65902 binary)
+Performing another presolve...
+Presolve removed 70271 rows and 70271 columns (presolve time = 6s)...
+Presolve removed 70271 rows and 70271 columns
+Presolve time: 5.72s
+Deterministic concurrent LP optimizer: primal and dual simplex
+Showing primal log only...
+
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.3452074e+07   6.727358e+06   7.987297e+13      7s
+Concurrent spin time: 0.00s
+
+Solved with dual simplex
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   55020    7.5665703e+06   0.000000e+00   0.000000e+00     10s
+
+Root relaxation: objective 7.566570e+06, 55020 iterations, 2.50 seconds (4.01 work units)
+Total elapsed time = 9.54s (DegenMoves)
+Total elapsed time = 10.08s (DegenMoves)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 7566570.28    0  438          - 7566570.28      -     -   11s
+H    0     0                    7905549.2259 7566570.28  4.29%     -   13s
+     0     0 7571018.67    0  507 7905549.23 7571018.67  4.23%     -   17s
+     0     0 7571693.00    0  483 7905549.23 7571693.00  4.22%     -   19s
+     0     0 7571693.00    0  480 7905549.23 7571693.00  4.22%     -   19s
+     0     0 7571693.00    0  480 7905549.23 7571693.00  4.22%     -   19s
+     0     0 7572758.81    0  427 7905549.23 7572758.81  4.21%     -   20s
+     0     0 7572956.10    0  431 7905549.23 7572956.10  4.21%     -   20s
+     0     0 7573057.72    0  433 7905549.23 7573057.72  4.21%     -   20s
+     0     0 7573086.02    0  427 7905549.23 7573086.02  4.21%     -   21s
+     0     0 7573087.63    0  428 7905549.23 7573087.63  4.21%     -   21s
+     0     0 7573088.46    0  426 7905549.23 7573088.46  4.21%     -   21s
+H    0     0                    7897807.3577 7573491.46  4.11%     -   23s
+     0     0 7573491.46    0  468 7897807.36 7573491.46  4.11%     -   23s
+     0     0 7573510.60    0  485 7897807.36 7573510.60  4.11%     -   24s
+     0     0 7573536.94    0  490 7897807.36 7573536.94  4.11%     -   24s
+     0     0 7573537.30    0  492 7897807.36 7573537.30  4.11%     -   24s
+H    0     0                    7893017.5861 7573537.30  4.05%     -   26s
+H    0     0                    7888219.8537 7573537.30  3.99%     -   26s
+H    0     0                    7887751.8798 7573537.30  3.98%     -   26s
+H    0     0                    7887684.2566 7573537.30  3.98%     -   26s
+H    0     0                    7887681.7596 7573594.11  3.98%     -   26s
+     0     0 7573594.11    0  484 7887681.76 7573594.11  3.98%     -   26s
+     0     0 7573639.08    0  482 7887681.76 7573639.08  3.98%     -   26s
+     0     0 7573641.48    0  489 7887681.76 7573641.48  3.98%     -   27s
+     0     0 7573643.67    0  489 7887681.76 7573643.67  3.98%     -   27s
+     0     0 7573643.67    0  489 7887681.76 7573643.67  3.98%     -   27s
+     0     0 7573648.73    0  470 7887681.76 7573648.73  3.98%     -   27s
+     0     0 7573650.12    0  483 7887681.76 7573650.12  3.98%     -   28s
+     0     0 7573653.62    0  484 7887681.76 7573653.62  3.98%     -   28s
+     0     0 7573654.14    0  485 7887681.76 7573654.14  3.98%     -   29s
+     0     0 7573654.60    0  478 7887681.76 7573654.60  3.98%     -   29s
+     0     0 7573655.20    0  479 7887681.76 7573655.20  3.98%     -   30s
+     0     0 7573655.28    0  478 7887681.76 7573655.28  3.98%     -   30s
+     0     0 7573655.28    0  387 7887681.76 7573655.28  3.98%     -   31s
+H    0     0                    7885334.4996 7573655.28  3.95%     -   33s
+     0     2 7573655.28    0  385 7885334.50 7573655.28  3.95%     -   34s
+     3     8 7575763.25    2  400 7885334.50 7573711.87  3.95%   222   35s
+   217   226 7576099.60   22  406 7885334.50 7573714.32  3.95%  21.1   40s
+H  225   234                    7878884.9331 7573714.32  3.87%  20.5   42s
+H  227   234                    7876852.0628 7573714.32  3.85%  20.4   42s
+H  229   234                    7874483.3361 7573714.32  3.82%  20.2   42s
+H  231   234                    7873663.2448 7573714.32  3.81%  20.1   42s
+H  232   234                    7867288.9778 7573714.32  3.73%  20.0   42s
+   349   361 7576111.97   35  404 7867288.98 7573714.32  3.73%  14.7   45s
+   608   686 7576752.54   61  403 7867288.98 7573714.32  3.73%  10.3   50s
+  1001  1010 7577022.63   99  395 7867288.98 7573714.32  3.73%   8.8   61s
+  1033  1042 7577219.05  102  386 7867288.98 7573714.32  3.73%   9.3   65s
+  1081  1090 7577155.72  106  392 7867288.98 7573714.32  3.73%   9.5   70s
+H 1107  1114                    7606681.0685 7573714.32  0.43%   9.4   73s
+H 1108  1114                    7603289.6200 7573714.32  0.39%   9.4   73s
+
+Cutting planes:
+  Learned: 6
+  Gomory: 193
+  Cover: 308
+  Implied bound: 179
+  MIR: 556
+  Flow cover: 358
+  RLT: 18
+  Relax-and-lift: 94
+
+Explored 1113 nodes (83975 simplex iterations) in 73.84 seconds (79.75 work units)
+Thread count was 8 (of 8 available processors)
+
+Solution count 10: 7.60329e+06 7.60668e+06 7.86729e+06 ... 7.88775e+06
+
+Optimal solution found (tolerance 2.00e-02)
+Best objective 7.603289619991e+06, best bound 7.573714322006e+06, gap 0.3890%
+

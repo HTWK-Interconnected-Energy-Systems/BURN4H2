@@ -1,0 +1,89 @@
+Solver command line: []
+
+Read LP format model from file C:\Users\wlhlm\AppData\Local\Temp\tmp6gz5getu.pyomo.lp
+Reading time = 2.90 seconds
+objective: 979392 rows, 878399 columns, 2165214 nonzeros
+Set parameter MIPGap to value 0.02
+Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - Windows 11.0 (26100.2))
+
+CPU model: Intel(R) Core(TM) Ultra 7 258V, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+MIPGap  0.02
+
+Optimize a model with 979392 rows, 878399 columns and 2165214 nonzeros
+Model fingerprint: 0x9241fa4d
+Model has 8783 quadratic constraints
+Variable types: 755424 continuous, 122975 integer (105408 binary)
+Coefficient statistics:
+  Matrix range     [6e-03, 2e+02]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [1e-02, 4e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [8e-05, 1e+04]
+Presolve removed 776478 rows and 649120 columns
+Presolve time: 0.64s
+Presolved: 202914 rows, 229279 columns, 631766 nonzeros
+Variable types: 154593 continuous, 74686 integer (65902 binary)
+Performing another presolve...
+Presolve removed 70272 rows and 70273 columns (presolve time = 9s)...
+Presolve removed 70272 rows and 70273 columns
+Presolve time: 8.65s
+Deterministic concurrent LP optimizer: primal and dual simplex
+Showing primal log only...
+
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.3541671e+08   5.694482e+05   2.352534e+13     11s
+Concurrent spin time: 0.01s
+
+Solved with dual simplex
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   74751    1.2708324e+08   0.000000e+00   0.000000e+00     14s
+
+Root relaxation: objective 1.270832e+08, 74751 iterations, 4.34 seconds (4.62 work units)
+Total elapsed time = 14.50s (DegenMoves)
+Total elapsed time = 15.21s (DegenMoves)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 1.2708e+08    0  297          - 1.2708e+08      -     -   17s
+     0     0 1.2708e+08    0  342          - 1.2708e+08      -     -   21s
+     0     0 1.2708e+08    0  331          - 1.2708e+08      -     -   22s
+     0     0 1.2708e+08    0  333          - 1.2708e+08      -     -   23s
+     0     0 1.2708e+08    0  303          - 1.2708e+08      -     -   24s
+     0     0 1.2708e+08    0  315          - 1.2708e+08      -     -   24s
+     0     0 1.2708e+08    0  314          - 1.2708e+08      -     -   25s
+     0     0 1.2708e+08    0  293          - 1.2708e+08      -     -   27s
+     0     0 1.2708e+08    0  300          - 1.2708e+08      -     -   28s
+     0     0 1.2708e+08    0  301          - 1.2708e+08      -     -   28s
+     0     0 1.2708e+08    0  294          - 1.2708e+08      -     -   31s
+     0     0 1.2708e+08    0  292          - 1.2708e+08      -     -   31s
+     0     0 1.2708e+08    0  282          - 1.2708e+08      -     -   32s
+H    0     0                    1.271375e+08 1.2708e+08  0.04%     -   32s
+
+Cutting planes:
+  Gomory: 196
+  Cover: 179
+  Implied bound: 62
+  MIR: 476
+  Flow cover: 258
+  Network: 1
+  RLT: 39
+  Relax-and-lift: 180
+
+Explored 1 nodes (82086 simplex iterations) in 33.06 seconds (30.15 work units)
+Thread count was 8 (of 8 available processors)
+
+Solution count 1: 1.27137e+08 
+
+Optimal solution found (tolerance 2.00e-02)
+Best objective 1.271374619809e+08, best bound 1.270841765405e+08, gap 0.0419%
+

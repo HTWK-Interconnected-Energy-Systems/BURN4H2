@@ -1,0 +1,77 @@
+Solver command line: []
+
+Read LP format model from file C:\Users\wlhlm\AppData\Local\Temp\tmphgwpob79.pyomo.lp
+Reading time = 2.45 seconds
+objective: 979392 rows, 878399 columns, 2217918 nonzeros
+Set parameter MIPGap to value 0.02
+Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - Windows 11.0 (26100.2))
+
+CPU model: Intel(R) Core(TM) Ultra 7 258V, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+MIPGap  0.02
+
+Optimize a model with 979392 rows, 878399 columns and 2217918 nonzeros
+Model fingerprint: 0xc5b06c35
+Model has 8783 quadratic constraints
+Variable types: 755424 continuous, 122975 integer (105408 binary)
+Coefficient statistics:
+  Matrix range     [8e-03, 2e+02]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [1e-02, 4e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [8e-05, 1e+04]
+Presolve removed 777516 rows and 650158 columns
+Presolve time: 0.57s
+Presolved: 201876 rows, 228241 columns, 629124 nonzeros
+Variable types: 153838 continuous, 74403 integer (65619 binary)
+Performing another presolve...
+Presolve removed 70365 rows and 70366 columns (presolve time = 7s)...
+Presolve removed 70365 rows and 70366 columns
+Presolve time: 6.90s
+Deterministic concurrent LP optimizer: primal and dual simplex
+Showing primal log only...
+
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.1178593e+08   5.639737e+06   4.042969e+13      9s
+   52297    1.0819312e+08   5.208589e+03   6.622670e+09     10s
+Concurrent spin time: 0.00s
+
+Solved with dual simplex
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   70640    1.0551382e+08   0.000000e+00   0.000000e+00     11s
+
+Root relaxation: objective 1.055138e+08, 70640 iterations, 3.21 seconds (3.93 work units)
+Total elapsed time = 11.53s (DegenMoves)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 1.0551e+08    0  155          - 1.0551e+08      -     -   12s
+H    0     0                    1.055287e+08 1.0551e+08  0.01%     -   19s
+H    0     0                    1.055263e+08 1.0551e+08  0.01%     -   19s
+
+Cutting planes:
+  Gomory: 99
+  Cover: 46
+  Implied bound: 31
+  MIR: 161
+  Flow cover: 131
+  RLT: 24
+  Relax-and-lift: 123
+
+Explored 1 nodes (74496 simplex iterations) in 19.80 seconds (24.48 work units)
+Thread count was 8 (of 8 available processors)
+
+Solution count 2: 1.05526e+08 1.05529e+08 
+
+Optimal solution found (tolerance 2.00e-02)
+Best objective 1.055262777961e+08, best bound 1.055138224730e+08, gap 0.0118%
+

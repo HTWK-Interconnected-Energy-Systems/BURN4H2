@@ -1,0 +1,78 @@
+Solver command line: []
+
+Read LP format model from file C:\Users\wlhlm\AppData\Local\Temp\tmpccy7li3q.pyomo.lp
+Reading time = 38.13 seconds
+objective: 967944 rows, 858479 columns, 78914406 nonzeros
+Set parameter MIPGap to value 0.03
+Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - Windows 11.0 (26100.2))
+
+CPU model: Intel(R) Core(TM) Ultra 7 258V, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+MIPGap  0.03
+
+Optimize a model with 967944 rows, 858479 columns and 78914406 nonzeros
+Model fingerprint: 0x64aca8c8
+Model has 8759 quadratic constraints
+Variable types: 735840 continuous, 122639 integer (105120 binary)
+Coefficient statistics:
+  Matrix range     [6e-03, 2e+02]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [1e-02, 5e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [8e-05, 1e+04]
+Presolve removed 157680 rows and 140160 columns (presolve time = 11s)...
+Presolve removed 582508 rows and 477387 columns (presolve time = 16s)...
+Presolve removed 621895 rows and 512429 columns (presolve time = 21s)...
+Presolve removed 643758 rows and 529949 columns (presolve time = 26s)...
+Presolve removed 661697 rows and 536810 columns (presolve time = 31s)...
+Presolve removed 666759 rows and 541872 columns (presolve time = 36s)...
+Presolve removed 666759 rows and 541872 columns (presolve time = 41s)...
+Presolve removed 666759 rows and 541872 columns (presolve time = 45s)...
+Presolve removed 675518 rows and 541872 columns (presolve time = 58s)...
+Presolve removed 675518 rows and 541872 columns (presolve time = 61s)...
+Presolve removed 675518 rows and 541873 columns (presolve time = 65s)...
+Presolve removed 675518 rows and 541873 columns (presolve time = 72s)...
+Presolve removed 771049 rows and 646049 columns
+Presolve time: 73.57s
+Presolved: 196895 rows, 212430 columns, 620386 nonzeros
+Variable types: 149192 continuous, 63238 integer (63238 binary)
+Performing another presolve...
+Presolve removed 52564 rows and 52565 columns
+Presolve time: 4.49s
+Deterministic concurrent LP optimizer: primal and dual simplex
+Showing primal log only...
+
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    3.9516773e+07   5.366825e+07   6.456823e+13     80s
+   15030    4.1673751e+07   4.441412e+06   8.704498e+12     81s
+Concurrent spin time: 0.07s
+
+Solved with dual simplex
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   50707    2.4626401e+07   0.000000e+00   0.000000e+00     82s
+
+Root relaxation: objective 2.462640e+07, 50707 iterations, 2.51 seconds (4.84 work units)
+Total elapsed time = 82.06s (DegenMoves)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.4626e+07    0  618          - 2.4626e+07      -     -   84s
+H    0     0                    2.516101e+07 2.4626e+07  2.12%     -   85s
+
+Explored 1 nodes (60794 simplex iterations) in 86.12 seconds (63.44 work units)
+Thread count was 8 (of 8 available processors)
+
+Solution count 1: 2.5161e+07 
+
+Optimal solution found (tolerance 3.00e-02)
+Best objective 2.516101426864e+07, best bound 2.462640139502e+07, gap 2.1248%
+
