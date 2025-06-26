@@ -37,6 +37,10 @@ data/input/pv_capacity_factors/leipzig_t45_a270_leap.csv
 data/input/pv_capacity_factors/leipzig_t45_a270_normal.csv
 data/input/pv_capacity_factors/leipzig_t45_a270.csv
 
+data/output/archive/
+data/output/uc1
+data/output/uc2
+
 # Internal development folders
 postprocessing/
 preprocessing/
