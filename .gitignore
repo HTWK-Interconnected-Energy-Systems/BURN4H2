@@ -27,6 +27,16 @@ data/input/demands/district_heating/default
 data/input/demands/local_heating/Bedarf NW-Netz
 data/input/demands/local_heating/Bedarf NW-Netz_zusätzl Abnehmer
 
+data/input/pv_capacity_factors/leipzig_t45_a90_leap.csv
+data/input/pv_capacity_factors/leipzig_t45_a90_normal.csv
+data/input/pv_capacity_factors/leipzig_t45_a90.csv
+data/input/pv_capacity_factors/leipzig_t45_a180_leap.csv
+data/input/pv_capacity_factors/leipzig_t45_a180_normal.csv
+data/input/pv_capacity_factors/leipzig_t45_a180.csv
+data/input/pv_capacity_factors/leipzig_t45_a270_leap.csv
+data/input/pv_capacity_factors/leipzig_t45_a270_normal.csv
+data/input/pv_capacity_factors/leipzig_t45_a270.csv
+
 # Internal development folders
 postprocessing/
 preprocessing/

@@ -1,519 +1,222 @@
 <!-- omit in toc -->
-# BURN4H2 - Framework 
+# BURN4H2-Framework
+
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Pyomo](https://img.shields.io/badge/pyomo-6.0+-orange.svg)](https://pyomo.readthedocs.io/)
+
 <!-- omit in toc -->
-# Table of Contents 
+## Table of Contents 
 - [Overview](#overview)
-- [System Boundaries](#system-boundaries)
+- [Project Background](#project-background)
+- [Framework Architecture](#framework-architecture)
+- [System Boundaries and Assumptions](#system-boundaries-and-assumptions)
 - [Components](#components)
-  - [CHP Units](#chp-units)
-  - [Heat Pump](#heat-pump)
-  - [Battery Storage](#battery-storage)
-  - [Heat Storage](#heat-storage)
-  - [Local Heat Storage](#local-heat-storage)
-  - [Photovoltaics](#photovoltaics)
-  - [Collector (Solar Thermal)](#collector-solar-thermal)
-  - [Grid](#grid)
 - [Topology](#topology)
-- [Ports](#ports)
-  - [CHP](#chp)
-    - [Input Ports](#input-ports)
-    - [Output Ports](#output-ports)
-  - [Heat Pump](#heat-pump-1)
-    - [Stage 1](#stage-1)
-      - [Input Ports](#input-ports-1)
-      - [Output Ports](#output-ports-1)
-    - [Stage 2](#stage-2)
-      - [Input Ports](#input-ports-2)
-      - [Output Ports](#output-ports-2)
-  - [Storage](#storage)
-    - [Battery Storage](#battery-storage-1)
-      - [Input Ports](#input-ports-3)
-      - [Output Ports](#output-ports-3)
-    - [Heat Storage](#heat-storage-1)
-      - [Input Ports](#input-ports-4)
-      - [Output Ports](#output-ports-4)
-    - [Local Heat Storage](#local-heat-storage-1)
-      - [Input Ports](#input-ports-5)
-      - [Output Ports](#output-ports-5)
-  - [Photovoltaics](#photovoltaics-1)
-    - [Output Ports](#output-ports-6)
-  - [Collector](#collector)
-    - [Output Ports](#output-ports-7)
-  - [Grid](#grid-1)
-    - [Electrical Grid](#electrical-grid)
-      - [Input Ports](#input-ports-6)
-      - [Output Ports](#output-ports-8)
-    - [Hydrogen Grid](#hydrogen-grid)
-      - [Output Ports](#output-ports-9)
-    - [Heat Grid](#heat-grid)
-      - [Input Ports](#input-ports-7)
-      - [Output Ports](#output-ports-10)
-    - [Waste Heat Grid](#waste-heat-grid)
-      - [Input Ports](#input-ports-8)
-      - [Output Ports](#output-ports-11)
-    - [Local Heat Grid](#local-heat-grid)
-      - [Input Ports](#input-ports-9)
-      - [Output Ports](#output-ports-12)
-- [Run the Script](#run-the-script)
-  - [1. Install Dependencies](#1-install-dependencies)
-  - [2. Select a Configuration File](#2-select-a-configuration-file)
-  - [3. Run the Script](#3-run-the-script)
-    - [Run with Default Configuration](#run-with-default-configuration)
-    - [Run with a Specific Scenario](#run-with-a-specific-scenario)
-  - [4. Execution Process](#4-execution-process)
-  - [5. Naming Convention of the Results](#5-naming-convention-of-the-results)
-    - [Output CSV Files](#output-csv-files)
-    - [Metadata JSON Files](#metadata-json-files)
+- [Installation and Usage](#installation-and-usage)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+  - [Running Simulations](#running-simulations)
+- [Output and Results](#output-and-results)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
 ## Overview
-This model demonstrates the optimization of an industrial energy system with focus on sector coupling between power and heat. 
 
-It includes:
-- Combined heat and power units (CHP)
-- Heat Pumps
-- Solar Thermal Collector
-- Battery & Heat Storage
-- Grid Connections (Power, Heat, Waste Heat)
+The BURN4H2-Framework is an open-source optimization framework for industrial energy systems with a focus on sector coupling between power and heat. The framework enables detailed modeling and optimization of complex energy systems including hydrogen integration, combined heat and power units, heat pumps, renewable energy sources, and various storage technologies.
 
----
+## Project Background
 
-## System Boundaries 
+This framework was developed as part of the BURN4H2 project, specifically within the sub-project "Systemmodellierung und Regelungskonzeptentwicklung" (System Modeling and Control Concept Development). The framework is based on scientifically established methods and utilizes the Python programming language in combination with the algebraic modeling language Pyomo to formulate a mixed-integer linear programming (MILP) problem, which is solved using the Gurobi solver.
 
-- Mixed-lineare programming approach (MILP)
-- Perfect forecast
-- Hourly resolution
-- No transmission losses
-- No ramp rates
+### Key Features
 
----
+- **Optimization Objective**: Minimization of total system operating costs
+- **Modeling Approach**: Bottom-up analytical approach with detailed component modeling
+- **Sector Coupling**: Integration of electrical, thermal, and hydrogen energy sectors
+- **Modularity**: Flexible framework structure allowing easy adaptation without core modifications
+- **Real-world Data**: Integration of actual plant data, load profiles, and site-specific infrastructure conditions
+- **Transparency**: Complete disclosure of model structure and technical assumptions
 
-## Components 
+The modular design enables flexible adaptation of energy system models without intervention in the core structure. High site-specific modeling depth is achieved through the use of real plant data, load profiles, and infrastructural site conditions. Complete disclosure of the model structure and technical assumptions ensures transparency and traceability of results.
 
-### CHP Units
-- Two identical units (chp 1, chp 2)
-- Fixed hydrogen admixture (0-100%) for 0%, 30%, 50% and 100%
+## Framework Architecture
 
-- Assumptions:
-  - Constant efficiency in converting fuel to both power and heat.
-  - Linear dependency between:
-    - gas consumption and power output
-    - heat and power output
-    - co2 and power output
-    - waste heat and power output
-  - Binary on/off modeling of operation.
+The framework follows a modular structure with the following core components:
 
+```
+burn4h2/
+├── main.py              # Main optimization model and execution logic
+└── blocks/              # Modular component definitions
+    ├── chp.py          # Combined Heat and Power units
+    ├── grid.py         # Grid connections (electrical, heat, hydrogen)
+    ├── heatpump.py     # Heat pump systems
+    ├── storage.py      # Storage systems (battery, thermal, hydrogen)
+    ├── res.py          # Renewable energy sources
+    ├── collector.py    # Solar thermal collectors
+    └── electrolyzer.py # Hydrogen production
+```
 
-#### Assumptions for Hydrogen Admixture Data (30%, 50%, 100%)
+## System Boundaries and Assumptions
 
-##### Methodology Overview
-The data for different hydrogen admixture ratios (30%, 50%, and 100%) in the CHP units was derived through a systematic approach combining interpolation and scaling techniques. 
+### General Model Assumptions
 
-##### Initial Data Availability
-Complete data was available for 100% load with hydrogen admixtures of 0%, 30%, 50%, and 100%
-For 25% load, data was only available for 0% H₂ admixture
-For all other operating points, values needed to be calculated using appropriate methods
+- **Optimization Method**: Mixed-integer linear programming (MILP)
+- **Forecast Quality**: Perfect forecast assumed
+- **Temporal Resolution**: Hourly time steps
+- **Transmission**: No transmission losses between system components
+- **Grid Infrastructure**: Unlimited flow capacity in network connections
+- **System Operation**: No ramp rate constraints
+- **Energy Balance**: Perfect balancing of supply and demand at each time step
+- **Component Operation**: Ideal operation without degradation effects (unless specified)
 
-##### Key Performance Metrics
-The dataset includes three main performance parameters:
+## Components
 
-- **P_f**: Fuel thermal input power [MW]
-- **Q_th**: Thermal net output power [MW]
-- **P_el**: Electrical net output power [MW]
+The framework includes the following energy system components:
 
-##### Two-Step Calculation Process
+### Power Generation
+- **Combined Heat and Power (CHP)**: Two identical units with configurable hydrogen admixture (0%, 30%, 50%, 100%)
+- **Photovoltaics**: Solar power generation with capacity factor profiles
+- **Grid Connection**: Electrical import/export capabilities
 
-1. Interpolation for 35% Load at 0% H₂
-Since the minimum load values in the underlying data sheets start at 35%, we first interpolated values for 35% load with 0% H₂:
+### Heat Generation
+- **Heat Pumps**: Two-stage ammonia-based heat pump system
+- **Solar Thermal**: Collector systems for thermal energy generation
+- **Waste Heat Recovery**: Integration of waste heat from CHP units
 
-- Linear interpolation was applied between known values at 25% and 100% load
-- The interpolation followed the formula: y = y₁ + (y₂ - y₁) × (x - x₁)/(x₂ - x₁)
-- This provided baseline values for P_f, Q_th, and P_el at 35% load with 0% H₂
+### Storage Systems
+- **Battery Storage**: Electrical energy storage
+- **Thermal Storage**: Heat storage for district heating
+- **Stratified Heat Storage**: Multi-zone thermal storage
+- **Geothermal Storage**: Ground-coupled heat storage
+- **Hydrogen Storage**: Hydrogen energy storage
 
-2. Scaling for 30%, 50%, and 100% H₂ at 35% Load
-For each hydrogen admixture percentage, scaling factors were calculated based on how performance changed at 100% load:
-
-- Scaling factors = (Value at 100% load with target H₂%)/(Value at 100% load with 0% H₂)
-- These scaling factors were then applied to the interpolated 35% load with 0% H₂ values
-- This approach assumes proportional performance changes across different load levels
-
-##### Key Assumptions
-1. Linear relationship between load percentage and power outputs when hydrogen percentage remains constant
-2. Proportional effects of hydrogen admixture across different load levels
-3. Waste heat production remains consistent regardless of hydrogen admixture percentages
-4. Carbon dioxide (CO2) emissions decrease in direct proportion to hydrogen content in the fuel mixture (e.g., a 70% hydrogen admixture results in a 70% reduction in CO2 emissions)
-
-##### Additional Data for 25% Load
-For completeness, values for 25% load with 30%, 50%, and 100% H₂ were also calculated through backward interpolation from the now-complete dataset for 35% and 100% loads.
-
-##### Results
-The resulting dataset provides a complete performance profile for CHP units operating at different load points (25%, 35%, 100%) with various hydrogen admixtures (0%, 30%, 50%, 100%), enabling comprehensive modeling of CHP behavior under different operating conditions and hydrogen blending scenarios.
-
-  
-### Heat Pump
-
-**Technical specifications:**
-- Working fluid: R-717 (Ammonia)
-- Single-stage compression cycle
-- Minimum temperature difference: 10 K
-- No subcooling or desuperheating
-
-*<img src="docs/images/kreisprozess.PNG" alt="topology" width="500">
-*Figure 1: Schematic representation of the heat pump cycle with main components: compressor (a:1→2), condenser (c:2→3), expansion valve (d:3→4) and evaporator (b:4→1)**
-
-**Thermodynamic assumptions:**
-
-1. Isentropic compression
-2. Isobaric heat rejection
-3. Isothermal/isobaric heat rejection through condensation
-4. Isenthalpic expansion through throttle valve
-5. Isothermal/isobaric heat absorption in evaporator
-
-**Additional Assumptions:**
-- Single-stage compression
-- No losses in compression, condensation, or expansion processes.
-
-### Battery Storage
-
-**Assumptions:**
-
-- Perfect charging/discharging
-- No losses
-- No cyclic degradation
-- Fixed capacity 
-
-### Heat Storage 
-
-**Assumptions:**
-
-- Fixed storage capacity with ideal charge and discharge efficiency
-- Negligible thermal losses during storage
-- Only one-directional operation per time period (charge or discharge)
-
-### Local Heat Storage
-**Assumptions:**
-
-- Fixed storage capacity with ideal charge and discharge efficiency.
-- Instantaneous response during discharging
-- bidirectional operation within the same timestep (charge and discharge)
-- Negligible thermal losses during storage
-- Ability to dispatch excess heat directly into district heating grid
-
-### Photovoltaics
-**Assumptions:**
-- Constant panel efficiency (?) -> Martin fragen
-- Ideal irradiance conditions without shading or degradation (?) -> Martin fragen
-- Negligible conversion losses beyond rated efficiency (?) -> Martin fragen
-
-### Collector (Solar Thermal)
-**Assumptions:**
-- Fixed Solar thermal capacity
-- No ambient or thermal losses considered
-- Constant collection efficiency over the operational period
-
-### Grid 
-**Assumptions:**
-- No transmission losses between assets
-- Unlimited flow capacity in network arcs
-- Perfect balancing of supply and demand
-
----
+### Grid Infrastructure
+- **Electrical Grid**: Power import/export and distribution
+- **Heat Grid**: District heating network
+- **Local Heat Grid**: Localized heat distribution
+- **Hydrogen Grid**: Hydrogen supply infrastructure
+- **Natural Gas Grid**: Natural gas supply
+- **Waste Heat Grid**: Waste heat collection and distribution
 
 ## Topology
 
-*<img src="docs/images/Demomodell.png" alt="print_df_example" width="900">
-*Figure 2: Schematic Topology of the Demomodel**
+The energy system topology demonstrates the interconnection of all components through a network of energy flows:
 
----
+![System Topology](docs/images/Demomodell.png)
+*Figure 1: Schematic topology of the energy system model*
 
-**Arcs:**
-*<img src="docs/images/arcs.png" alt="print_df_example" width="500">
-*Figure 4: Schematic figure of an arc**
+The system uses a port-based connection approach where each component has defined input and output ports for different energy carriers (electrical power, heat, hydrogen, natural gas).
 
----
-## Ports
+## Installation and Usage
 
-**Ports:**
-*<img src="docs/images/ports.png" alt="print_df_example" width="500">
-*Figure 3: Schematic figure of the of an asset**
+### Prerequisites
 
+- Python 3.8 or higher
+- Gurobi optimization solver (license required)
+- Required Python packages (see `requirements.txt`)
 
-### CHP
+### Installation
 
-#### Input Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|--------------------|-------|
-| natural_gas_in | chp.natural_gas | Natural gas input  | MW    |
-| hydrogen_in    | chp.hydrogen    | Hydrogen input     | MW    |
-
-#### Output Ports
-| Port Name      | Variable        | Description        | Unit  |
-|---------------|-----------------|--------------------|-------|
-| power_out      | chp.power       | Electrical power   | MW    |
-| heat_out       | chp.heat        | Heat output        | MW    |
-| waste_heat_out | chp.waste_heat  | Waste heat output  | MW    |
-
----
-
-### Heat Pump
-
-#### Stage 1
-
-##### Input Ports
-| Port Name      | Variable                 | Description                              | Unit  |
-|----------------|--------------------------|------------------------------------------|-------|
-| power_in       | heatpump_s1.power_in     | Electrical power input                   | MW    |
-| waste_heat_in  | heatpump_s1.heat_in      | Waste heat input (from geo storage)      | MW    |
-
-##### Output Ports
-| Port Name      | Variable                | Description         | Unit  |
-|----------------|-------------------------|---------------------|-------|
-| heat_out       | heatpump_s1.heat_out    | Heat output         | MW    |
-
-#### Stage 2
-
-##### Input Ports
-| Port Name      | Variable                   | Description                    | Unit  |
-|----------------|----------------------------|--------------------------------|-------|
-| power_in       | heatpump_s2.power_in       | Electrical power input         | MW    |
-| waste_heat_in  | heatpump_s2.waste_heat_in   | Waste heat input               | MW    |
-
-##### Output Ports
-| Port Name      | Variable                | Description         | Unit  |
-|----------------|-------------------------|---------------------|-------|
-| heat_out       | heatpump_s2.heat_out    | Heat output         | MW    |
-
----
-
-### Storage
-
-#### Battery Storage
-
-##### Input Ports
-| Port Name      | Variable                         | Description       | Unit  |
-|----------------|----------------------------------|-------------------|-------|
-| power_in       | battery_storage.power_charging   | Charging power    | MW    |
-
-
-##### Output Ports
-
-| Port Name      | Variable                          | Description         | Unit  |
-|----------------|-----------------------------------|---------------------|-------|
-| power_out      | battery_storage.power_discharging | Discharging power   | MW    |
-
-
-
-#### Heat Storage 
-
-##### Input Ports
-| Port Name      | Variable                      | Description       | Unit  |
-|----------------|-------------------------------|-------------------|-------|
-| heat_in        | heat_storage.heat_charging    | Charging heat     | MW    |
-
-##### Output Ports
-| Port Name      | Variable                      | Description         | Unit  |
-|----------------|-------------------------------|---------------------|-------|
-| heat_out       | heat_storage.heat_discharging | Discharging heat    | MW    |
-
-
-#### Local Heat Storage 
-
-##### Input Ports
-
-| Port Name      | Variable                          | Description        | Unit  |
-|----------------|-----------------------------------|--------------------|-------|
-| heat_in        | local_heat_storage.heat_charging  | Charging heat      | MW    |
-
-
-##### Output Ports
-
-| Port Name       | Variable                               | Description                 | Unit  |
-|-----------------|----------------------------------------|-----------------------------|-------|
-| heat_out        | local_heat_storage.heat_discharging    | Discharging heat            | MW    |
-| excess_heat_out | local_heat_storage.excess_heat_discharging | Excess heat discharging | MW    |
-
----
-
-### Photovoltaics
-
-#### Output Ports
-
-| Port Name      | Variable  | Description       | Unit  |
-|----------------|-----------|-------------------|-------|
-| power_out      | pv.power  | Electrical power  | MW    |
-
----
-
-### Collector 
-
-#### Output Ports
-| Port Name      | Variable          | Description  | Unit  |
-|----------------|-------------------|--------------|-------|
-| heat_out       | solar_thermal.heat | Heat output | MW    |
-
----
-### Grid
-
-#### Electrical Grid 
-
-##### Input Ports
-
-| Port Name      | Variable                     | Description            | Unit  |
-|----------------|------------------------------|------------------------|-------|
-| power_in       | electrical_grid.power_in     | Power feed-in          | MW    |
-
-##### Output Ports
-
-| Port Name      | Variable                      | Description           | Unit  |
-|----------------|-------------------------------|-----------------------|-------|
-| power_out      | electrical_grid.power_out      | Power supply         | MW    |
-
----
-
-#### Hydrogen Grid
-
-
-##### Output Ports
-
-| Port Name     | Variable                      | Description         | Unit  |
-|---------------|-------------------------------|---------------------|-------|
-| hydrogen_out  | hydrogen_grid.hydrogen_out     | Hydrogen supply     | MW    |
-
----
-
-#### Heat Grid 
-
-##### Input Ports
-
-| Port Name       | Variable                   | Description         | Unit  |
-|-----------------|----------------------------|---------------------|-------|
-| heat_in         | heat_grid.heat_in          | Heat feed-in        | MW    |
-| excess_heat_in  | heat_grid.excess_heat_in   | Excess heat feed-in | MW    |
-
-##### Output Ports
-
-| Port Name               | Variable                       | Description                      | Unit  |
-|-------------------------|--------------------------------|----------------------------------|-------|
-| heat_out                | heat_grid.heat_out              | Heat supply                      | MW    |
-| heat_grid_to_local_out  | heat_grid.heat_grid_to_local    | Heat grid to local heat grid     | MW    |
-
----
-
-#### Waste Heat Grid 
-
-##### Input Ports
-| Port Name      | Variable                           | Description          | Unit  |
-|----------------|------------------------------------|----------------------|-------|
-| waste_heat_in  | waste_heat_grid.waste_heat_in       | Waste heat feed-in   | MW    |
-
-##### Output Ports
-| Port Name      | Variable                         | Description          | Unit  |
-|----------------|----------------------------------|----------------------|-------|
-| heat_out       | waste_heat_grid.waste_heat_out      | Waste heat supply   | MW    |
-
----
-
-#### Local Heat Grid
-
-##### Input Ports
-| Port Name         | Variable                      | Description                  | Unit  |
-|-------------------|-------------------------------|------------------------------|-------|
-| heat_in           | local_heat_grid.heat_in        | Local heat feed-in           | MW    |
-| district_heat_in  | local_heat_grid.district_heat_in | District heat feed-in      | MW    |
-
-##### Output Ports
-| Port Name      | Variable                         | Description          | Unit  |
-|----------------|----------------------------------|----------------------|-------|
-| heat_out       | local_heat_grid.heat_out          | Local heat supply    | MW    |
-
-
----
-
-## Run the Script
-
-### 1. Install Dependencies
-Ensure all required dependencies are installed:
-
+1. Clone the repository:
 ```bash
-# Install dependencies
+git clone https://github.com/your-org/burn4h2-framework.git
+cd burn4h2-framework
+```
+
+2. Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
----
+3. Configure Gurobi solver according to your license.
 
-### 2. Select a Configuration File
-Available configuration files are located in **`data/config/`**:
+### Configuration
 
-**Default Configuration:**
-- `dummy.json`
+Configuration files are located in `config/templates/`. Each configuration defines:
+- System parameters (prices, capacities, etc.)
+- Time series data references
+- Component specifications
+- Scenario-specific settings
 
-**Scenario Configurations:**
-- `gee23_ST-min_NW-ref_2028.json`
-- `gee23_ST-max_NW-ref_2028.json`
-- `gee23_ST-min_NW-ext_2028.json`
-- `gee23_ST-max_NW-ext_2028.json`
+Available configurations:
+- `dummy.json` - Basic demonstration scenario
+- Scenario-specific configurations for different use cases
 
-Detailed descriptions of each scenario are available in `data/config/config-README.md`.
+### Running Simulations
 
----
-
-### 3. Run the Script
-
-#### Run with Default Configuration
+#### Default Configuration
 ```bash
 python main.py
 ```
 
-#### Run with a Specific Scenario
+#### Specific Configuration
 ```bash
-python main.py --config gee23_ST-min_NW-ref_2028.json
+python main.py --config your_config.json
 ```
+
+#### Use Case Batch Processing
+```bash
+python main.py --use-case uc1
+```
+
+## Output and Results
+
+### Result Files
+
+The framework generates timestamped output files:
+
+- **CSV Output**: `{config}_{timestamp}_output.csv`
+  - Time series results for all variables and parameters
+  - Component operational states and energy flows
+  - Cost and emission data
+
+- **Metadata**: `{config}_{timestamp}_metadata.json`
+  - Solver settings and performance
+  - Configuration parameters
+  - System specifications
+
+- **Cost Analysis**: `{config}_{timestamp}_costs.json`
+  - Detailed cost breakdown
+  - Revenue analysis
+  - Economic performance indicators
+
+### Directory Structure
+```
+data/output/
+├── use_case_1/
+│   ├── scenario_1/
+│   │   ├── config_timestamp_output.csv
+│   │   ├── config_timestamp_metadata.json
+│   │   └── config_timestamp_costs.json
+│   └── scenario_2/
+└── dummy/
+```
+
+## Contributing
+
+**Please note: This project is now closed and is no longer under active development.**
+
+This framework was developed as part of the BURN4H2 research project and represents a completed research deliverable. While the code is made available for transparency and reproducibility, no further development or feature additions are planned.
+
+### Data Availability
+
+The framework includes sample data in the `dummy.json` configuration for demonstration purposes. However, please note:
+
+- **Real operational data** (electricity prices, gas prices, load profiles, etc.) used in the original research cannot be shared due to **data protection and confidentiality agreements**
+- Only **anonymized dummy data** is provided in the public repository
+- The dummy configuration demonstrates the framework's functionality but does not represent actual operational scenarios
+
+## License
+
+This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
 
 ---
 
-### 4. Execution Process
-During execution, the following steps occur:
-- Solver options are set
-- Input data is loaded
-- The optimization model is instantiated and solved
-- Results are stored in `data/output/`
-- A solver log and metadata (`.json`) are also created
+**Contact**: This is an archived research project. For technical questions, please refer to the documentation within the repository.
 
----
 
-### 5. Naming Convention of the Results
-
-The output files follow a consistent naming pattern that includes the configuration name and timestamp:
-
-#### Output CSV Files
-
-```bash
-{config_name}_{timestamp}_output.csv
-```
-
-**Example:** `gee23_ST-min_NW-ref_2028_20240225_143022_output.csv`
-
-- `config_name`: Name of the configuration file used (without `.json` extension)
-- `timestamp`: Date and time of execution (`YYYYMMDD_HHMMSS` format)
-- `output.csv`: Contains all timestep results including:
-  - Parameters (power_price, gas_price, etc.)
-  - Variables (power flows, storage levels, etc.)
-  - Expressions (calculated values)
-
-#### Metadata JSON Files  
-
-```bash
-{config_name}_{timestamp}_metadata.json
-```
-
-**Example:** `gee23_ST-min_NW-ref_2028_20240225_143022_metadata.json`
-
-The metadata file contains:
-- Timestamp of execution
-- Configuration file used
-- Solver options
-- Component parameters (e.g., hydrogen admixture ratios)
-- Other relevant run information
-
-Both files are stored in the corresponding scenario subdirectory under `data/output/`.
+**Citation**: If you use this framework in your research, please cite the BURN4H2 project and reference this repository appropriately.
