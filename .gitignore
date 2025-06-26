@@ -41,6 +41,13 @@ data/output/archive/
 data/output/uc1
 data/output/uc2
 
+
+docs/images/zzz_pictures_readme
+docs/config-doc.md
+docs/pw-doc.md
+docs/sr-doc.md
+
+
 # Internal development folders
 postprocessing/
 preprocessing/
