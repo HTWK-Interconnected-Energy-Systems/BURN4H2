@@ -106,7 +106,7 @@ The framework includes the following energy system components:
 
 The energy system topology demonstrates the interconnection of all components through a network of energy flows:
 
-![System Topology](docs/images/Demomodell.png)
+![System Topology](docs/images/demomodell.png)
 *Figure 1: Schematic topology of the energy system model*
 
 The system uses a port-based connection approach where each component has defined input and output ports for different energy carriers (electrical power, heat, hydrogen, natural gas).
