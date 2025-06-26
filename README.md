@@ -217,6 +217,3 @@ This project is licensed under the [MIT License](LICENSE) - see the LICENSE file
 ---
 
 **Contact**: This is an archived research project. For technical questions, please refer to the documentation within the repository.
-
-
-**Citation**: If you use this framework in your research, please cite the BURN4H2 project and reference this repository appropriately.
