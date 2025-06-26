@@ -27,6 +27,11 @@ data/input/demands/district_heating/default
 data/input/demands/local_heating/Bedarf NW-Netz
 data/input/demands/local_heating/Bedarf NW-Netz_zusätzl Abnehmer
 
+# Internal development folders
+postprocessing/
+preprocessing/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
