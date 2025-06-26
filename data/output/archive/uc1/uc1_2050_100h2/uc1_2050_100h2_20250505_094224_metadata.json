@@ -1,0 +1,15 @@
+{
+    "timestamp": "20250505_094224",
+    "config": "uc1_2050_100h2.json",
+    "solver_options": {
+        "MIPGap": 0.03
+    },
+    "hydrogen_admixture": {
+        "chp_1": 1,
+        "chp_2": 1
+    },
+    "H2_PRICE": 200,
+    "CO2_PRICE": 185.19,
+    "HEAT_PRICE": 0,
+    "USE_CONST_H2_PRICE": false
+}

@@ -1,5 +1,5 @@
 <!-- omit in toc -->
-# Demomodell 
+# BURN4H2 - Framework 
 <!-- omit in toc -->
 # Table of Contents 
 - [Overview](#overview)

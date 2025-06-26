@@ -1,270 +1,218 @@
-import pandas as pd
-import json
+'''
+Helper script for postprocessing energy system simulation results.
+Contains the Scenario class to access and load data for specific scenarios.
+'''
 import os
-import glob
-import datetime as dt
+import json
+import pandas as pd
 import re
-from typing import Dict, Any, List, Optional, Union
+import datetime as dt
 
-class ScenarioData:
-    """Klasse zur Verwaltung von Szenariodaten aus verschiedenen Dateien."""
-    
-    def __init__(self, scenario_name: str, base_path: str):
+class Scenario:
+    """
+    Manages access to data for a specific simulation scenario.
+    """
+    def __init__(self, base_data_path, use_case, year, h2_pct, co2_multiplier):
         """
-        Initialisiert ein Szenariodatenobjekt.
+        Initializes a Scenario object.
+
+        Args:
+            base_data_path (str): The base path to the data output directory.
+            use_case (str): The use case identifier ("uc1" or "uc2").
+            year (int): The simulation year (e.g., 2030).
+            h2_pct (int): The hydrogen percentage (e.g., 0, 30, 50, 100).
+            co2_multiplier (bool): False for standard CO2 price (uc1), True for doubled (uc2).
+        """
+        self.base_data_path = base_data_path
+        self.use_case = use_case
+        self.year = year # This is the primary year for the scenario
+        self.h2_pct = h2_pct
+        self.co2_multiplier = co2_multiplier
+
+        if self.use_case == "uc1" and self.co2_multiplier:
+            raise ValueError("For use_case 'uc1', co2_multiplier must be False.")
+        if self.use_case == "uc2" and not self.co2_multiplier:
+            raise ValueError("For use_case 'uc2', co2_multiplier must be True.")
+
+        if self.use_case == "uc1":
+            self.scenario_name_identifier = f"uc1_{self.year}_{self.h2_pct}h2"
+        elif self.use_case == "uc2":
+            self.scenario_name_identifier = f"uc2_{self.year}_{self.h2_pct}h2_2xco2"
+        else:
+            raise ValueError(f"Unknown use_case: {self.use_case}. Must be 'uc1' or 'uc2'.")
+
+        self.scenario_dir = os.path.join(self.base_data_path, self.use_case, self.scenario_name_identifier)
+
+        self.data_output = None
+        self.data_costs = None
+        self.data_metadata = None
+        self.data_chp_asset = None
+
+    def _find_file(self, suffix_pattern):
+        if not os.path.exists(self.scenario_dir):
+            abs_path_scenario_dir = os.path.abspath(self.scenario_dir)
+            raise FileNotFoundError(
+                f"Scenario directory not found: '{self.scenario_dir}' (resolved to '{abs_path_scenario_dir}'). "
+                f"Ensure 'base_data_path' ('{self.base_data_path}') is correct and the directory exists."
+            )
+        if not os.path.isdir(self.scenario_dir):
+            abs_path_scenario_dir = os.path.abspath(self.scenario_dir)
+            raise NotADirectoryError(
+                f"The path '{self.scenario_dir}' (resolved to '{abs_path_scenario_dir}') is not a directory."
+            )
+        expected_prefix = self.scenario_name_identifier
+        found_files = [os.path.join(self.scenario_dir, fname) for fname in os.listdir(self.scenario_dir)
+                       if fname.startswith(expected_prefix) and fname.endswith(suffix_pattern)]
+        if not found_files:
+            raise FileNotFoundError(
+                f"No file starting with '{expected_prefix}' and ending with '{suffix_pattern}' "
+                f"found in directory '{self.scenario_dir}'. Check filenames and timestamps."
+            )
+        return found_files[0]
+
+    def load_output_data(self, set_datetime_index=True):
+        """
+        Loads the time series output CSV file, adds a datetime index, and stores it.
+        The year for the datetime index is determined from metadata if available,
+        otherwise from the scenario's year attribute.
         
         Args:
-            scenario_name: Name des Szenarios
-            base_path: Basispfad zum Szenarioverzeichnis
-        """
-        self.scenario_name = scenario_name
-        self.base_path = base_path
-        self.scenario_path = os.path.join(base_path, scenario_name)
-        
-        # Datenspeicher
-        self.costs: Optional[Dict[str, Any]] = None
-        self.metadata: Optional[Dict[str, Any]] = None
-        self.output: Optional[pd.DataFrame] = None
-        self.processed_output: Optional[pd.DataFrame] = None
-        
-        # Dateipfade
-        self._find_files()
-    
-    def _find_files(self) -> None:
-        """Identifiziert alle relevanten Dateien im Szenariopfad."""
-        if not os.path.exists(self.scenario_path):
-            raise FileNotFoundError(f"Szenariopfad {self.scenario_path} existiert nicht.")
-        
-        self.output_files = glob.glob(os.path.join(self.scenario_path, '*_output.csv'))
-        self.costs_files = glob.glob(os.path.join(self.scenario_path, '*_costs.json'))
-        self.metadata_files = glob.glob(os.path.join(self.scenario_path, '*_metadata.json'))
-    
-    def load_all_data(self) -> 'ScenarioData':
-        """Lädt alle verfügbaren Daten für das Szenario."""
-        self.load_costs()
-        self.load_metadata()
-        self.load_output()
-        return self
-    
-    def load_costs(self) -> 'ScenarioData':
-        """Lädt die Kostendaten aus der JSON-Datei."""
-        if self.costs_files:
-            # Nehme die neueste Datei
-            latest_file = max(self.costs_files, key=os.path.getmtime)
-            with open(latest_file, 'r') as f:
-                self.costs = json.load(f)
-            print(f"Kostendaten aus {os.path.basename(latest_file)} geladen.")
-        else:
-            print(f"Keine Kostendateien für {self.scenario_name} gefunden.")
-        return self
-    
-    def load_metadata(self) -> 'ScenarioData':
-        """Lädt die Metadaten aus der JSON-Datei."""
-        if self.metadata_files:
-            # Nehme die neueste Datei
-            latest_file = max(self.metadata_files, key=os.path.getmtime)
-            with open(latest_file, 'r') as f:
-                self.metadata = json.load(f)
-            print(f"Metadaten aus {os.path.basename(latest_file)} geladen.")
-        else:
-            print(f"Keine Metadatendateien für {self.scenario_name} gefunden.")
-        return self
-    
-    def load_output(self) -> 'ScenarioData':
-        """Lädt die Ausgabedaten aus der CSV-Datei."""
-        if self.output_files:
-            # Nehme die neueste Datei
-            latest_file = max(self.output_files, key=os.path.getmtime)
-            self.output = pd.read_csv(latest_file)
-            print(f"Ausgabedaten aus {os.path.basename(latest_file)} geladen.")
-        else:
-            print(f"Keine Ausgabedateien für {self.scenario_name} gefunden.")
-        return self
-    
-    def preprocess(self) -> 'ScenarioData':
-        """Verarbeitet die geladenen Daten vor."""
-        if self.output is not None:
-            # Kopie erstellen, um das Original nicht zu verändern
-            df = self.output.copy()
-            
-            # Fehlende Werte behandeln
-            df = df.fillna(0)
-            
-            # Zeit-Spalten in Datetime konvertieren
-            time_columns = [col for col in df.columns if 'time' in col.lower() or 'date' in col.lower()]
-            for col in time_columns:
-                if df[col].dtype == 'object':
-                    df[col] = pd.to_datetime(df[col], errors='ignore')
-            
-            # Numerische Spalten identifizieren
-            numeric_cols = df.select_dtypes(include=['number']).columns
-            
-            # Optional: Ausreißer behandeln in numerischen Spalten
-            for col in numeric_cols:
-                # 3 Standardabweichungen als Grenze für Ausreißer
-                mean, std = df[col].mean(), df[col].std()
-                if std > 0:  # Vermeide Division durch Null
-                    df[col] = df[col].clip(lower=mean-3*std, upper=mean+3*std)
-            
-            # Optional: Zeitreihenindexierung, wenn Zeitstempel vorhanden
-            if time_columns and not df[time_columns[0]].isna().any():
-                df.set_index(time_columns[0], inplace=True)
-            
-            self.processed_output = df
-            print(f"Daten für {self.scenario_name} vorverarbeitet.")
-        else:
-            print("Keine Ausgabedaten zum Vorverarbeiten vorhanden. Bitte zuerst load_output() aufrufen.")
-        return self
-    
-    def add_datetime(self, default_year=None, set_as_index=True) -> 'ScenarioData':
-        """
-        Fügt eine datetime-Spalte basierend auf dem stündlichen Index hinzu.
-        Das Jahr wird automatisch aus den Metadaten extrahiert, wenn möglich.
-        
-        Args:
-            default_year (int, optional): Fallback-Jahr, falls Metadaten nicht verfügbar sind
-            set_as_index (bool): Wenn True, wird die neue datetime-Spalte als Index gesetzt
-            
+            set_datetime_index (bool): If True, sets the datetime column as index.
+                                       If False, adds 'datetime' as a column.
+                                       (This argument is for potential future flexibility,
+                                        current primary use case sets it as index).
         Returns:
-            ScenarioData: Das aktuelle ScenarioData-Objekt für Method Chaining
+            pd.DataFrame: The output data with a datetime index or column.
         """
-     
-        
-        # Daten vorbereiten, falls nötig
-        if self.processed_output is None:
-            if self.output is not None:
-                self.preprocess()
-            else:
-                print("Keine Ausgabedaten vorhanden. Bitte zuerst load_output() aufrufen.")
-                return self
-        
-        # Jahr aus Metadaten extrahieren
-        year = default_year or 2023  # Fallback-Jahr
-        
-        if self.metadata and 'config' in self.metadata:
-            config_name = self.metadata['config']
-            # Regex, um das Jahr zu extrahieren (vier aufeinanderfolgende Ziffern)
+        if self.data_output is not None:
+            # Check if datetime processing was already done according to set_datetime_index
+            if set_datetime_index and isinstance(self.data_output.index, pd.DatetimeIndex):
+                return self.data_output
+            if not set_datetime_index and 'datetime' in self.data_output.columns:
+                 return self.data_output
+            # If not, it means data was cached but not processed as requested, so re-process
+            # This case is less likely if load_output_data is the only entry point for self.data_output modification
+
+        csv_file_path = self._find_file("_output.csv")
+        loaded_df = pd.read_csv(csv_file_path)
+
+        # --- Start of integrated datetime logic ---
+        # Ensure metadata is loaded for year extraction
+        if self.data_metadata is None:
+            try:
+                self.load_metadata()
+            except FileNotFoundError:
+                print("Metadata file not found for year extraction. Will use scenario year.")
+            except Exception as e:
+                print(f"Error loading metadata for year extraction: {e}. Will use scenario year.")
+
+
+        year_to_use = self.year # Default to scenario's year
+        extracted_year_from_meta = None
+
+        if self.data_metadata and 'config' in self.data_metadata:
+            config_name = self.data_metadata['config']
             year_match = re.search(r'(\d{4})', config_name)
             if year_match:
-                year = int(year_match.group(1))
-                print(f"Jahr {year} aus Metadaten extrahiert.")
+                extracted_year_from_meta = int(year_match.group(1))
+                print(f"Jahr {extracted_year_from_meta} aus Metadaten ('config': '{config_name}') für Datetime-Index extrahiert.")
+                if extracted_year_from_meta != self.year:
+                    print(f"WARNUNG: Jahr aus Metadaten ({extracted_year_from_meta}) weicht vom Szenario-Jahr ({self.year}) ab. Verwende Jahr aus Metadaten für Zeitstempel.")
+                year_to_use = extracted_year_from_meta
             else:
-                print(f"Kein Jahr in der Konfiguration {config_name} gefunden, verwende {year}.")
+                print(f"Kein Jahr in Metadaten-Konfiguration '{config_name}' gefunden. Verwende Szenario-Jahr {self.year} für Zeitstempel.")
         else:
-            if default_year:
-                print(f"Keine Metadaten verfügbar. Verwende angegebenes Jahr: {default_year}.")
-            else:
-                print(f"Keine Metadaten verfügbar. Verwende Standardjahr: {year}.")
-        
-        # Anzahl der Datenpunkte
-        num_points = len(self.processed_output)
-        
-        # Bestimmen, ob es ein Schaltjahr ist
-        is_leap_year = (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)
-        expected_hours = 8784 if is_leap_year else 8760
-        
-        # Warnung, wenn die Datenpunkte nicht mit dem erwarteten Jahr übereinstimmen
-        if num_points not in [expected_hours, expected_hours-1, expected_hours+1]:
-            print(f"Warnung: Die Anzahl der Datenpunkte ({num_points}) stimmt nicht mit der erwarteten Anzahl für das Jahr {year} ({expected_hours}) überein.")
-        
-        print(f"Erstelle Zeitstempel für das Jahr {year} ({'Schaltjahr' if is_leap_year else 'Normales Jahr'}).")
-        
-        # Startdatum: 1. Januar des angegebenen Jahres um 01:00 Uhr
-        start_date = dt.datetime(year, 1, 1, 1, 0)
-        
-        # Erzeuge Zeitstempel für jede Stunde des Jahres (mit 'h' statt 'H')
-        hours = pd.date_range(start=start_date, periods=num_points, freq='h')
-        
-        # Effizienter: Assign verwenden statt direkter Zuweisung
-        if set_as_index:
-            # Effizienter: Direkt Index setzen
-            self.processed_output = self.processed_output.set_index(hours)
-            self.processed_output.index.name = 'datetime'
-        else:
-            # Effizienter: assign verwenden statt direkter Zuweisung
-            self.processed_output = self.processed_output.assign(datetime=hours)
-        
-        print(f"Datetime-Spalte für {self.scenario_name} hinzugefügt.")
-        
-        return self
-    
-    
-    def summary(self) -> Dict[str, Any]:
-        """Erstellt eine Zusammenfassung der Szenariodaten."""
-        summary = {
-            "scenario_name": self.scenario_name,
-            "data_available": {
-                "costs": self.costs is not None,
-                "metadata": self.metadata is not None,
-                "output": self.output is not None,
-                "processed": self.processed_output is not None,
-            }
-        }
-        
-        if self.metadata:
-            summary["scenario_info"] = {
-                "hydrogen_admixture_chp1": self.metadata.get("hydrogen_admixture", {}).get("chp_1"),
-                "hydrogen_admixture_chp2": self.metadata.get("hydrogen_admixture", {}).get("chp_2"),
-            }
-            
-   
-            
-        if self.output is not None:
-            summary["data_shape"] = {
-                "rows": self.output.shape[0],
-                "columns": self.output.shape[1]
-            }
-            
-        return summary
+            print(f"Keine Metadaten für Jahr-Extraktion verfügbar oder 'config'-Schlüssel fehlt. Verwende Szenario-Jahr {self.year} für Zeitstempel.")
 
-class ScenarioCollection:
-    """Sammlung mehrerer Szenarien für den Vergleich."""
-    
-    def __init__(self, base_path: str):
-        """
-        Initialisiert eine Sammlung von Szenarien.
+        num_points = len(loaded_df)
+        is_leap_year = (year_to_use % 4 == 0 and year_to_use % 100 != 0) or (year_to_use % 400 == 0)
+        expected_hours = 8784 if is_leap_year else 8760
+
+        if num_points != expected_hours:
+            print(f"WARNUNG: Anzahl Datenpunkte ({num_points}) für {self.scenario_name_identifier} stimmt nicht mit erwarteten Stunden für {year_to_use} ({expected_hours}) überein.")
+        print(f"Erstelle Zeitstempel für {self.scenario_name_identifier}, Jahr {year_to_use} ({'Schaltjahr' if is_leap_year else 'Normales Jahr'}).")
+
         
-        Args:
-            base_path: Basispfad zum Verzeichnis mit den Szenarioverzeichnissen
-        """
-        self.base_path = base_path
-        self.scenarios: Dict[str, ScenarioData] = {}
+        start_datetime = dt.datetime(year_to_use, 1, 1, 0, 0) # Start at 00:00
         
-    def discover_scenarios(self) -> 'ScenarioCollection':
-        """Findet alle verfügbaren Szenarien im Basispfad."""
-        import os
-        
-        if not os.path.exists(self.base_path):
-            raise FileNotFoundError(f"Der Basispfad {self.base_path} existiert nicht.")
-        
-        # Alle Verzeichnisse im Basispfad als Szenarien betrachten
-        scenario_dirs = [d for d in os.listdir(self.base_path) 
-                        if os.path.isdir(os.path.join(self.base_path, d))]
-        
-        print(f"{len(scenario_dirs)} Szenarien gefunden: {scenario_dirs}")
-        return self
-    
-    def load_scenario(self, scenario_name: str) -> 'ScenarioCollection':
-        """Lädt ein einzelnes Szenario in die Sammlung."""
-        scenario = ScenarioData(scenario_name, self.base_path)
-        scenario.load_all_data()
-        self.scenarios[scenario_name] = scenario
-        return self
-    
-    def load_scenarios(self, scenario_names: List[str]) -> 'ScenarioCollection':
-        """Lädt mehrere Szenarien in die Sammlung."""
-        for name in scenario_names:
-            self.load_scenario(name)
-        return self
-    
-    def preprocess_all(self) -> 'ScenarioCollection':
-        """Verarbeitet alle geladenen Szenarien vor."""
-        for scenario in self.scenarios.values():
-            scenario.preprocess()
-        return self
-    
-    def add_datetime_all(self, default_year=None, set_as_index=True) -> 'ScenarioCollection':
-        """Fügt Datetime-Spalten für alle geladenen Szenarien hinzu."""
-        for scenario in self.scenarios.values():
-            scenario.add_datetime(default_year=default_year, set_as_index=set_as_index)
-        return self
+        # Create datetime series
+        # If num_points is 8761 (e.g. from oemof results ending at hour 1 of next year for a full year)
+        # and expected_hours is 8760, we might want to trim the last point or adjust periods.   
+        # For now, using num_points directly.
+        hours_index = pd.date_range(start=start_datetime, periods=num_points, freq='h')
+
+        if len(hours_index) > len(loaded_df): # e.g. if num_points was 8761 and freq='h' created 8761 periods
+            hours_index = hours_index[:-1] # common fix for oemof results that include hour 0 of next year
+            print(f"Angepasste Länge des DatetimeIndex von {len(hours_index)+1} auf {len(hours_index)} um mit Datenlänge {len(loaded_df)} übereinzustimmen.")
+
+
+        if set_datetime_index:
+            if len(hours_index) == len(loaded_df):
+                loaded_df = loaded_df.set_index(hours_index)
+                loaded_df.index.name = 'datetime'
+                print(f"Datetime-Index für {self.scenario_name_identifier} gesetzt.")
+            else:
+                print(f"FEHLER: Länge des generierten DatetimeIndex ({len(hours_index)}) stimmt nicht mit Datenlänge ({len(loaded_df)}) überein. Index nicht gesetzt.")
+        else:
+            if len(hours_index) == len(loaded_df):
+                loaded_df = loaded_df.assign(datetime=hours_index)
+                print(f"Datetime-Spalte für {self.scenario_name_identifier} hinzugefügt.")
+            else:
+                print(f"FEHLER: Länge der generierten Datetime-Spalte ({len(hours_index)}) stimmt nicht mit Datenlänge ({len(loaded_df)}) überein. Spalte nicht hinzugefügt.")
+        # --- End of integrated datetime logic ---
+
+        self.data_output = loaded_df # Cache the processed DataFrame
+        return self.data_output
+
+    def load_costs_data(self):
+        if self.data_costs is None:
+            json_costs_path = self._find_file("_costs.json")
+            with open(json_costs_path, 'r', encoding='utf-8') as f:
+                self.data_costs = json.load(f)
+        return self.data_costs
+
+    def load_metadata(self):
+        if self.data_metadata is None:
+            json_metadata_path = self._find_file("_metadata.json")
+            with open(json_metadata_path, 'r', encoding='utf-8') as f:
+                self.data_metadata = json.load(f)
+        return self.data_metadata
+
+    def load_chp_asset_data(self):
+        if self.data_chp_asset is None:
+            chp_asset_filename = f"chp_h2_{self.h2_pct}.csv" if self.h2_pct > 0 else "chp.csv"
+            # Construct path relative to this script file or a known base for input data
+            # Assuming 'data/input/assets' is two levels up from 'postprocessing/utils' and then down
+            script_dir = os.path.dirname(os.path.abspath(__file__)) # postprocessing/utils
+            input_assets_dir = os.path.abspath(os.path.join(script_dir, "..", "..", "data", "input", "assets"))
+            chp_asset_filepath = os.path.join(input_assets_dir, chp_asset_filename)
+
+            if not os.path.exists(chp_asset_filepath):
+                # Fallback for old naming or if base_data_path was meant to be more general
+                assets_dir_fallback = os.path.abspath(os.path.join(self.base_data_path, "..", "..", "data", "input", "assets"))
+                chp_asset_filepath_fallback = os.path.join(assets_dir_fallback, chp_asset_filename)
+                if os.path.exists(chp_asset_filepath_fallback):
+                    chp_asset_filepath = chp_asset_filepath_fallback
+                else:
+                    raise FileNotFoundError(
+                        f"CHP asset data file not found at '{chp_asset_filepath}' or '{chp_asset_filepath_fallback}'. "
+                        f"Ensure the file exists for H2 percentage {self.h2_pct}."
+                    )
+            try:
+                self.data_chp_asset = pd.read_csv(chp_asset_filepath, index_col='index')
+            except Exception as e:
+                raise Exception(f"Error loading CHP asset data from '{chp_asset_filepath}': {e}")
+        return self.data_chp_asset
+
+    def load_all_data(self):
+        return {
+            "output": self.load_output_data(),
+            "costs": self.load_costs_data(),
+            "metadata": self.load_metadata(),
+            "chp_asset": self.load_chp_asset_data()
+        }
+
+    def __repr__(self):
+        return (f"<Scenario: {self.scenario_name_identifier} ( "
+                f"use_case='{self.use_case}', year={self.year}, "
+                f"h2_pct={self.h2_pct}, co2_multiplier={self.co2_multiplier})>")

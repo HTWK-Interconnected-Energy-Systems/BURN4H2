@@ -1,0 +1,66 @@
+Solver command line: []
+
+Read LP format model from file C:\Users\wlhlm\AppData\Local\Temp\tmpgj1mf2er.pyomo.lp
+Reading time = 2.51 seconds
+objective: 994224 rows, 875999 columns, 2246886 nonzeros
+Set parameter MIPGap to value 0.03
+Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - Windows 11.0 (26100.2))
+
+CPU model: Intel(R) Core(TM) Ultra 7 258V, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+MIPGap  0.03
+
+Optimize a model with 994224 rows, 875999 columns and 2246886 nonzeros
+Model fingerprint: 0x1cd0265b
+Model has 8759 quadratic constraints
+Variable types: 753360 continuous, 122639 integer (105120 binary)
+Coefficient statistics:
+  Matrix range     [8e-03, 2e+02]
+  QMatrix range    [1e+00, 1e+00]
+  Objective range  [1e-02, 3e+02]
+  Bounds range     [1e+00, 3e+00]
+  RHS range        [8e-05, 1e+04]
+Presolve removed 786986 rows and 653225 columns
+Presolve time: 0.60s
+Presolved: 207238 rows, 222774 columns, 646545 nonzeros
+Variable types: 142296 continuous, 80478 integer (71718 binary)
+Performing another presolve...
+Presolve removed 70246 rows and 70246 columns (presolve time = 9s)...
+Presolve removed 70246 rows and 70246 columns
+Presolve time: 8.64s
+Deterministic concurrent LP optimizer: primal and dual simplex
+Showing primal log only...
+
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    4.3309452e+07   3.605248e+07   4.612694e+13     10s
+Concurrent spin time: 0.01s
+
+Solved with dual simplex
+
+Root simplex log...
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   61819    2.8768673e+07   0.000000e+00   0.000000e+00     14s
+
+Root relaxation: objective 2.876867e+07, 61819 iterations, 3.77 seconds (4.70 work units)
+Total elapsed time = 13.88s (DegenMoves)
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0 2.8769e+07    0  610          - 2.8769e+07      -     -   16s
+H    0     0                    2.896103e+07 2.8769e+07  0.66%     -   17s
+
+Explored 1 nodes (71653 simplex iterations) in 17.99 seconds (20.10 work units)
+Thread count was 8 (of 8 available processors)
+
+Solution count 1: 2.8961e+07 
+
+Optimal solution found (tolerance 3.00e-02)
+Best objective 2.896102992474e+07, best bound 2.876867294932e+07, gap 0.6642%
+
