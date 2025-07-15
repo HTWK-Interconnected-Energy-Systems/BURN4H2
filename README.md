@@ -210,6 +210,9 @@ The framework includes sample data in the `dummy.json` configuration for demonst
 - Only **anonymized dummy data** is provided in the public repository
 - The dummy configuration demonstrates the framework's functionality but does not represent actual operational scenarios
 
+## Acknowledgements
+The repository is a result of the research and development activities within the "Burn4H2" project (FKZ: 03EE5140C), which was funded by the German Federal Ministry of Economic Affairs and Climate Action (BMWK). We gratefully acknowledge the support provided by the BMWK in enabling the research and development and wish to thank all our project partners for helpful comments and fruitful discussions.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
