@@ -1,0 +1,17 @@
+cff-version: 1.0.1
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Hafemann
+    given-names: Martin
+    orcid: https://orcid.org/0009-0006-8433-0817
+  - family-names: Wilhelm
+    given-names: Paul
+  - family-names: Reker
+    given-names: Sophia
+  - family-names: Huhn
+    given-names: Robert
+  - family-names: Schneider
+    given-names: Jens
+title: HTWK-Interconnected-Energy-Systems/BURN4H2
+version: v1.0.1
+date-released: 2025-07-15
