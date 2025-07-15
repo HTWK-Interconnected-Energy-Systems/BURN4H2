@@ -1,5 +1,6 @@
 cff-version: 1.0.1
 message: "If you use this software, please cite it as below."
+doi: 10.5281/zenodo.15920960
 authors:
   - family-names: Hafemann
     given-names: Martin
